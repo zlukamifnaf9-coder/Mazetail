@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Диско-Сити — Акт 3</title>
+    <style>
+        body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; overflow: hidden; }
+        * { box-sizing: border-box; }
+        #gameContainer { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 16px; max-width: 700px; width: 100%; box-shadow: 0 0 60px rgba(255,215,0,0.1); }
+        #title { color: #ff6b6b; font-family: 'Georgia', serif; font-size: 20px; text-align: center; letter-spacing: 4px; text-shadow: 0 0 30px rgba(255,100,100,0.3); margin: 4px 0; }
+        #subtitle { color: #666; font-size: 11px; text-align: center; letter-spacing: 6px; margin-bottom: 10px; }
+        canvas { display: block; margin: 0 auto; border: 1px solid #333; border-radius: 8px; background: #0d0d0d; width: 100%; height: auto; image-rendering: pixelated; touch-action: none; }
+        #infoBar { display: flex; justify-content: space-between; color: #888; font-size: 12px; padding: 8px 4px; border-bottom: 1px solid #222; margin: 8px 0; flex-wrap: wrap; gap: 4px; }
+        #infoBar span { padding: 0 6px; }
+        .hp { color: #ff6b6b; }
+        .coins { color: #ffd700; }
+        .susp { color: #ff8844; }
+        #dialogBox { background: #111; border-left: 3px solid #FFD700; padding: 10px 14px; margin: 8px 0; min-height: 50px; color: #ccc; font-family: 'Georgia', serif; font-size: 13px; line-height: 1.5; border-radius: 4px; }
+        #controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
+        .btn { background: #1a1a1a; color: #FFD700; border: 1px solid #FFD700; padding: 6px 14px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer; transition: 0.2s; touch-action: manipulation; }
+        .btn:hover { background: #2a2a2a; transform: scale(1.03); }
+        .btn-danger { border-color: #ff4444; color: #ff4444; }
+        .btn-success { border-color: #44ff88; color: #44ff88; }
+        .btn-sm { padding: 4px 10px; font-size: 10px; }
+        .btn-gold { border-color: #ffd700; color: #ffd700; background: #1a1a00; }
+        #mobileDpad { display: none; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 50px); gap: 4px; justify-content: center; margin: 10px auto; }
+        #mobileDpad button { background: #1a1a1a; border: 1px solid #444; border-radius: 8px; color: #FFD700; font-size: 20px; cursor: pointer; touch-action: manipulation; }
+        #mobileDpad .empty { visibility: hidden; }
+        @media (max-width: 600px) { #mobileDpad { display: grid; } .btn { font-size: 10px; padding: 4px 10px; } }
+        .valahia-tag { color: #555; font-size: 9px; border: 1px solid #333; padding: 2px 8px; border-radius: 10px; display: inline-block; margin: 2px; }
+        .neon-flicker { animation: flicker 2.5s infinite; }
+        @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .pulse { animation: pulse 1.5s infinite; }
+        .boss-bar { background: #1a0a0a; border: 1px solid #ff4444; border-radius: 4px; padding: 6px 12px; margin: 6px 0; color: #ff6666; font-size: 13px; display: flex; justify-content: space-between; }
+        .boss-bar .hp-boss { color: #ff2222; font-weight: bold; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div id="gameContainer">
+    <div id="title">🕺 ДИСКО-СИТИ</div>
+    <div id="subtitle">✦ ОККУПИРОВАН ВАЛАХИЕЙ ✦</div>
+
+    <canvas id="cityCanvas" width="600" height="400"></canvas>
+
+    <div id="infoBar">
+        <span class="hp">❤️ <span id="hpDisplay">100</span></span>
+        <span class="coins">💰 <span id="coinsDisplay">50</span></span>
+        <span class="susp">👁️ <span id="suspDisplay">0</span>%</span>
+        <span style="color:#666;">📍 <span id="locDisplay">Центр</span></span>
+        <span id="bossStatus" style="color:#ff4444;display:none;">⚔️ БОСС</span>
+    </div>
+
+    <div id="dialogBox">
+        🌆 Город сияет неоном. Патруль Валахии проходит мимо.<br>
+        <span style="color:#888;font-size:12px;">Тебе нужен пропуск, чтобы покинуть город.</span>
+    </div>
+
+    <div id="bossBar" class="boss-bar hidden">
+        <span>👑 Комендант Валахии</span>
+        <span class="hp-boss">❤️ <span id="bossHpDisplay">100</span>/100</span>
+    </div>
+
+    <div id="controls">
+        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+        <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
+        <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn" style="display:none;">🚪 ПОКИНУТЬ</button>
+    </div>
+
+    <div id="mobileDpad">
+        <button class="empty"></button>
+        <button onclick="movePlayer(0,-1)">⬆️</button>
+        <button class="empty"></button>
+        <button onclick="movePlayer(-1,0)">⬅️</button>
+        <button onclick="interact()">🗣️</button>
+        <button onclick="movePlayer(1,0)">➡️</button>
+        <button class="empty"></button>
+        <button onclick="movePlayer(0,1)">⬇️</button>
+        <button class="empty"></button>
+    </div>
+
+    <div style="text-align:center; margin-top:6px;">
+        <span class="valahia-tag">⚜️ Валахия</span>
+        <span class="valahia-tag">📜 Правило №7: Не смотреть на патруль</span>
+        <span class="valahia-tag neon-flicker">🎶 Неон до 06:00</span>
+    </div>
+</div>
+
+<script>
+// ─── КАНВАС ───
+const canvas = document.getElementById('cityCanvas');
+const ctx = canvas.getContext('2d');
+const W = 600, H = 400;
+
+// ─── КАРТА ───
+const COLS = 20, ROWS = 15, TILE = 30;
+const map = [
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,2,2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,1],
+    [1,0,0,2,2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,2,2,0,0,0,0,0,0,0,0,0,0,2,2,0,0,1],
+    [1,0,0,2,2,0,0,0,0,0,0,0,0,0,0,2,2,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+    [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+];
+
+// ─── СОСТОЯНИЕ ───
+let player = { x: 10, y: 7 };
+let hp = 100, coins = 50, suspicion = 0;
+let hasApple = true, hasMap = true, hasResistance = false;
+let hasPass = false;
+let talkedToCitizen = false, foundBasement = false;
+let bossDefeated = false;
+let bossPhase = 0; // 0=не встречен, 1=диалог, 2=бой
+let bossHp = 100;
+let gameOver = false;
+
+const patrols = [
+    { x: 5, y: 5, dx: 1, dy: 0 },
+    { x: 14, y: 10, dx: -1, dy: 0 },
+    { x: 8, y: 12, dx: 0, dy: -1 },
+];
+
+const citizens = [
+    { x: 4, y: 6, name: 'Старик', text: 'Раньше здесь играла музыка... Настоящая.' },
+    { x: 15, y: 4, name: 'Женщина', text: 'Моего мужа забрали. Нарушил правило №4.' },
+    { x: 12, y: 12, name: 'Парень', text: 'Я хочу сбежать. Но куда? Везде Валахия.' },
+    { x: 7, y: 2, name: 'Продавщица', text: 'Я продаю слёзы в бутылках. Хочешь?' },
+];
+
+let dialogText = '🌆 Город сияет неоном. Патруль Валахии проходит мимо.';
+
+// ─── ЭЛЕМЕНТЫ ───
+const dialogBox = document.getElementById('dialogBox');
+const hpDisplay = document.getElementById('hpDisplay');
+const coinsDisplay = document.getElementById('coinsDisplay');
+const suspDisplay = document.getElementById('suspDisplay');
+const locDisplay = document.getElementById('locDisplay');
+const leaveBtn = document.getElementById('leaveBtn');
+const bossBar = document.getElementById('bossBar');
+const bossHpDisplay = document.getElementById('bossHpDisplay');
+const bossStatus = document.getElementById('bossStatus');
+
+// ─── ОБНОВЛЕНИЕ UI ───
+function updateUI() {
+    hpDisplay.textContent = hp;
+    coinsDisplay.textContent = coins;
+    suspDisplay.textContent = Math.min(suspicion, 100);
+    locDisplay.textContent = getLocationName();
+    if (suspicion >= 50 || hasPass) leaveBtn.style.display = 'inline-block';
+    else leaveBtn.style.display = 'none';
+    if (bossPhase >= 1) {
+        bossBar.classList.remove('hidden');
+        bossStatus.style.display = 'inline';
+        bossHpDisplay.textContent = bossHp;
+    } else {
+        bossBar.classList.add('hidden');
+        bossStatus.style.display = 'none';
+    }
+    if (gameOver) {
+        document.getElementById('controls').innerHTML = `<button class="btn btn-danger" onclick="location.reload()">🔄 НАЧАТЬ ЗАНОВО</button>`;
+    }
+}
+
+function getLocationName() {
+    const px = player.x, py = player.y;
+    if (px >= 7 && px <= 9 && py >= 1 && py <= 3) return 'Таверна';
+    if (px >= 14 && px <= 17 && py >= 8 && py <= 9) return 'Рынок';
+    if (px >= 3 && px <= 4 && py >= 2 && py <= 3) return 'Жилой квартал';
+    if (px === 9 && py === 7) return 'Центральная площадь';
+    if (px === 10 && py === 1) return 'Вход в город';
+    if (px === 16 && py === 1) return 'Канцелярия Валахии';
+    return 'Улица';
+}
+
+// ─── РИСОВАНИЕ ───
+function draw() {
+    ctx.clearRect(0, 0, W, H);
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const x = c * TILE, y = r * TILE;
+            const tile = map[r][c];
+            if (tile === 1) {
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(x, y, TILE, TILE);
+                ctx.fillStyle = '#2a2a2a';
+                ctx.fillRect(x+2, y+2, TILE-4, TILE-4);
+            } else if (tile === 2) {
+                ctx.fillStyle = '#151515';
+                ctx.fillRect(x, y, TILE, TILE);
+                ctx.fillStyle = '#222';
+                ctx.fillRect(x+2, y+2, TILE-4, TILE-4);
+                ctx.fillStyle = '#ff8844';
+                ctx.globalAlpha = 0.3 + Math.random() * 0.2;
+                ctx.fillRect(x+6, y+6, 6, 6);
+                ctx.fillRect(x+18, y+6, 6, 6);
+                ctx.fillRect(x+6, y+18, 6, 6);
+                ctx.fillRect(x+18, y+18, 6, 6);
+                ctx.globalAlpha = 1;
+            } else if (tile === 3) {
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(x, y, TILE, TILE);
+                const bright = 0.3 + Math.random() * 0.4;
+                ctx.fillStyle = `rgba(255, 100, 255, ${bright})`;
+                ctx.fillRect(x+4, y+8, 22, 14);
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px monospace';
+                ctx.fillText('✦', x+12, y+18);
+            } else {
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(x, y, TILE, TILE);
+                ctx.fillStyle = '#111';
+                ctx.fillRect(x+1, y+1, TILE-2, TILE-2);
+                if ((c+r) % 3 === 0) {
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.fillRect(x+8, y+12, 4, 2);
+                    ctx.fillRect(x+16, y+5, 2, 4);
+                }
+            }
+        }
+    }
+    
+    patrols.forEach(p => {
+        const x = p.x * TILE, y = p.y * TILE;
+        ctx.fillStyle = '#1a1a2a';
+        ctx.fillRect(x+4, y+4, 22, 22);
+        ctx.fillStyle = '#444';
+        ctx.fillRect(x+8, y+8, 14, 14);
+        ctx.fillStyle = '#ff4444';
+        ctx.fillRect(x+12, y+4, 6, 4);
+        ctx.fillStyle = '#888';
+        ctx.font = '14px monospace';
+        ctx.fillText('⚜️', x+8, y+20);
+        ctx.fillStyle = 'rgba(255,200,100,0.1)';
+        ctx.beginPath();
+        ctx.arc(x+15, y+30, 20, 0, Math.PI*2);
+        ctx.fill();
+    });
+    
+    citizens.forEach(c => {
+        const x = c.x * TILE, y = c.y * TILE;
+        ctx.fillStyle = '#2a1a1a';
+        ctx.fillRect(x+6, y+6, 18, 18);
+        ctx.fillStyle = '#8a7a7a';
+        ctx.fillRect(x+10, y+8, 10, 10);
+        ctx.fillStyle = '#aaa';
+        ctx.font = '12px monospace';
+        ctx.fillText('👤', x+8, y+20);
+    });
+    
+    // Комендант (босс) на канцелярии
+    if (bossPhase === 0) {
+        const bx = 16 * TILE, by = 1 * TILE;
+        ctx.fillStyle = '#2a0a0a';
+        ctx.fillRect(bx+4, by+4, 22, 22);
+        ctx.fillStyle = '#ff4444';
+        ctx.fillRect(bx+10, by+6, 10, 6);
+        ctx.fillStyle = '#ccaa88';
+        ctx.fillRect(bx+8, by+14, 14, 10);
+        ctx.fillStyle = '#ffd700';
+        ctx.font = '8px monospace';
+        ctx.fillText('👑', bx+10, by+20);
+        ctx.fillStyle = '#666';
+        ctx.font = '7px monospace';
+        ctx.fillText('комендант', bx+4, by+30);
+    }
+    
+    // Игрок
+    const px = player.x * TILE, py = player.y * TILE;
+    const glow = ctx.createRadialGradient(px+15, py+15, 2, px+15, py+15, 20);
+    glow.addColorStop(0, 'rgba(255,215,0,0.3)');
+    glow.addColorStop(1, 'rgba(255,215,0,0)');
+    ctx.fillStyle = glow;
+    ctx.fillRect(px-10, py-10, 50, 50);
+    ctx.fillStyle = '#FFD700';
+    ctx.fillRect(px+10, py+6, 10, 6);
+    ctx.fillRect(px+8, py+12, 14, 14);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(px+12, py+8, 4, 4);
+    ctx.fillRect(px+14, py+20, 8, 4);
+    ctx.fillStyle = '#ff8844';
+    ctx.font = '12px monospace';
+    ctx.fillText('🗡️', px+4, py+22);
+    ctx.fillStyle = '#FFD700';
+    ctx.font = '8px monospace';
+    ctx.fillText('Эйнар', px+6, py-4);
+}
+
+// ─── ДВИЖЕНИЕ ───
+function movePlayer(dx, dy) {
+    if (gameOver || bossPhase === 2) return;
+    const nx = player.x + dx;
+    const ny = player.y + dy;
+    if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) return;
+    if (map[ny][nx] === 1) {
+        dialogText = '🧱 Стена. Валахия не разрешает проход.';
+        dialogBox.innerHTML = dialogText;
+        return;
+    }
+    player.x = nx;
+    player.y = ny;
+    
+    // Вход в канцелярию — босс!
+    if (player.x === 16 && player.y === 1 && bossPhase === 0) {
+        startBoss();
+        return;
+    }
+    
+    patrols.forEach(p => {
+        if (Math.abs(p.x - player.x) < 2 && Math.abs(p.y - player.y) < 2) {
+            if (Math.random() < 0.3) {
+                suspicion += 5;
+                hp -= 2;
+                dialogText = `⚠️ Патруль заметил тебя! Подозрение +5, HP -2.`;
+                dialogBox.innerHTML = dialogText;
+            }
+        }
+    });
+    
+    citizens.forEach(c => {
+        if (c.x === player.x && c.y === player.y) {
+            dialogText = `👤 ${c.name}: «${c.text}»`;
+            if (!talkedToCitizen) {
+                talkedToCitizen = true;
+                suspicion += 3;
+                dialogText += `<br><span style="color:#888;">— Ты чувствуешь, что он боится.</span>`;
+            }
+            dialogBox.innerHTML = dialogText;
+        }
+    });
+    
+    if (player.x === 9 && player.y === 7) {
+        dialogText = '📍 Центральная площадь. Неон мигает. Вокруг пусто.';
+        dialogBox.innerHTML = dialogText;
+    }
+    if (player.x === 8 && player.y === 1) {
+        dialogText = '🚪 Здесь вход в таверну. Над дверью вывеска: «Угасший неон».';
+        dialogBox.innerHTML = dialogText;
+    }
+    if (player.x === 15 && player.y === 8 && !foundBasement) {
+        dialogText = '⬇️ Ты наткнулся на люк. Из-под земли доносится шёпот.';
+        dialogBox.innerHTML = dialogText;
+        foundBasement = true;
+    }
+    if (player.x === 16 && player.y === 1 && bossPhase === 0) {
+        startBoss();
+    }
+    
+    updateUI();
+    draw();
+}
+
+// ─── БОСС: КОМЕНДАНТ ───
+function startBoss() {
+    bossPhase = 1;
+    dialogText = `
+        <div style="color:#ff6666;">
+            👑 <b>Комендант Валахии</b> сидит за столом.<br>
+            «Ты мальчик, который идёт в Кальдеру? Я знаю всё о тебе.»<br>
+            <span style="color:#888;">— Он поправляет галстук и улыбается.</span><br>
+            <span style="color:#ffaa44;">«Пропуск стоит 50 монет или… ты сделаешь для меня кое-что.»</span>
+        </div>
+    `;
+    dialogBox.innerHTML = dialogText;
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-gold" onclick="bossChoice('pay')">💰 ЗАПЛАТИТЬ 50</button>
+        <button class="btn" onclick="bossChoice('quest')">📜 ВЗЯТЬ ЗАДАНИЕ</button>
+        <button class="btn btn-danger" onclick="bossChoice('fight')">⚔️ АТАКОВАТЬ</button>
+    `;
+    updateUI();
+}
+
+function bossChoice(choice) {
+    if (choice === 'pay') {
+        if (coins >= 50) {
+            coins -= 50;
+            hasPass = true;
+            dialogText = `✅ Ты заплатил 50 монет. Комендант кивает.<br>«Мудрое решение. Пропуск твой.»`;
+            dialogBox.innerHTML = dialogText;
+            document.getElementById('controls').innerHTML = `<button class="btn btn-success" onclick="endBoss()">🚪 ПОЛУЧИТЬ ПРОПУСК</button>`;
+        } else {
+            dialogText = `❌ У тебя нет 50 монет. «Тогда придётся отработать.»`;
+            dialogBox.innerHTML = dialogText;
+            document.getElementById('controls').innerHTML = `
+                <button class="btn" onclick="bossChoice('quest')">📜 ВЗЯТЬ ЗАДАНИЕ</button>
+                <button class="btn btn-danger" onclick="bossChoice('fight')">⚔️ АТАКОВАТЬ</button>
+            `;
+        }
+    } else if (choice === 'quest') {
+        dialogText = `
+            📜 «В подвале старой таверны прячутся мятежники. Приведи их главу ко мне. Или не возвращайся.»<br>
+            <span style="color:#888;">— Он протягивает тебе ключ от подвала.</span>
+        `;
+        dialogBox.innerHTML = dialogText;
+        document.getElementById('controls').innerHTML = `
+            <button class="btn" onclick="bossQuest()">⬇️ ИДТИ В ПОДВАЛ</button>
+            <button class="btn btn-danger" onclick="bossChoice('fight')">⚔️ НЕТ, Я БУДУ ДРАТЬСЯ</button>
+        `;
+    } else if (choice === 'fight') {
+        bossPhase = 2;
+        bossHp = 100;
+        dialogText = `⚔️ Комендант встаёт. «Глупый ребёнок.» Бой начинается!`;
+        dialogBox.innerHTML = dialogText;
+        document.getElementById('controls').innerHTML = `
+            <button class="btn" onclick="bossFight('attack')">⚔️ АТАКОВАТЬ</button>
+            <button class="btn" onclick="bossFight('defend')">🛡️ ЗАЩИТА</button>
+            <button class="btn" onclick="bossFight('item')">🍎 ЯБЛОКО</button>
+        `;
+        updateUI();
+    }
+}
+
+function bossQuest() {
+    if (foundBasement) {
+        hasResistance = true;
+        hasPass = true;
+        suspicion += 20;
+        dialogText = `
+            ⬇️ Ты спускаешься в подвал. Встречаешь главу Сопротивления.<br>
+            «Мы знаем, что ты пришёл. Комендант нас не получит. Возьми пропуск — мы сделали копию.»<br>
+            <span style="color:#44ff88;">✅ Ты получил пропуск. Сопротивление теперь твой союзник.</span>
+        `;
+        dialogBox.innerHTML = dialogText;
+        document.getElementById('controls').innerHTML = `<button class="btn btn-success" onclick="endBoss()">🚪 ПОКИНУТЬ КАНЦЕЛЯРИЮ</button>`;
+        updateUI();
+    } else {
+        dialogText = `❌ Ты не нашёл подвал. Комендант ждёт. Попробуй поискать на рынке.`;
+        dialogBox.innerHTML = dialogText;
+        document.getElementById('controls').innerHTML = `
+            <button class="btn" onclick="endBoss()">🔙 ВЕРНУТЬСЯ В ГОРОД</button>
+        `;
+    }
+}
+
+function bossFight(action) {
+    if (gameOver || bossHp <= 0) return;
+    let log = '';
+    let playerAtk = 8 + (hasResistance ? 5 : 0);
+    
+    if (action === 'attack') {
+        let dmg = playerAtk + Math.floor(Math.random() * 10);
+        bossHp -= dmg;
+        log = `💥 Ты нанёс ${dmg} урона! (❤️ ${bossHp}/100)`;
+    } else if (action === 'defend') {
+        log = '🛡️ Ты защищаешься. Урон снижен.';
+    } else if (action === 'item') {
+        if (hasApple) {
+            hp = Math.min(hp + 15, 100);
+            hasApple = false;
+            log = '🍎 Ты съел яблоко. ❤️ +15';
+        } else {
+            log = '❌ У тебя нет яблок!';
+        }
+    }
+    
+    if (bossHp <= 0) {
+        bossDefeated = true;
+        hasPass = true;
+        dialogText = `${log}<br>🏆 Ты победил Коменданта!<br>«Ты сильнее, чем я думал… Пропуск твой.»`;
+        dialogBox.innerHTML = dialogText;
+        document.getElementById('controls').innerHTML = `<button class="btn btn-success" onclick="endBoss()">🚪 ЗАБРАТЬ ПРОПУСК</button>`;
+        updateUI();
+        return;
+    }
+    
+    // Атака босса
+    let enemyDmg = 6 + Math.floor(Math.random() * 8);
+    if (action === 'defend') enemyDmg = Math.floor(enemyDmg * 0.3);
+    hp -= enemyDmg;
+    log += `<br>💀 Комендант атакует! -${enemyDmg} HP (❤️ ${hp})`;
+    
+    if (hp <= 0) {
+        gameOver = true;
+        log += `<br><span style="color:#ff0000;">💀 Ты пал в бою...</span>`;
+        dialogBox.innerHTML = log;
+        updateUI();
+        return;
+    }
+    
+    dialogText = log;
+    dialogBox.innerHTML = log;
+    bossHpDisplay.textContent = bossHp;
+    updateUI();
+}
+
+function endBoss() {
+    bossPhase = 3;
+    player.x = 10;
+    player.y = 7;
+    dialogText = `📜 Ты получил пропуск. Ворота открыты.<br><span style="color:#888;">— Теперь ты можешь покинуть Диско-Сити.</span>`;
+    dialogBox.innerHTML = dialogText;
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+        <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn2">🚪 ПОКИНУТЬ</button>
+    `;
+    updateUI();
+    draw();
+}
+
+// ─── ВЗАИМОДЕЙСТВИЕ ───
+function interact() {
+    if (gameOver) return;
+    let interacted = false;
+    
+    citizens.forEach(c => {
+        if (Math.abs(c.x - player.x) <= 1 && Math.abs(c.y - player.y) <= 1) {
+            dialogText = `👤 ${c.name}: «${c.text}»`;
+            if (!talkedToCitizen) {
+                talkedToCitizen = true;
+                suspicion += 2;
+                dialogText += `<br><span style="color:#888;">— Он оглядывается и говорит шёпотом.</span>`;
+            }
+            dialogBox.innerHTML = dialogText;
+            interacted = true;
+        }
+    });
+    
+    if (player.x === 8 && player.y === 1 && bossPhase !== 2) {
+        dialogText = `🍺 Таверна «Угасший неон». Бармен молча протирает стакан.`;
+        if (coins >= 20) {
+            dialogText += `<br><button class="btn btn-sm" onclick="buyInfo()">🕵️ КУПИТЬ ИНФОРМАЦИЮ (20💰)</button>`;
+        }
+        dialogBox.innerHTML = dialogText;
+        interacted = true;
+    }
+    
+    if (player.x === 15 && player.y === 8 && foundBasement && !hasResistance) {
+        dialogText = `⬇️ Люк в подвал. Слышен шёпот: «Ты пришёл за нами?»`;
+        dialogBox.innerHTML = dialogText;
+        document.getElementById('controls').innerHTML += `<button class="btn btn-sm btn-success" onclick="bossQuest()">⬇️ СПУСТИТЬСЯ</button>`;
+        interacted = true;
+    }
+    
+    if (player.x === 16 && player.y === 1 && bossPhase === 0) {
+        startBoss();
+        interacted = true;
+    }
+    
+    if (!interacted) {
+        dialogText = '🗣️ Здесь никого нет. Только неон и тишина.';
+        dialogBox.innerHTML = dialogText;
+    }
+    updateUI();
+}
+
+function buyInfo() {
+    if (coins < 20) {
+        dialogText = '❌ У тебя нет 20 монет.';
+        dialogBox.innerHTML = dialogText;
+        return;
+    }
+    coins -= 20;
+    suspicion += 10;
+    dialogText = `🕵️ Бармен: «Комендант боится того, кто идёт из Кальдеры. Он не такой сильный, как кажется.»`;
+    dialogBox.innerHTML = dialogText;
+    updateUI();
+}
+
+function openInventory() {
+    let items = '🎒 <b>Инвентарь:</b><br>';
+    if (hasMap) items += '🗺️ Карта Диско-Сити<br>';
+    if (hasApple) items += '🍎 Яблоко (+15 HP)<br>';
+    if (hasResistance) items += '🔰 Печать Сопротивления<br>';
+    if (hasPass) items += '📜 Пропуск через город<br>';
+    items += `💰 Монет: ${coins}`;
+    dialogBox.innerHTML = items;
+}
+
+function provoke() {
+    if (gameOver) return;
+    suspicion += 20;
+    hp -= 10;
+    dialogText = `⚠️ Ты кричишь на патруль. Они запоминают твоё лицо. Подозрение +20, HP -10.`;
+    if (suspicion >= 100) {
+        dialogText += '<br><span style="color:#ff0000;">🔴 ВАЛАХИЯ ОБЪЯВИЛА ТЕБЯ ВРАГОМ. Ты теряешь сознание...</span>';
+        gameOver = true;
+        dialogBox.innerHTML = dialogText;
+        updateUI();
+        return;
+    }
+    dialogBox.innerHTML = dialogText;
+    updateUI();
+}
+
+function tryLeave() {
+    if (!hasPass) {
+        dialogText = '🚪 Ворота закрыты. Тебе нужен пропуск.';
+        dialogBox.innerHTML = dialogText;
+        return;
+    }
+    dialogText = `🚪 Ты покидаешь Диско-Сити. Впереди — путь к следующим деревням.<br><span style="color:#44ff88;">✅ Акт 3 завершён.</span>`;
+    dialogBox.innerHTML = dialogText;
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-success" onclick="location.reload()">🌍 ПРОДОЛЖИТЬ ПУТЬ</button>
+    `;
+}
+
+document.addEventListener('keydown', (e) => {
+    switch(e.key) {
+        case 'ArrowUp': movePlayer(0,-1); break;
+        case 'ArrowDown': movePlayer(0,1); break;
+        case 'ArrowLeft': movePlayer(-1,0); break;
+        case 'ArrowRight': movePlayer(1,0); break;
+        case 'e': interact(); break;
+        case 'Enter': interact(); break;
+    }
+    e.preventDefault();
+});
+
+setInterval(() => {
+    if (gameOver || bossPhase === 2) return;
+    patrols.forEach(p => {
+        const nx = p.x + p.dx;
+        const ny = p.y + p.dy;
+        if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && map[ny][nx] !== 1) {
+            p.x = nx;
+            p.y = ny;
+        } else {
+            p.dx *= -1;
+            p.dy *= -1;
+        }
+    });
+    draw();
+}, 800);
+
+setInterval(() => { if (!gameOver) draw(); }, 1500);
+
+updateUI();
+draw();
+</script>
+</body>
+</html>
