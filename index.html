@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MazeTale — Полная игра</title>
     <style>
-        /* ─── СТИЛИ ─── */
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; overflow: hidden; }
         * { box-sizing: border-box; }
         #gameContainer { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 16px; max-width: 700px; width: 100%; box-shadow: 0 0 60px rgba(255,215,0,0.1); }
@@ -36,7 +35,6 @@
         .hidden { display: none; }
         .save-notice { color: #44ff88; font-size: 10px; text-align: center; margin: 4px 0; opacity: 0.7; }
         @media (max-width: 600px) { #mobileDpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); } .btn { font-size: 10px; padding: 4px 10px; } }
-        .battle-animation { position: relative; overflow: hidden; }
         #bossHealthBar { width: 100%; height: 12px; background: #1a0a0a; border: 1px solid #ff4444; border-radius: 6px; margin: 4px 0; overflow: hidden; }
         #bossHealthBar .fill { height: 100%; background: #ff2222; border-radius: 6px; transition: width 0.3s; }
     </style>
@@ -51,7 +49,7 @@
 
     <div id="infoBar">
         <span class="hp">❤️ <span id="hpDisplay">100</span></span>
-        <span class="coins">💰 <span id="coinsDisplay">50</span></span>
+        <span class="coins">💰 <span id="coinsDisplay">10</span></span>
         <span class="susp">👁️ <span id="suspDisplay">0</span>%</span>
         <span style="color:#666;">📍 <span id="locDisplay">Дом</span></span>
         <span id="bossStatus" style="color:#ff4444;display:none;">⚔️ БОСС</span>
@@ -83,7 +81,7 @@
 
     <div style="text-align:center; margin-top:6px;">
         <span class="valahia-tag">🏰 MazeTale</span>
-        <span class="valahia-tag">📜 Версия 1.0</span>
+        <span class="valahia-tag">📜 Версия 2.0</span>
         <span class="valahia-tag neon-flicker">🎮 Полная игра</span>
     </div>
 </div>
@@ -91,6 +89,7 @@
 <script>
 // ═══════════════════════════════════════════════════
 //  MAZETALE — ПОЛНАЯ ИГРА (все акты в одном)
+//  СТАРТ С ДОМА + ПЕРЕХОД В ДИСКО-СИТИ ПОСЛЕ КОРОЛЯ
 // ═══════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -104,10 +103,10 @@ let hp = 100, maxHp = 100;
 let coins = 10;
 let suspicion = 0;
 let inventory = [];
-let gameState = 'explore'; // explore | battle | dialog
+let gameState = 'explore';
 let gameOver = false;
 
-// ─── ФЛАГИ (выборы игрока) ───
+// ─── ФЛАГИ ───
 let flags = {
     talkedToAnfisa: false,
     helpedAnfisa: false,
@@ -123,7 +122,6 @@ let flags = {
     hasPass: false,
     hasResistance: false,
     bossDefeated: false,
-    // Диско-Сити
     talkedToCitizen: false,
     foundBasement: false,
 };
@@ -141,7 +139,6 @@ let battle = {
 };
 
 // ─── КАРТЫ ЛОКАЦИЙ ───
-// Карта дома (10x10)
 const houseMap = [
     ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱'],
     ['🧱','🪑','🪑','🍽️','🍽️','🍽️','🪑','🪑','🚪','🧱'],
@@ -155,7 +152,6 @@ const houseMap = [
     ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱']
 ];
 
-// Карта улицы (10x10)
 const streetMap = [
     ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
     ['🌲','🌲','🌲','🌲','🏠','🌲','🌲','🌲','🌲','🌲'],
@@ -168,7 +164,6 @@ const streetMap = [
     ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲']
 ];
 
-// Карта магазина (10x10)
 const shopMap = [
     ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱'],
     ['🧱','🚪','⬜','⬜','⬜','⬜','⬜','⬜','🚪','🧱'],
@@ -182,7 +177,6 @@ const shopMap = [
     ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱']
 ];
 
-// Карта замка (20x20) — уменьшенная версия
 const castleMap = [
     ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
     ['🌲','🌲','🌲','🌲','🏰','🏰','🏰','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
@@ -196,7 +190,6 @@ const castleMap = [
     ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲']
 ];
 
-// Карта Диско-Сити (20x15)
 const discoMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
@@ -249,7 +242,6 @@ function saveProgress() {
         } : null,
         kingDefeated: flags.kingDefeated,
         hasPass: flags.hasPass,
-        act: 3
     };
     try {
         localStorage.setItem('mazetale_save', JSON.stringify(data));
@@ -314,7 +306,6 @@ function drawMap() {
             const tile = currentMap[r][c];
             
             if (typeof tile === 'number') {
-                // Цифровая карта (Диско-Сити)
                 ctx.fillStyle = '#0a0a0a';
                 ctx.fillRect(x, y, tileSize, tileSize);
                 if (tile === 1) {
@@ -343,7 +334,6 @@ function drawMap() {
                     ctx.fillRect(x+1, y+1, tileSize-2, tileSize-2);
                 }
             } else {
-                // Символьная карта
                 ctx.fillStyle = '#1a1a1a';
                 ctx.fillRect(x, y, tileSize, tileSize);
                 ctx.fillStyle = '#aaa';
@@ -398,7 +388,8 @@ function movePlayer(dx, dy) {
     player.y = ny;
     
     // ─── ПЕРЕХОДЫ МЕЖДУ ЛОКАЦИЯМИ ───
-    // Из дома на улицу
+    
+    // 1. ИЗ ДОМА НА УЛИЦУ
     if (currentLocation === 'Дом' && tile === '🚪' && player.x === 0) {
         currentLocation = 'Улица';
         player.x = 4; player.y = 4;
@@ -406,7 +397,8 @@ function movePlayer(dx, dy) {
         dialogBox.innerHTML = '🌳 Ты выходишь на улицу. Перед тобой Анфиса.';
         return;
     }
-    // Из улицы в дом
+    
+    // 2. С УЛИЦЫ В ДОМ
     if (currentLocation === 'Улица' && tile === '🏠' && player.x === 1 && player.y === 4) {
         currentLocation = 'Дом';
         player.x = 8; player.y = 4;
@@ -414,7 +406,8 @@ function movePlayer(dx, dy) {
         dialogBox.innerHTML = '🏠 Ты возвращаешься в дом.';
         return;
     }
-    // Из улицы в магазин
+    
+    // 3. С УЛИЦЫ В МАГАЗИН
     if (currentLocation === 'Улица' && tile === '⬜' && player.x === 3 && player.y === 2) {
         currentLocation = 'Магазин';
         player.x = 1; player.y = 1;
@@ -422,7 +415,8 @@ function movePlayer(dx, dy) {
         dialogBox.innerHTML = '🏪 Ты заходишь в магазин.';
         return;
     }
-    // Из магазина на улицу
+    
+    // 4. ИЗ МАГАЗИНА НА УЛИЦУ
     if (currentLocation === 'Магазин' && tile === '🚪' && (player.x === 1 || player.x === 8)) {
         currentLocation = 'Улица';
         player.x = 3; player.y = 2;
@@ -430,7 +424,8 @@ function movePlayer(dx, dy) {
         dialogBox.innerHTML = '🌳 Ты выходишь на улицу.';
         return;
     }
-    // Из улицы в замок
+    
+    // 5. С УЛИЦЫ В ЗАМОК
     if (currentLocation === 'Улица' && tile === '🌲' && player.x === 8 && player.y === 0) {
         currentLocation = 'Замок';
         player.x = 1; player.y = 4;
@@ -438,12 +433,28 @@ function movePlayer(dx, dy) {
         dialogBox.innerHTML = '🏰 Ты подходишь к замку. Вокруг разбойники.';
         return;
     }
-    // Из замка на улицу
+    
+    // 6. ИЗ ЗАМКА НА УЛИЦУ
     if (currentLocation === 'Замок' && tile === '🌲' && player.x === 0) {
         currentLocation = 'Улица';
         player.x = 8; player.y = 0;
         updateMap();
         dialogBox.innerHTML = '🌳 Ты возвращаешься в город.';
+        return;
+    }
+    
+    // 7. В ДИСКО-СИТИ — ТОЛЬКО ПОСЛЕ ПОБЕДЫ НАД КОРОЛЁМ!
+    if (currentLocation === 'Улица' && tile === '🌲' && player.x === 0 && player.y === 2 && flags.kingDefeated) {
+        currentLocation = 'Диско-Сити';
+        player.x = 7; player.y = 10;
+        updateMap();
+        dialogBox.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией. Тебе нужен пропуск.';
+        document.getElementById('controls').innerHTML = `
+            <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+            <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+            <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
+            <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn" style="display:none;">🚪 ПОКИНУТЬ</button>
+        `;
         return;
     }
     
@@ -499,16 +510,6 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // Диско-Сити (переход)
-    if (currentLocation === 'Улица' && tile === '🌲' && player.x === 0 && player.y === 2 && flags.kingDefeated) {
-        currentLocation = 'Диско-Сити';
-        player.x = 7; player.y = 10;
-        updateMap();
-        dialogBox.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией.';
-        return;
-    }
-    
-    // Обновляем UI и диалог
     dialogBox.innerHTML = `📍 ${getTileDescription(tile)}`;
     updateUI();
     drawMap();
@@ -691,7 +692,9 @@ function goToDisco() {
         <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
         <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
         <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
+        <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn" style="display:none;">🚪 ПОКИНУТЬ</button>
     `;
+    saveProgress();
 }
 
 function updateBossUI() {
@@ -734,6 +737,19 @@ function provoke() {
     saveProgress();
 }
 
+// ─── ПОКИНУТЬ ДИСКО-СИТИ ───
+function tryLeave() {
+    if (!flags.hasPass) {
+        dialogBox.innerHTML = '🚪 Ворота закрыты. Тебе нужен пропуск.';
+        return;
+    }
+    dialogBox.innerHTML = '🚪 Ты покидаешь Диско-Сити. Впереди — путь к следующим деревням.<br><span style="color:#44ff88;">✅ Игра пройдена!</span>';
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-success" onclick="location.reload()">🌍 НАЧАТЬ ЗАНОВО</button>
+    `;
+    saveProgress();
+}
+
 // ─── ОБНОВЛЕНИЕ UI ───
 function updateUI() {
     hpDisplay.textContent = Math.max(0, hp);
@@ -748,6 +764,11 @@ drawMap();
 
 // ─── АВТОСОХРАНЕНИЕ ───
 setInterval(saveProgress, 30000);
+
+// ─── ИНТРО-ДИАЛОГ ПРИ СТАРТЕ ───
+if (!loadProgress()) {
+    dialogBox.innerHTML = '🏠 Ты просыпаешься в старом доме. Вокруг тишина.<br><span style="color:#888;font-size:12px;">Исследуй дом, чтобы найти выход.</span>';
+}
 </script>
 </body>
 </html>
