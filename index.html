@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MazeTale — Акт 3</title>
+    <title>MazeTale — Полная игра</title>
     <style>
+        /* ─── СТИЛИ ─── */
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; overflow: hidden; }
         * { box-sizing: border-box; }
-        #gameContainer { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 16px; max-width: 700px; width: 100%; box-shadow: 0 0 60px rgba(255,215,0,0.1); position: relative; }
+        #gameContainer { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 16px; max-width: 700px; width: 100%; box-shadow: 0 0 60px rgba(255,215,0,0.1); }
         #title { color: #ff6b6b; font-family: 'Georgia', serif; font-size: 20px; text-align: center; letter-spacing: 4px; text-shadow: 0 0 30px rgba(255,100,100,0.3); margin: 4px 0; }
         #subtitle { color: #666; font-size: 11px; text-align: center; letter-spacing: 6px; margin-bottom: 10px; }
-        canvas { display: block; margin: 0 auto; border: 1px solid #333; border-radius: 8px; background: #0d0d0d; width: 100%; height: auto; image-rendering: pixelated; touch-action: none; cursor: pointer; }
+        canvas { display: block; margin: 0 auto; border: 1px solid #333; border-radius: 8px; background: #0d0d0d; width: 100%; height: auto; image-rendering: pixelated; touch-action: none; }
         #infoBar { display: flex; justify-content: space-between; color: #888; font-size: 12px; padding: 8px 4px; border-bottom: 1px solid #222; margin: 8px 0; flex-wrap: wrap; gap: 4px; }
         #infoBar span { padding: 0 6px; }
         .hp { color: #ff6b6b; }
@@ -18,8 +19,8 @@
         .susp { color: #ff8844; }
         #dialogBox { background: #111; border-left: 3px solid #FFD700; padding: 10px 14px; margin: 8px 0; min-height: 50px; color: #ccc; font-family: 'Georgia', serif; font-size: 13px; line-height: 1.5; border-radius: 4px; }
         #controls { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 8px 0; }
-        .btn { background: #1a1a1a; color: #FFD700; border: 1px solid #FFD700; padding: 8px 18px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 13px; font-weight: bold; cursor: pointer; transition: 0.2s; touch-action: manipulation; }
-        .btn:hover { background: #2a2a2a; transform: scale(1.05); }
+        .btn { background: #1a1a1a; color: #FFD700; border: 1px solid #FFD700; padding: 6px 14px; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 12px; cursor: pointer; transition: 0.2s; touch-action: manipulation; }
+        .btn:hover { background: #2a2a2a; transform: scale(1.03); }
         .btn-danger { border-color: #ff4444; color: #ff4444; }
         .btn-success { border-color: #44ff88; color: #44ff88; }
         .btn-sm { padding: 4px 10px; font-size: 10px; }
@@ -34,43 +35,36 @@
         .boss-bar .hp-boss { color: #ff2222; font-weight: bold; }
         .hidden { display: none; }
         .save-notice { color: #44ff88; font-size: 10px; text-align: center; margin: 4px 0; opacity: 0.7; }
+        @media (max-width: 600px) { #mobileDpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); } .btn { font-size: 10px; padding: 4px 10px; } }
+        .battle-animation { position: relative; overflow: hidden; }
         #bossHealthBar { width: 100%; height: 12px; background: #1a0a0a; border: 1px solid #ff4444; border-radius: 6px; margin: 4px 0; overflow: hidden; }
         #bossHealthBar .fill { height: 100%; background: #ff2222; border-radius: 6px; transition: width 0.3s; }
-        .battle-animation { position: relative; overflow: hidden; }
-        @keyframes slash { 0% { transform: translateX(-50px) rotate(-20deg); opacity: 0; } 50% { transform: translateX(20px) rotate(10deg); opacity: 1; } 100% { transform: translateX(50px) rotate(0deg); opacity: 0; } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        @keyframes shield { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(1); opacity: 0; } }
-        @keyframes flash { 0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; } }
-        .slash-effect { position: absolute; color: #fff; font-size: 40px; font-weight: bold; pointer-events: none; animation: slash 0.5s forwards; }
-        .shake-effect { animation: shake 0.3s forwards; }
-        .shield-effect { position: absolute; color: #44ff88; font-size: 50px; pointer-events: none; animation: shield 0.4s forwards; }
-        .flash-effect { animation: flash 0.2s 3; }
-        @media (max-width: 600px) { #mobileDpad { grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); } .btn { font-size: 11px; padding: 6px 12px; } }
     </style>
 </head>
 <body>
+
 <div id="gameContainer">
-    <div id="title">🕺 ДИСКО-СИТИ</div>
-    <div id="subtitle">✦ ОККУПИРОВАН ВАЛАХИЕЙ ✦</div>
-    
+    <div id="title">🗺️ MAZETALE</div>
+    <div id="subtitle">✦ ПОЛНОЕ ПРИКЛЮЧЕНИЕ ✦</div>
+
     <canvas id="gameCanvas" width="600" height="400"></canvas>
-    
+
     <div id="infoBar">
         <span class="hp">❤️ <span id="hpDisplay">100</span></span>
         <span class="coins">💰 <span id="coinsDisplay">50</span></span>
         <span class="susp">👁️ <span id="suspDisplay">0</span>%</span>
-        <span style="color:#666;">📍 <span id="locDisplay">Центр</span></span>
+        <span style="color:#666;">📍 <span id="locDisplay">Дом</span></span>
         <span id="bossStatus" style="color:#ff4444;display:none;">⚔️ БОСС</span>
     </div>
-    
+
     <div id="dialogBox">
-        🌆 Город сияет неоном. Патруль Валахии проходит мимо.<br>
-        <span style="color:#888;font-size:12px;">Тебе нужен пропуск, чтобы покинуть город.</span>
+        🏠 Ты просыпаешься в старом доме. Вокруг тишина.<br>
+        <span style="color:#888;font-size:12px;">Исследуй дом, чтобы найти выход.</span>
         <div class="save-notice" id="saveNotice">💾 Прогресс сохраняется автоматически</div>
     </div>
-    
+
     <div id="bossBar" class="boss-bar hidden">
-        <span>👑 Комендант Валахии</span>
+        <span>👑 <span id="bossName">Босс</span></span>
         <span class="hp-boss">❤️ <span id="bossHpDisplay">100</span>/100</span>
     </div>
     <div id="bossHealthBar" class="hidden"><div class="fill" id="bossHealthFill" style="width:100%"></div></div>
@@ -79,7 +73,6 @@
         <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
         <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
         <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
-        <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn" style="display:none;">🚪 ПОКИНУТЬ</button>
     </div>
 
     <div id="mobileDpad">
@@ -89,35 +82,122 @@
     </div>
 
     <div style="text-align:center; margin-top:6px;">
-        <span class="valahia-tag">⚜️ Валахия</span>
-        <span class="valahia-tag">📜 Правило №7: Не смотреть на патруль</span>
-        <span class="valahia-tag neon-flicker">🎶 Неон до 06:00</span>
+        <span class="valahia-tag">🏰 MazeTale</span>
+        <span class="valahia-tag">📜 Версия 1.0</span>
+        <span class="valahia-tag neon-flicker">🎮 Полная игра</span>
     </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════
-//  MAZETALE — АКТ 3: ДИСКО-СИТИ
-//  С анимациями боя и переходами
+//  MAZETALE — ПОЛНАЯ ИГРА (все акты в одном)
 // ═══════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const W = 600, H = 400;
+const TILE = 30;
 
-// ─── СОСТОЯНИЕ ───
-let gameState = 'explore'; // explore | battle | transition
-let player = { x: 10, y: 7 };
-let hp = 100, coins = 50, suspicion = 0;
-let hasApple = true, hasMap = true, hasResistance = false, hasPass = false;
-let talkedToCitizen = false, foundBasement = false;
-let bossPhase = 0, bossHp = 100, maxBossHp = 100;
+// ─── СОСТОЯНИЕ ИГРОКА ───
+let player = { x: 3, y: 2 };
+let hp = 100, maxHp = 100;
+let coins = 10;
+let suspicion = 0;
+let inventory = [];
+let gameState = 'explore'; // explore | battle | dialog
 let gameOver = false;
-let battleAnim = { type: '', timer: 0, active: false };
 
-// ─── КАРТА ───
-const COLS = 20, ROWS = 15, TILE = 30;
-const map = [
+// ─── ФЛАГИ (выборы игрока) ───
+let flags = {
+    talkedToAnfisa: false,
+    helpedAnfisa: false,
+    hasNote: false,
+    hasSword: false,
+    hasShield: false,
+    hasApple: true,
+    hasHealPotion: false,
+    hasDamagePotion: false,
+    hasAnfisa: false,
+    isAllyWithBandits: false,
+    kingDefeated: false,
+    hasPass: false,
+    hasResistance: false,
+    bossDefeated: false,
+    // Диско-Сити
+    talkedToCitizen: false,
+    foundBasement: false,
+};
+
+// ─── БОЕВЫЕ ПАРАМЕТРЫ ───
+let battle = {
+    active: false,
+    enemyName: '',
+    enemyHP: 0,
+    enemyMaxHP: 0,
+    enemyAttack: 0,
+    playerAttack: 8,
+    defense: false,
+    phase: 0
+};
+
+// ─── КАРТЫ ЛОКАЦИЙ ───
+// Карта дома (10x10)
+const houseMap = [
+    ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱'],
+    ['🧱','🪑','🪑','🍽️','🍽️','🍽️','🪑','🪑','🚪','🧱'],
+    ['🧱','🪑','🪑','🍽️','🍽️','🍽️','🪑','🪑','🚪','🧱'],
+    ['🧱','🛋️','🛋️','⬜','⬜','⬜','🪑','🪑','⬜','🧱'],
+    ['🧱','🛋️','🛋️','⬜','⬜','⬜','🪑','🪑','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','🛏️','🛏️','⬜','⬜','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','🛏️','🛏️','⬜','⬜','⬜','🧱'],
+    ['🧱','📦','⬜','⬜','⬜','⬜','⬜','⬜','⬜','🧱'],
+    ['🧱','🔥','⬜','⬜','⬜','⬜','⬜','⬜','🚪','🧱'],
+    ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱']
+];
+
+// Карта улицы (10x10)
+const streetMap = [
+    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','🏠','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','⬜','⬜','⬜','⬜','⬜','⬜','🌲'],
+    ['🌲','🌲','🌲','⬜','⬜','⬜','⬜','⬜','⬜','🌲'],
+    ['🌲','🌲','🌲','⬜','⬜','👩','⬜','⬜','⬜','🌲'],
+    ['🌲','🌲','🌲','⬜','⬜','⬜','⬜','⬜','⬜','🌲'],
+    ['🌲','🌲','🌲','⬜','⬜','⬜','⬜','⬜','⬜','🌲'],
+    ['🌲','🌲','🌲','⬜','⬜','⬜','⬜','⬜','⬜','🌲'],
+    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲']
+];
+
+// Карта магазина (10x10)
+const shopMap = [
+    ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱'],
+    ['🧱','🚪','⬜','⬜','⬜','⬜','⬜','⬜','🚪','🧱'],
+    ['🧱','⬜','📜','🛡️','⬜','⬜','⚗️','📦','⬜','🧱'],
+    ['🧱','⬜','📜','🛡️','⬜','⬜','⚗️','📦','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','⬜','⬜','⬜','⬜','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','🧑','⬜','⬜','⬜','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','⬜','⬜','⬜','⬜','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','⬜','⬜','⬜','⬜','⬜','🧱'],
+    ['🧱','⬜','⬜','⬜','⬜','⬜','⬜','⬜','💰','🧱'],
+    ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱']
+];
+
+// Карта замка (20x20) — уменьшенная версия
+const castleMap = [
+    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','🏰','🏰','🏰','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','👹','⚔️','👺','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
+    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲']
+];
+
+// Карта Диско-Сити (20x15)
+const discoMap = [
     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
     [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,2,2,0,0,0,0,0,0,0,0,2,2,0,0,0,0,1],
@@ -132,434 +212,542 @@ const map = [
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
     [1,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-const patrols = [{x:5,y:5,dx:1,dy:0},{x:14,y:10,dx:-1,dy:0},{x:8,y:12,dx:0,dy:-1}];
-const citizens = [
-    {x:4,y:6,name:'Старик',text:'Раньше здесь играла музыка... Настоящая.'},
-    {x:15,y:4,name:'Женщина',text:'Моего мужа забрали. Нарушил правило №4.'},
-    {x:12,y:12,name:'Парень',text:'Я хочу сбежать. Но куда? Везде Валахия.'},
-    {x:7,y:2,name:'Продавщица',text:'Я продаю слёзы в бутылках. Хочешь?'}
-];
+// ─── ТЕКУЩАЯ КАРТА ───
+let currentMap = houseMap;
+let currentLocation = 'Дом';
+let mapCols = 10, mapRows = 10;
 
-// ─── ЭЛЕМЕНТЫ ───
+// ─── ЭЛЕМЕНТЫ UI ───
 const dialogBox = document.getElementById('dialogBox');
 const hpDisplay = document.getElementById('hpDisplay');
 const coinsDisplay = document.getElementById('coinsDisplay');
 const suspDisplay = document.getElementById('suspDisplay');
 const locDisplay = document.getElementById('locDisplay');
-const leaveBtn = document.getElementById('leaveBtn');
 const bossBar = document.getElementById('bossBar');
 const bossHpDisplay = document.getElementById('bossHpDisplay');
-const bossStatus = document.getElementById('bossStatus');
 const bossHealthBar = document.getElementById('bossHealthBar');
 const bossHealthFill = document.getElementById('bossHealthFill');
+const bossStatus = document.getElementById('bossStatus');
+const bossName = document.getElementById('bossName');
 const saveNotice = document.getElementById('saveNotice');
 
 // ─── СОХРАНЕНИЕ ───
-function saveProgress(){
-    const data={hp,coins,suspicion,hasApple,hasMap,hasResistance,hasPass,talkedToCitizen,foundBasement,bossPhase,bossHp,playerX:player.x,playerY:player.y,act:3};
-    try{localStorage.setItem('mazetale_save',JSON.stringify(data));}catch(e){}
-}
-function loadProgress(){
-    try{const raw=localStorage.getItem('mazetale_save');if(!raw)return false;const data=JSON.parse(raw);
-    hp=data.hp||100;coins=data.coins||50;suspicion=data.suspicion||0;hasApple=data.hasApple!==undefined?data.hasApple:true;
-    hasMap=data.hasMap!==undefined?data.hasMap:true;hasResistance=data.hasResistance||false;hasPass=data.hasPass||false;
-    talkedToCitizen=data.talkedToCitizen||false;foundBasement=data.foundBasement||false;bossPhase=data.bossPhase||0;
-    bossHp=data.bossHp||100;player.x=data.playerX||10;player.y=data.playerY||7;return true;}catch(e){return false;}
-}
-
-function updateUI(){
-    hpDisplay.textContent=Math.max(0,hp);
-    coinsDisplay.textContent=coins;
-    suspDisplay.textContent=Math.min(suspicion,100);
-    locDisplay.textContent=getLocationName();
-    if(suspicion>=50||hasPass)leaveBtn.style.display='inline-block';
-    else leaveBtn.style.display='none';
-    if(bossPhase>=1){
-        bossBar.classList.remove('hidden');
-        bossHealthBar.classList.remove('hidden');
-        bossStatus.style.display='inline';
-        bossHpDisplay.textContent=Math.max(0,bossHp);
-        bossHealthFill.style.width=(bossHp/maxBossHp*100)+'%';
-    }else{
-        bossBar.classList.add('hidden');
-        bossHealthBar.classList.add('hidden');
-        bossStatus.style.display='none';
-    }
-    if(gameOver){
-        document.getElementById('controls').innerHTML='<button class="btn btn-danger" onclick="location.reload()">🔄 НАЧАТЬ ЗАНОВО</button>';
-    }
+function saveProgress() {
+    const data = {
+        hp, coins, suspicion, inventory, flags,
+        playerX: player.x, playerY: player.y,
+        currentLocation,
+        battle: battle.active ? {
+            enemyName: battle.enemyName,
+            enemyHP: battle.enemyHP,
+            enemyMaxHP: battle.enemyMaxHP,
+            enemyAttack: battle.enemyAttack,
+            phase: battle.phase
+        } : null,
+        kingDefeated: flags.kingDefeated,
+        hasPass: flags.hasPass,
+        act: 3
+    };
+    try {
+        localStorage.setItem('mazetale_save', JSON.stringify(data));
+        saveNotice.textContent = '💾 Сохранено!';
+        setTimeout(() => {
+            saveNotice.textContent = '💾 Прогресс сохраняется автоматически';
+        }, 2000);
+    } catch(e) {}
 }
 
-function getLocationName(){
-    const px=player.x,py=player.y;
-    if(px>=7&&px<=9&&py>=1&&py<=3)return 'Таверна';
-    if(px>=14&&px<=17&&py>=8&&py<=9)return 'Рынок';
-    if(px>=3&&px<=4&&py>=2&&py<=3)return 'Жилой квартал';
-    if(px===9&&py===7)return 'Центральная площадь';
-    if(px===10&&py===1)return 'Вход в город';
-    if(px===16&&py===1)return 'Канцелярия Валахии';
-    return 'Улица';
+function loadProgress() {
+    try {
+        const raw = localStorage.getItem('mazetale_save');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        hp = data.hp || 100;
+        coins = data.coins || 10;
+        suspicion = data.suspicion || 0;
+        inventory = data.inventory || [];
+        flags = data.flags || {};
+        player.x = data.playerX || 3;
+        player.y = data.playerY || 2;
+        currentLocation = data.currentLocation || 'Дом';
+        if (data.battle) {
+            battle.active = true;
+            battle.enemyName = data.battle.enemyName;
+            battle.enemyHP = data.battle.enemyHP;
+            battle.enemyMaxHP = data.battle.enemyMaxHP;
+            battle.enemyAttack = data.battle.enemyAttack;
+            battle.phase = data.battle.phase;
+        }
+        flags.kingDefeated = data.kingDefeated || false;
+        flags.hasPass = data.hasPass || false;
+        updateMap();
+        return true;
+    } catch(e) { return false; }
+}
+
+// ─── ОБНОВЛЕНИЕ КАРТЫ ───
+function updateMap() {
+    switch(currentLocation) {
+        case 'Дом': currentMap = houseMap; mapCols = 10; mapRows = 10; break;
+        case 'Улица': currentMap = streetMap; mapCols = 10; mapRows = 9; break;
+        case 'Магазин': currentMap = shopMap; mapCols = 10; mapRows = 10; break;
+        case 'Замок': currentMap = castleMap; mapCols = 20; mapRows = 9; break;
+        case 'Диско-Сити': currentMap = discoMap; mapCols = 20; mapRows = 15; break;
+        default: currentMap = houseMap; mapCols = 10; mapRows = 10;
+    }
+    drawMap();
 }
 
 // ─── РИСОВАНИЕ ───
-function drawExplore(){
-    ctx.clearRect(0,0,W,H);
-    // Карта
-    for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
-        const x=c*TILE,y=r*TILE,tile=map[r][c];
-        if(tile===1){ctx.fillStyle='#1a1a1a';ctx.fillRect(x,y,TILE,TILE);ctx.fillStyle='#2a2a2a';ctx.fillRect(x+2,y+2,TILE-4,TILE-4);}
-        else if(tile===2){ctx.fillStyle='#151515';ctx.fillRect(x,y,TILE,TILE);ctx.fillStyle='#222';ctx.fillRect(x+2,y+2,TILE-4,TILE-4);ctx.fillStyle='#ff8844';ctx.globalAlpha=0.3+Math.random()*0.2;ctx.fillRect(x+6,y+6,6,6);ctx.fillRect(x+18,y+6,6,6);ctx.fillRect(x+6,y+18,6,6);ctx.fillRect(x+18,y+18,6,6);ctx.globalAlpha=1;}
-        else if(tile===3){ctx.fillStyle='#0a0a0a';ctx.fillRect(x,y,TILE,TILE);const bright=0.3+Math.random()*0.4;ctx.fillStyle='rgba(255,100,255,'+bright+')';ctx.fillRect(x+4,y+8,22,14);ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.fillText('✦',x+12,y+18);}
-        else{ctx.fillStyle='#0a0a0a';ctx.fillRect(x,y,TILE,TILE);ctx.fillStyle='#111';ctx.fillRect(x+1,y+1,TILE-2,TILE-2);}
+function drawMap() {
+    ctx.clearRect(0, 0, W, H);
+    const cols = currentMap[0].length;
+    const rows = currentMap.length;
+    const tileSize = Math.min(600 / cols, 400 / rows, TILE);
+    
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            const x = c * tileSize, y = r * tileSize;
+            const tile = currentMap[r][c];
+            
+            if (typeof tile === 'number') {
+                // Цифровая карта (Диско-Сити)
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(x, y, tileSize, tileSize);
+                if (tile === 1) {
+                    ctx.fillStyle = '#1a1a1a';
+                    ctx.fillRect(x+1, y+1, tileSize-2, tileSize-2);
+                    ctx.fillStyle = '#2a2a2a';
+                    ctx.fillRect(x+3, y+3, tileSize-6, tileSize-6);
+                } else if (tile === 2) {
+                    ctx.fillStyle = '#151515';
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                    ctx.fillStyle = '#ff8844';
+                    ctx.globalAlpha = 0.3;
+                    ctx.fillRect(x+6, y+6, 6, 6);
+                    ctx.fillRect(x+tileSize-12, y+6, 6, 6);
+                    ctx.globalAlpha = 1;
+                } else if (tile === 3) {
+                    ctx.fillStyle = 'rgba(255,100,255,0.4)';
+                    ctx.fillRect(x+4, y+8, tileSize-8, 14);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '10px monospace';
+                    ctx.fillText('✦', x+tileSize/2-4, y+18);
+                } else {
+                    ctx.fillStyle = '#0a0a0a';
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                    ctx.fillStyle = '#111';
+                    ctx.fillRect(x+1, y+1, tileSize-2, tileSize-2);
+                }
+            } else {
+                // Символьная карта
+                ctx.fillStyle = '#1a1a1a';
+                ctx.fillRect(x, y, tileSize, tileSize);
+                ctx.fillStyle = '#aaa';
+                ctx.font = (tileSize * 0.6) + 'px serif';
+                ctx.fillText(tile, x + tileSize*0.2, y + tileSize*0.7);
+            }
+        }
     }
-    // Патрули
-    patrols.forEach(p=>{const x=p.x*TILE,y=p.y*TILE;ctx.fillStyle='#1a1a2a';ctx.fillRect(x+4,y+4,22,22);ctx.fillStyle='#444';ctx.fillRect(x+8,y+8,14,14);ctx.fillStyle='#ff4444';ctx.fillRect(x+12,y+4,6,4);ctx.fillStyle='#888';ctx.font='14px monospace';ctx.fillText('⚜️',x+8,y+20);});
-    // Жители
-    citizens.forEach(c=>{const x=c.x*TILE,y=c.y*TILE;ctx.fillStyle='#2a1a1a';ctx.fillRect(x+6,y+6,18,18);ctx.fillStyle='#8a7a7a';ctx.fillRect(x+10,y+8,10,10);ctx.fillStyle='#aaa';ctx.font='12px monospace';ctx.fillText('👤',x+8,y+20);});
-    // Комендант
-    if(bossPhase===0){const bx=16*TILE,by=1*TILE;ctx.fillStyle='#2a0a0a';ctx.fillRect(bx+4,by+4,22,22);ctx.fillStyle='#ff4444';ctx.fillRect(bx+10,by+6,10,6);ctx.fillStyle='#ccaa88';ctx.fillRect(bx+8,by+14,14,10);ctx.fillStyle='#ffd700';ctx.font='8px monospace';ctx.fillText('👑',bx+10,by+20);ctx.fillStyle='#666';ctx.font='7px monospace';ctx.fillText('комендант',bx+4,by+30);}
+    
     // Игрок
-    const px=player.x*TILE,py=player.y*TILE;
-    const glow=ctx.createRadialGradient(px+15,py+15,2,px+15,py+15,20);glow.addColorStop(0,'rgba(255,215,0,0.3)');glow.addColorStop(1,'rgba(255,215,0,0)');ctx.fillStyle=glow;ctx.fillRect(px-10,py-10,50,50);
-    ctx.fillStyle='#FFD700';ctx.fillRect(px+10,py+6,10,6);ctx.fillRect(px+8,py+12,14,14);ctx.fillStyle='#fff';ctx.fillRect(px+12,py+8,4,4);ctx.fillRect(px+14,py+20,8,4);ctx.fillStyle='#ff8844';ctx.font='12px monospace';ctx.fillText('🗡️',px+4,py+22);ctx.fillStyle='#FFD700';ctx.font='8px monospace';ctx.fillText('Эйнар',px+6,py-4);
-}
-
-function drawBattle(){
-    ctx.clearRect(0,0,W,H);
-    // Фон боя
-    const grad=ctx.createLinearGradient(0,0,0,H);
-    grad.addColorStop(0,'#0a0a1a');
-    grad.addColorStop(1,'#1a0a0a');
-    ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+    const px = player.y * tileSize, py = player.x * tileSize;
+    ctx.fillStyle = '#FFD700';
+    ctx.shadowColor = '#FFD700';
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(px + tileSize/2, py + tileSize/2, tileSize*0.3, 0, Math.PI*2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#000';
+    ctx.font = (tileSize * 0.6) + 'px sans-serif';
+    ctx.fillText('🐱', px + tileSize*0.25, py + tileSize*0.7);
     
-    // Противник (Комендант)
-    const bx=400,by=120;
-    // Тень
-    ctx.fillStyle='rgba(255,0,0,0.1)';ctx.beginPath();ctx.ellipse(bx+40,by+100,60,20,0,0,Math.PI*2);ctx.fill();
-    // Тело
-    const shake=battleAnim.type==='hit'?4:0;
-    ctx.fillStyle='#2a0a0a';
-    ctx.fillRect(bx+shake-10,by+10,80,70);
-    ctx.fillStyle='#ccaa88';
-    ctx.fillRect(bx+shake,by+20,60,50);
-    // Голова
-    ctx.fillStyle='#eebb99';
-    ctx.beginPath();
-    ctx.arc(bx+shake+30,by+10,25,0,Math.PI*2);
-    ctx.fill();
-    // Корона
-    ctx.fillStyle='#ffd700';
-    ctx.fillRect(bx+shake+15,by-5,30,8);
-    ctx.fillRect(bx+shake+18,by-12,6,8);
-    ctx.fillRect(bx+shake+26,by-15,6,8);
-    ctx.fillRect(bx+shake+34,by-12,6,8);
-    // Глаза
-    ctx.fillStyle='#ff2222';
-    ctx.beginPath();
-    ctx.arc(bx+shake+20,by+8,4,0,Math.PI*2);
-    ctx.arc(bx+shake+40,by+8,4,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#000';
-    ctx.beginPath();
-    ctx.arc(bx+shake+18,by+6,2,0,Math.PI*2);
-    ctx.arc(bx+shake+38,by+6,2,0,Math.PI*2);
-    ctx.fill();
-    // Усы
-    ctx.fillStyle='#444';
-    ctx.fillRect(bx+shake+5,by+18,12,2);
-    ctx.fillRect(bx+shake+43,by+18,12,2);
-    // Плащ
-    ctx.fillStyle='#1a0a2a';
-    ctx.fillRect(bx+shake-20,by+40,20,40);
-    ctx.fillRect(bx+shake+60,by+40,20,40);
-    // Имя и HP
-    ctx.fillStyle='#ff6666';
-    ctx.font='12px monospace';
-    ctx.fillText('👑 Комендант Валахии',bx-20,by-20);
-    ctx.fillStyle='#ff2222';
-    ctx.font='14px monospace';
-    ctx.fillText('❤️ '+Math.max(0,bossHp)+'/'+maxBossHp,bx+10,by-5);
-    // Полоска HP босса
-    ctx.fillStyle='#1a0a0a';
-    ctx.fillRect(bx-10,by+100,120,10);
-    ctx.fillStyle='#ff2222';
-    ctx.fillRect(bx-10,by+100,120*(bossHp/maxBossHp),10);
+    // Анфиса (если с нами)
+    if (flags.hasAnfisa && currentLocation !== 'Диско-Сити') {
+        const ax = (player.y + 1) * tileSize, ay = player.x * tileSize;
+        ctx.fillStyle = '#ff69b4';
+        ctx.beginPath();
+        ctx.arc(ax + tileSize/2, ay + tileSize/2, tileSize*0.25, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = (tileSize * 0.5) + 'px sans-serif';
+        ctx.fillText('👩', ax + tileSize*0.3, ay + tileSize*0.7);
+    }
     
-    // Игрок (слева)
-    const px=80,py=180;
-    ctx.fillStyle='rgba(255,215,0,0.1)';ctx.beginPath();ctx.ellipse(px+30,py+70,40,15,0,0,Math.PI*2);ctx.fill();
-    // Тело
-    ctx.fillStyle='#FFD700';
-    ctx.fillRect(px+20,py+10,20,30);
-    ctx.fillStyle='#ff8844';
-    ctx.fillRect(px+10,py+40,40,30);
-    // Голова
-    ctx.fillStyle='#eebb99';
-    ctx.beginPath();
-    ctx.arc(px+30,py+5,18,0,Math.PI*2);
-    ctx.fill();
-    // Волосы
-    ctx.fillStyle='#8B4513';
-    ctx.fillRect(px+12,py-10,36,8);
-    ctx.fillRect(px+8,py-5,8,10);
-    ctx.fillRect(px+44,py-5,8,10);
-    // Глаза
-    ctx.fillStyle='#222';
-    ctx.beginPath();
-    ctx.arc(px+24,py+2,3,0,Math.PI*2);
-    ctx.arc(px+36,py+2,3,0,Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle='#fff';
-    ctx.beginPath();
-    ctx.arc(px+22,py,1.5,0,Math.PI*2);
-    ctx.arc(px+34,py,1.5,0,Math.PI*2);
-    ctx.fill();
-    // Меч (если атака)
-    if(battleAnim.type==='attack'&&battleAnim.timer>0){
-        ctx.fillStyle='#ffd700';
-        ctx.fillRect(px+50,py-20,40,4);
-        ctx.fillRect(px+85,py-30,6,20);
-        ctx.fillStyle='#ff8844';
-        ctx.font='30px monospace';
-        ctx.fillText('💥',px+70,py-30);
-    }
-    // Щит (если защита)
-    if(battleAnim.type==='defend'&&battleAnim.timer>0){
-        ctx.fillStyle='#44ff88';
-        ctx.font='40px monospace';
-        ctx.fillText('🛡️',px-10,py+20);
-    }
-    // Эффект попадания
-    if(battleAnim.type==='hit'&&battleAnim.timer>0){
-        ctx.fillStyle='rgba(255,255,255,'+(battleAnim.timer/20)+')';
-        ctx.fillRect(0,0,W,H);
-    }
-    // Вспышка
-    if(battleAnim.type==='flash'){
-        ctx.fillStyle='rgba(255,200,100,0.3)';
-        ctx.fillRect(0,0,W,H);
-    }
-}
-
-function draw(){
-    if(gameState==='explore')drawExplore();
-    else if(gameState==='battle')drawBattle();
+    locDisplay.textContent = currentLocation;
 }
 
 // ─── ДВИЖЕНИЕ ───
-function movePlayer(dx,dy){
-    if(gameOver||gameState==='battle')return;
-    const nx=player.x+dx,ny=player.y+dy;
-    if(nx<0||nx>=COLS||ny<0||ny>=ROWS)return;
-    if(map[ny][nx]===1){dialogBox.innerHTML='🧱 Стена. Валахия не разрешает проход.';return;}
-    player.x=nx;player.y=ny;
-    if(player.x===16&&player.y===1&&bossPhase===0){startBoss();return;}
-    patrols.forEach(p=>{if(Math.abs(p.x-player.x)<2&&Math.abs(p.y-player.y)<2){if(Math.random()<0.3){suspicion+=5;hp-=2;dialogBox.innerHTML='⚠️ Патруль заметил тебя! Подозрение +5, HP -2.';}}});
-    citizens.forEach(c=>{if(c.x===player.x&&c.y===player.y){dialogBox.innerHTML='👤 '+c.name+': «'+c.text+'»';if(!talkedToCitizen){talkedToCitizen=true;suspicion+=3;dialogBox.innerHTML+='<br><span style="color:#888;">— Ты чувствуешь, что он боится.</span>';}}});
-    if(player.x===9&&player.y===7){dialogBox.innerHTML='📍 Центральная площадь. Неон мигает. Вокруг пусто.';}
-    if(player.x===8&&player.y===1){dialogBox.innerHTML='🚪 Здесь вход в таверну. Над дверью вывеска: «Угасший неон».';}
-    if(player.x===15&&player.y===8&&!foundBasement){dialogBox.innerHTML='⬇️ Ты наткнулся на люк. Из-под земли доносится шёпот.';foundBasement=true;}
-    updateUI();draw();saveProgress();
-}
-
-// ─── БОСС ───
-function startBoss(){
-    gameState='battle';
-    bossPhase=1;
-    bossHp=maxBossHp;
-    dialogBox.innerHTML='👑 Комендант Валахии: «Ты мальчик, который идёт в Кальдеру? Я знаю всё о тебе.»<br>«Пропуск стоит 50 монет или… ты сделаешь для меня кое-что.»';
-    document.getElementById('controls').innerHTML=`
-        <button class="btn btn-gold" onclick="bossChoice('pay')">💰 ЗАПЛАТИТЬ 50</button>
-        <button class="btn" onclick="bossChoice('quest')">📜 ВЗЯТЬ ЗАДАНИЕ</button>
-        <button class="btn btn-danger" onclick="bossChoice('fight')">⚔️ АТАКОВАТЬ</button>
-    `;
-    updateUI();draw();
-}
-
-function bossChoice(choice){
-    if(choice==='pay'){
-        if(coins>=50){coins-=50;hasPass=true;dialogBox.innerHTML='✅ Ты заплатил 50 монет. Комендант кивает.<br>«Мудрое решение. Пропуск твой.»';endBoss();}
-        else{dialogBox.innerHTML='❌ У тебя нет 50 монет. «Тогда придётся отработать.»';}
-    }else if(choice==='quest'){
-        dialogBox.innerHTML='📜 «В подвале старой таверны прячутся мятежники. Приведи их главу ко мне.»';
-        document.getElementById('controls').innerHTML=`
-            <button class="btn" onclick="bossQuest()">⬇️ ИДТИ В ПОДВАЛ</button>
-            <button class="btn btn-danger" onclick="bossChoice('fight')">⚔️ НЕТ, Я БУДУ ДРАТЬСЯ</button>
-        `;
-    }else if(choice==='fight'){
-        bossPhase=2;
-        dialogBox.innerHTML='⚔️ Комендант встаёт. «Глупый ребёнок.» Бой начинается!';
-        document.getElementById('controls').innerHTML=`
-            <button class="btn" onclick="bossFight('attack')">⚔️ АТАКОВАТЬ</button>
-            <button class="btn" onclick="bossFight('defend')">🛡️ ЗАЩИТА</button>
-            <button class="btn" onclick="bossFight('item')">🍎 ЯБЛОКО</button>
-        `;
-        updateUI();draw();
-    }
-}
-
-function bossQuest(){
-    if(foundBasement){
-        hasResistance=true;hasPass=true;suspicion+=20;
-        dialogBox.innerHTML='⬇️ Ты спускаешься в подвал. Встречаешь главу Сопротивления.<br>«Возьми пропуск — мы сделали копию.»<br>✅ Ты получил пропуск.';
-        endBoss();
-    }else{
-        dialogBox.innerHTML='❌ Ты не нашёл подвал. Попробуй поискать на рынке.';
-        document.getElementById('controls').innerHTML=`<button class="btn" onclick="endBoss()">🔙 ВЕРНУТЬСЯ</button>`;
-    }
-    updateUI();saveProgress();
-}
-
-function bossFight(action){
-    if(gameOver||bossHp<=0)return;
-    let log='';
-    let playerAtk=8+(hasResistance?5:0);
+function movePlayer(dx, dy) {
+    if (gameOver || battle.active) return;
+    const nx = player.x + dx;
+    const ny = player.y + dy;
+    const rows = currentMap.length;
+    const cols = currentMap[0].length;
+    if (nx < 0 || nx >= rows || ny < 0 || ny >= cols) return;
     
-    if(action==='attack'){
-        battleAnim={type:'attack',timer:15};
-        let dmg=playerAtk+Math.floor(Math.random()*10);
-        bossHp-=dmg;
-        log='💥 Ты нанёс '+dmg+' урона!';
-        battleAnim.type='hit';
-        setTimeout(()=>{battleAnim.type='';draw();},300);
-    }else if(action==='defend'){
-        battleAnim={type:'defend',timer:10};
-        log='🛡️ Ты защищаешься.';
-        setTimeout(()=>{battleAnim.type='';draw();},300);
-    }else if(action==='item'){
-        if(hasApple){hp=Math.min(hp+15,100);hasApple=false;log='🍎 Ты съел яблоко. ❤️ +15';}
-        else{log='❌ У тебя нет яблок!';}
-    }
+    const tile = currentMap[nx][ny];
+    if (typeof tile === 'number' && tile === 1) return;
+    if (tile === '🧱' || tile === '🌲') return;
     
-    if(bossHp<=0){
-        hasPass=true;
-        dialogBox.innerHTML=log+'<br>🏆 Ты победил Коменданта!<br>«Ты сильнее, чем я думал… Пропуск твой.»';
-        document.getElementById('controls').innerHTML=`<button class="btn btn-success" onclick="endBoss()">🚪 ЗАБРАТЬ ПРОПУСК</button>`;
-        updateUI();draw();saveProgress();
+    player.x = nx;
+    player.y = ny;
+    
+    // ─── ПЕРЕХОДЫ МЕЖДУ ЛОКАЦИЯМИ ───
+    // Из дома на улицу
+    if (currentLocation === 'Дом' && tile === '🚪' && player.x === 0) {
+        currentLocation = 'Улица';
+        player.x = 4; player.y = 4;
+        updateMap();
+        dialogBox.innerHTML = '🌳 Ты выходишь на улицу. Перед тобой Анфиса.';
+        return;
+    }
+    // Из улицы в дом
+    if (currentLocation === 'Улица' && tile === '🏠' && player.x === 1 && player.y === 4) {
+        currentLocation = 'Дом';
+        player.x = 8; player.y = 4;
+        updateMap();
+        dialogBox.innerHTML = '🏠 Ты возвращаешься в дом.';
+        return;
+    }
+    // Из улицы в магазин
+    if (currentLocation === 'Улица' && tile === '⬜' && player.x === 3 && player.y === 2) {
+        currentLocation = 'Магазин';
+        player.x = 1; player.y = 1;
+        updateMap();
+        dialogBox.innerHTML = '🏪 Ты заходишь в магазин.';
+        return;
+    }
+    // Из магазина на улицу
+    if (currentLocation === 'Магазин' && tile === '🚪' && (player.x === 1 || player.x === 8)) {
+        currentLocation = 'Улица';
+        player.x = 3; player.y = 2;
+        updateMap();
+        dialogBox.innerHTML = '🌳 Ты выходишь на улицу.';
+        return;
+    }
+    // Из улицы в замок
+    if (currentLocation === 'Улица' && tile === '🌲' && player.x === 8 && player.y === 0) {
+        currentLocation = 'Замок';
+        player.x = 1; player.y = 4;
+        updateMap();
+        dialogBox.innerHTML = '🏰 Ты подходишь к замку. Вокруг разбойники.';
+        return;
+    }
+    // Из замка на улицу
+    if (currentLocation === 'Замок' && tile === '🌲' && player.x === 0) {
+        currentLocation = 'Улица';
+        player.x = 8; player.y = 0;
+        updateMap();
+        dialogBox.innerHTML = '🌳 Ты возвращаешься в город.';
         return;
     }
     
-    // Атака босса
-    let enemyDmg=6+Math.floor(Math.random()*8);
-    if(action==='defend')enemyDmg=Math.floor(enemyDmg*0.3);
-    hp-=enemyDmg;
-    log+='<br>💀 Комендант атакует! -'+enemyDmg+' HP';
-    battleAnim={type:'hit',timer:10};
-    setTimeout(()=>{battleAnim.type='';draw();},200);
-    
-    if(hp<=0){gameOver=true;log+='<br><span style="color:#ff0000;">💀 Ты пал в бою...</span>';dialogBox.innerHTML=log;updateUI();draw();return;}
-    
-    dialogBox.innerHTML=log;
-    updateUI();draw();saveProgress();
-}
-
-function endBoss(){
-    gameState='explore';
-    bossPhase=3;
-    player.x=10;player.y=7;
-    dialogBox.innerHTML='📜 Ты получил пропуск. Ворота открыты.<br>— Теперь ты можешь покинуть Диско-Сити.';
-    document.getElementById('controls').innerHTML=`
-        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
-        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
-        <button class="btn btn-sm btn-success" onclick="tryLeave()">🚪 ПОКИНУТЬ</button>
-    `;
-    updateUI();draw();saveProgress();
-}
-
-// ─── ВЗАИМОДЕЙСТВИЕ ───
-function interact(){
-    if(gameOver||gameState==='battle')return;
-    let interacted=false;
-    citizens.forEach(c=>{if(Math.abs(c.x-player.x)<=1&&Math.abs(c.y-player.y)<=1){dialogBox.innerHTML='👤 '+c.name+': «'+c.text+'»';if(!talkedToCitizen){talkedToCitizen=true;suspicion+=2;dialogBox.innerHTML+='<br><span style="color:#888;">— Он оглядывается и говорит шёпотом.</span>';}interacted=true;}});
-    if(player.x===8&&player.y===1&&bossPhase!==2){dialogBox.innerHTML='🍺 Таверна «Угасший неон». Бармен молча протирает стакан.';if(coins>=20){dialogBox.innerHTML+='<br><button class="btn btn-sm" onclick="buyInfo()">🕵️ КУПИТЬ ИНФОРМАЦИЮ (20💰)</button>';}interacted=true;}
-    if(player.x===15&&player.y===8&&foundBasement&&!hasResistance){dialogBox.innerHTML='⬇️ Люк в подвал. Слышен шёпот: «Ты пришёл за нами?»';document.getElementById('controls').innerHTML+='<button class="btn btn-sm btn-success" onclick="bossQuest()">⬇️ СПУСТИТЬСЯ</button>';interacted=true;}
-    if(player.x===16&&player.y===1&&bossPhase===0){startBoss();interacted=true;}
-    if(!interacted){dialogBox.innerHTML='🗣️ Здесь никого нет. Только неон и тишина.';}
-    updateUI();saveProgress();
-}
-
-function buyInfo(){
-    if(coins<20){dialogBox.innerHTML='❌ У тебя нет 20 монет.';return;}
-    coins-=20;suspicion+=10;
-    dialogBox.innerHTML='🕵️ Бармен: «Комендант боится того, кто идёт из Кальдеры. Он не такой сильный, как кажется.»';
-    updateUI();saveProgress();
-}
-
-function openInventory(){
-    let items='🎒 <b>Инвентарь:</b><br>';
-    if(hasMap)items+='🗺️ Карта Диско-Сити<br>';
-    if(hasApple)items+='🍎 Яблоко (+15 HP)<br>';
-    if(hasResistance)items+='🔰 Печать Сопротивления<br>';
-    if(hasPass)items+='📜 Пропуск через город<br>';
-    items+='💰 Монет: '+coins;
-    dialogBox.innerHTML=items;
-}
-
-function provoke(){
-    if(gameOver||gameState==='battle')return;
-    suspicion+=20;hp-=10;
-    dialogBox.innerHTML='⚠️ Ты кричишь на патруль. Они запоминают твоё лицо. Подозрение +20, HP -10.';
-    if(suspicion>=100){
-        dialogBox.innerHTML+='<br><span style="color:#ff0000;">🔴 ВАЛАХИЯ ОБЪЯВИЛА ТЕБЯ ВРАГОМ. Ты теряешь сознание...</span>';
-        gameOver=true;updateUI();draw();return;
+    // ─── ВЗАИМОДЕЙСТВИЕ С ОБЪЕКТАМИ ───
+    // Сундук в доме
+    if (currentLocation === 'Дом' && tile === '📦' && player.x === 7 && player.y === 1) {
+        if (!flags.hasNote) {
+            flags.hasNote = true;
+            dialogBox.innerHTML = '📦 Ты открываешь сундук. Внутри лежит старая записка.';
+            inventory.push('📜 Старая записка');
+            updateUI();
+            saveProgress();
+        } else {
+            dialogBox.innerHTML = '📦 Сундук пуст.';
+        }
+        return;
     }
-    updateUI();draw();saveProgress();
-}
-
-function tryLeave(){
-    if(!hasPass){dialogBox.innerHTML='🚪 Ворота закрыты. Тебе нужен пропуск.';return;}
-    dialogBox.innerHTML='🚪 Ты покидаешь Диско-Сити. Впереди — путь к следующим деревням.<br><span style="color:#44ff88;">✅ Акт 3 завершён.</span>';
-    document.getElementById('controls').innerHTML='<button class="btn btn-success" onclick="location.reload()">🌍 ПРОДОЛЖИТЬ ПУТЬ</button>';
+    
+    // Анфиса на улице
+    if (currentLocation === 'Улица' && tile === '👩' && player.x === 4 && player.y === 5) {
+        if (!flags.talkedToAnfisa) {
+            flags.talkedToAnfisa = true;
+            dialogBox.innerHTML = '👩 Анфиса: «О, ты проснулся! Город захватили разбойники. Помоги нам!»';
+            document.getElementById('controls').innerHTML += `
+                <button class="btn btn-success" onclick="helpAnfisa(true)">⚔️ ПОМОЧЬ</button>
+                <button class="btn btn-danger" onclick="helpAnfisa(false)">❌ ОТКАЗАТЬСЯ</button>
+            `;
+        } else {
+            dialogBox.innerHTML = '👩 Анфиса: «Ты уже знаешь. Разбойники у замка.»';
+        }
+        return;
+    }
+    
+    // Вход в замок (битва)
+    if (currentLocation === 'Замок' && (tile === '🏰' || tile === '👹' || tile === '⚔️' || tile === '👺')) {
+        if (!flags.kingDefeated) {
+            startKingBattle();
+        } else {
+            dialogBox.innerHTML = '🏰 Замок пуст. Король разбойников побеждён.';
+        }
+        return;
+    }
+    
+    // Магазин
+    if (currentLocation === 'Магазин' && tile === '🧑' && player.x === 5 && player.y === 4) {
+        dialogBox.innerHTML = '🧑 Продавец: «Что желаешь купить?»';
+        document.getElementById('controls').innerHTML += `
+            <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
+            <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
+            <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
+            <button class="btn" onclick="buyItem('potion')">🧪 Зелье (10💰)</button>
+        `;
+        return;
+    }
+    
+    // Диско-Сити (переход)
+    if (currentLocation === 'Улица' && tile === '🌲' && player.x === 0 && player.y === 2 && flags.kingDefeated) {
+        currentLocation = 'Диско-Сити';
+        player.x = 7; player.y = 10;
+        updateMap();
+        dialogBox.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией.';
+        return;
+    }
+    
+    // Обновляем UI и диалог
+    dialogBox.innerHTML = `📍 ${getTileDescription(tile)}`;
+    updateUI();
+    drawMap();
     saveProgress();
 }
 
-// ─── КЛАВИШИ ───
-document.addEventListener('keydown',(e)=>{
-    if(gameState==='battle')return;
-    switch(e.key){
-        case 'ArrowUp':movePlayer(0,-1);break;
-        case 'ArrowDown':movePlayer(0,1);break;
-        case 'ArrowLeft':movePlayer(-1,0);break;
-        case 'ArrowRight':movePlayer(1,0);break;
-        case 'e':interact();break;
-        case 'Enter':interact();break;
+function getTileDescription(tile) {
+    if (typeof tile === 'number') {
+        if (tile === 0) return 'Пустая улица.';
+        if (tile === 2) return 'Здание.';
+        if (tile === 3) return 'Неоновая вывеска.';
+        return 'Стена.';
     }
-    e.preventDefault();
-});
-
-// ─── ЦИКЛ АНИМАЦИИ ───
-function gameLoop(){
-    if(battleAnim.timer>0){
-        battleAnim.timer--;
-        draw();
-    }
-    requestAnimationFrame(gameLoop);
+    const desc = {
+        '⬜': 'Пустое место.',
+        '🪑': 'Стул.',
+        '🍽️': 'Стол.',
+        '🛋️': 'Диван.',
+        '🛏️': 'Кровать.',
+        '🔥': 'Камин.',
+        '📦': 'Сундук.',
+        '👩': 'Анфиса.',
+        '🧑': 'Продавец.',
+        '💰': 'Касса.',
+        '📜': 'Свиток.',
+        '🛡️': 'Щит.',
+        '⚗️': 'Зелье.',
+        '🏰': 'Замок.',
+        '👹': 'Разбойник.',
+        '👺': 'Разбойник.',
+        '⚔️': 'Оружие.',
+    };
+    return desc[tile] || 'Ничего особенного.';
 }
 
-// ─── ЗАПУСК ───
+// ─── ПОМОЩЬ АНФИСЕ ───
+function helpAnfisa(choice) {
+    if (choice) {
+        flags.helpedAnfisa = true;
+        coins += 15;
+        dialogBox.innerHTML = '👩 Анфиса: «Спасибо! Иди в магазин, купи оружие и припасы.»';
+    } else {
+        dialogBox.innerHTML = '👩 Анфиса грустно: «Я понимаю...»';
+    }
+    updateUI();
+    saveProgress();
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+        <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
+    `;
+}
+
+// ─── ПОКУПКА ───
+function buyItem(item) {
+    const prices = { apple: 5, sword: 20, shield: 15, potion: 10 };
+    const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит', potion: '🧪 Зелье' };
+    if (coins >= prices[item]) {
+        coins -= prices[item];
+        inventory.push(names[item]);
+        if (item === 'sword') flags.hasSword = true;
+        if (item === 'shield') flags.hasShield = true;
+        if (item === 'apple') flags.hasApple = true;
+        if (item === 'potion') flags.hasHealPotion = true;
+        dialogBox.innerHTML = `✅ Ты купил ${names[item]}!`;
+        updateUI();
+        saveProgress();
+    } else {
+        dialogBox.innerHTML = `❌ Не хватает монет! (нужно ${prices[item]})`;
+    }
+}
+
+// ─── БИТВА С КОРОЛЁМ ───
+function startKingBattle() {
+    battle.active = true;
+    battle.enemyName = '👑 Король разбойников';
+    battle.enemyHP = 120;
+    battle.enemyMaxHP = 120;
+    battle.enemyAttack = 14;
+    battle.playerAttack = 8 + (flags.hasSword ? 5 : 0) + (flags.hasAnfisa ? 3 : 0);
+    battle.phase = 1;
+    
+    bossName.textContent = '👑 Король разбойников';
+    bossBar.classList.remove('hidden');
+    bossHealthBar.classList.remove('hidden');
+    bossStatus.style.display = 'inline';
+    updateBossUI();
+    
+    dialogBox.innerHTML = '👑 Король разбойников: «Как ты посмел войти в мой замок?!»';
+    document.getElementById('controls').innerHTML = `
+        <button class="btn" onclick="kingBattleAction('attack')">⚔️ АТАКОВАТЬ</button>
+        <button class="btn" onclick="kingBattleAction('defend')">🛡️ ЗАЩИТА</button>
+        <button class="btn" onclick="kingBattleAction('item')">🍎 ЯБЛОКО</button>
+        ${flags.hasHealPotion ? '<button class="btn" onclick="kingBattleAction(\'heal\')">🧪 ЗЕЛЬЕ</button>' : ''}
+    `;
+    drawMap();
+}
+
+function kingBattleAction(action) {
+    if (gameOver || battle.enemyHP <= 0) return;
+    let log = '';
+    let damage = 0;
+    
+    if (action === 'attack') {
+        damage = battle.playerAttack + Math.floor(Math.random() * 6);
+        battle.enemyHP -= damage;
+        log = `⚔️ Ты нанёс ${damage} урона! (💀 ${battle.enemyHP}/${battle.enemyMaxHP})`;
+    } else if (action === 'defend') {
+        battle.defense = true;
+        log = '🛡️ Ты приготовился к защите!';
+    } else if (action === 'item') {
+        if (flags.hasApple) {
+            hp = Math.min(hp + 15, maxHp);
+            flags.hasApple = false;
+            log = `🍎 Ты съел яблоко! ❤️ +15 (теперь ${hp})`;
+        } else {
+            log = '❌ У тебя нет яблок!';
+        }
+    } else if (action === 'heal' && flags.hasHealPotion) {
+        hp = Math.min(hp + 25, maxHp);
+        flags.hasHealPotion = false;
+        log = `🧪 Ты использовал зелье! ❤️ +25 (теперь ${hp})`;
+    }
+    
+    if (battle.enemyHP <= 0) {
+        flags.kingDefeated = true;
+        log += '<br>🏆 Ты победил короля разбойников!';
+        dialogBox.innerHTML = log;
+        document.getElementById('controls').innerHTML = `
+            <button class="btn" onclick="kingDefeated()">👑 СЛУШАТЬ КОРОЛЯ</button>
+        `;
+        updateUI();
+        saveProgress();
+        return;
+    }
+    
+    // Атака короля
+    let enemyDamage = battle.enemyAttack - (battle.defense ? 4 : 0);
+    if (enemyDamage < 0) enemyDamage = 0;
+    hp -= enemyDamage;
+    battle.defense = false;
+    log += `<br>💀 Король атакует! -${enemyDamage} HP (❤️ ${hp})`;
+    
+    if (hp <= 0) {
+        log += '<br><span style="color:#ff0000;">💀 Ты пал в бою...</span>';
+        dialogBox.innerHTML = log;
+        gameOver = true;
+        updateUI();
+        return;
+    }
+    
+    dialogBox.innerHTML = log;
+    updateUI();
+    updateBossUI();
+    saveProgress();
+}
+
+function kingDefeated() {
+    dialogBox.innerHTML = '👑 Король разбойников: «Ты истинный воин. Я ухожу в Тёплый утёс. Если придёшь — будешь нашим гостем.»';
+    flags.isAllyWithBandits = true;
+    flags.hasAnfisa = true;
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+        <button class="btn btn-sm btn-success" onclick="goToDisco()">🌆 ИДТИ В ДИСКО-СИТИ</button>
+    `;
+    battle.active = false;
+    bossBar.classList.add('hidden');
+    bossHealthBar.classList.add('hidden');
+    bossStatus.style.display = 'none';
+    saveProgress();
+}
+
+function goToDisco() {
+    currentLocation = 'Диско-Сити';
+    player.x = 7; player.y = 10;
+    updateMap();
+    dialogBox.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией. Тебе нужен пропуск.';
+    document.getElementById('controls').innerHTML = `
+        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+        <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
+    `;
+}
+
+function updateBossUI() {
+    bossHpDisplay.textContent = Math.max(0, battle.enemyHP);
+    bossHealthFill.style.width = (battle.enemyHP / battle.enemyMaxHP * 100) + '%';
+}
+
+// ─── ВЗАИМОДЕЙСТВИЕ ───
+function interact() {
+    if (gameOver || battle.active) return;
+    const tile = currentMap[player.x][player.y];
+    dialogBox.innerHTML = `📍 ${getTileDescription(tile)}`;
+}
+
+// ─── ИНВЕНТАРЬ ───
+function openInventory() {
+    if (inventory.length === 0) {
+        dialogBox.innerHTML = '🎒 Инвентарь пуст.';
+        return;
+    }
+    let items = '🎒 <b>Инвентарь:</b><br>';
+    inventory.forEach(item => {
+        items += `• ${item}<br>`;
+    });
+    items += `<br>💰 Монет: ${coins}`;
+    dialogBox.innerHTML = items;
+}
+
+// ─── ПРОВОКАЦИЯ ───
+function provoke() {
+    if (gameOver || battle.active) return;
+    suspicion += 20;
+    hp -= 5;
+    dialogBox.innerHTML = `⚠️ Ты кричишь на патруль! Подозрение +20, HP -5.`;
+    if (suspicion >= 100) {
+        dialogBox.innerHTML += '<br><span style="color:#ff0000;">🔴 ВАЛАХИЯ ОБЪЯВИЛА ТЕБЯ ВРАГОМ!</span>';
+        gameOver = true;
+    }
+    updateUI();
+    saveProgress();
+}
+
+// ─── ОБНОВЛЕНИЕ UI ───
+function updateUI() {
+    hpDisplay.textContent = Math.max(0, hp);
+    coinsDisplay.textContent = coins;
+    suspDisplay.textContent = Math.min(suspicion, 100);
+}
+
+// ─── ЗАГРУЗКА СОХРАНЕНИЯ ───
 loadProgress();
 updateUI();
-draw();
-gameLoop();
+drawMap();
 
-// Патрули
-setInterval(()=>{
-    if(gameOver||gameState==='battle')return;
-    patrols.forEach(p=>{
-        const nx=p.x+p.dx,ny=p.y+p.dy;
-        if(nx>=0&&nx<COLS&&ny>=0&&ny<ROWS&&map[ny][nx]!==1){
-            p.x=nx;p.y=ny;
-        }else{
-            p.dx*=-1;p.dy*=-1;
-        }
-    });
-    draw();
-},800);
-
-setInterval(saveProgress,30000);
+// ─── АВТОСОХРАНЕНИЕ ───
+setInterval(saveProgress, 30000);
 </script>
 </body>
-    </html>
+</html>
