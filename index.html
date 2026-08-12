@@ -678,29 +678,90 @@
             }
         }
 
-        // ─── ПОИСК ДВЕРИ РЯДОМ ───
-        function findDoorNearby() {
-            const dirs = [
-                [-1, -1],
-                [-1, 0],
-                [-1, 1],
-                [0, -1],
-                [0, 1],
-                [1, -1],
-                [1, 0],
-                [1, 1]
-            ];
-            for (let d of dirs) {
-                const nx = player.x + d[0];
-                const ny = player.y + d[1];
-                if (nx >= 0 && nx < currentMap.length && ny >= 0 && ny < currentMap[0].length) {
-                    if (currentMap[nx][ny] === '🚪') {
-                        return { x: nx, y: ny };
-                    }
-                }
-            }
-            return null;
+        // ─── ВЗАИМОДЕЙСТВИЕ ───
+function interact() {
+    if (gameOver || inBattle) return;
+
+    // 1. Проверяем, есть ли дверь рядом
+    const doorPos = findDoorNearby();
+    if (doorPos) {
+        // Меню выбора: выйти или остаться
+        dialog.innerHTML = '🚪 Ты стоишь рядом с дверью. Куда идём?';
+        choicesDiv.innerHTML = `
+            <button class="btn btn-success" onclick="goThroughDoor()">🚪 ВЫЙТИ НА УЛИЦУ</button>
+            <button class="btn btn-danger" onclick="dialog.innerHTML='🚪 Ты остаёшься в доме.'; choicesDiv.innerHTML='';">❌ ОСТАТЬСЯ</button>
+        `;
+        return;
+    }
+
+    // 2. Остальные взаимодействия (сундук, NPC и т.д.)
+    const x = player.x, y = player.y;
+    const tile = currentMap[x][y];
+
+    if (tile === '📦') {
+        if (!flags.hasNote) {
+            flags.hasNote = true;
+            inventory.push('📜 Старая записка');
+            dialog.innerHTML = '📦 Ты открываешь сундук. Внутри лежит старая записка.';
+            updateUI();
+        } else {
+            dialog.innerHTML = '📦 Сундук пуст.';
         }
+        return;
+    }
+
+    if (tile === '👩') {
+        talkToAnfisa();
+        return;
+    }
+
+    // ... остальные NPC и предметы (продавец, король, мэр и т.д.)
+    // (оставляем как есть)
+
+    dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
+}
+
+// ─── ПРОХОД ЧЕРЕЗ ДВЕРЬ ───
+function goThroughDoor() {
+    // Смена локации
+    if (currentCity === 0) { // Дом → Айскристалл
+        currentCity = 1;
+        currentLocation = 'АЙСКРИСТАЛЛ';
+        currentMap = aiskristallMap;
+        player.x = 4; player.y = 4;
+        dialog.innerHTML = '🌳 Ты выходишь из дома и попадаешь в Айскристалл.';
+    } else {
+        // Если уже не в доме — просто возврат на улицу (запасной вариант)
+        currentCity = 1;
+        currentLocation = 'АЙСКРИСТАЛЛ';
+        currentMap = aiskristallMap;
+        player.x = 4; player.y = 4;
+        dialog.innerHTML = '🚪 Ты выходишь на улицу.';
+    }
+    choicesDiv.innerHTML = '';
+    drawMap();
+    updateUI();
+    saveProgress();
+}
+
+// ─── ПОИСК ДВЕРИ РЯДОМ (радиус 1 клетка) ───
+function findDoorNearby() {
+    const dirs = [
+        [-1, -1], [-1, 0], [-1, 1],
+        [0, -1],           [0, 1],
+        [1, -1],  [1, 0],  [1, 1]
+    ];
+    for (let d of dirs) {
+        const nx = player.x + d[0];
+        const ny = player.y + d[1];
+        if (nx >= 0 && nx < currentMap.length && ny >= 0 && ny < currentMap[0].length) {
+            if (currentMap[nx][ny] === '🚪') {
+                return { x: nx, y: ny };
+            }
+        }
+    }
+    return null;
+    }
 
         // ─── ПОИСК ПОРТАЛА РЯДОМ ───
         function findPortalNearby() {
