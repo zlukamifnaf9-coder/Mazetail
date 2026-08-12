@@ -496,4 +496,63 @@ function useItemAction(index, action) {
         if (item.includes('Яблоко')) {
             hp = Math.min(hp + 15, 100);
             inventory.splice(index, 1);
-            dialog.inne
+            dialog.innerHTML = `🍎 Ты съел яблоко! ❤️ +15 (теперь ${hp})`;
+            updateUI();
+        } else if (item.includes('Записка')) {
+            dialog.innerHTML = '📖 «Айскристалл — город магии. Будь осторожен.»';
+        } else {
+            dialog.innerHTML = `❌ Нельзя использовать ${item}.`;
+        }
+    } else if (action === 'wear') {
+        if (item.includes('Меч')) {
+            flags.hasSword = true;
+            dialog.innerHTML = '🗡️ Ты надел меч! (+5 к атаке)';
+        } else if (item.includes('Щит')) {
+            flags.hasShield = true;
+            dialog.innerHTML = '🛡️ Ты надел щит! (+3 к защите)';
+        } else {
+            dialog.innerHTML = `❌ Нельзя надеть ${item}.`;
+        }
+    } else if (action === 'drop') {
+        inventory.splice(index, 1);
+        dialog.innerHTML = `🗑️ Ты выкинул ${item}.`;
+        updateUI();
+    }
+    
+    setTimeout(showInventory, 1500);
+}
+
+// ─── СБРОС ───
+function resetGame() {
+    document.getElementById('gameOverScreen').style.display = 'none';
+    player = { x: 5, y: 5 };
+    hp = 100;
+    coins = 10;
+    inventory = [];
+    flags = {
+        talkedToAnfisa: false, hasNote: false, hasSword: false, hasShield: false,
+        hasApple: true, kingDefeated: false, helpedAnfisa: false, hasAnfisa: false,
+        hasPass: false, bossDefeated: false, chapter1Done: false, chapter2Done: false,
+        doorOpen: false
+    };
+    gameOver = false;
+    inBattle = false;
+    currentChapter = 1;
+    choicesDiv.innerHTML = '';
+    dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
+    bossBar.classList.add('hidden');
+    bossHealthBar.classList.add('hidden');
+    bossStatus.style.display = 'none';
+    drawMap();
+    updateUI();
+}
+
+// ─── ЗАПУСК ───
+function initGame() {
+    resetGame();
+}
+
+initGame();
+</script>
+</body>
+    </html>
