@@ -129,7 +129,6 @@
             <button class="btn" onclick="talk()">💬 ГОВОРИТЬ</button>
             <button class="btn" onclick="showInventory()">🎒 ИНВЕНТАРЬ</button>
             <button class="btn" onclick="showAchievements()">🏆 ДОСТИЖЕНИЯ</button>
-            <button class="btn" onclick="openShop()">🏪 МАГАЗИН</button>
         </div>
         <div id="dialog">📍 Ты в доме. Рядом стоит старый сундук.</div>
         <div id="choices"></div>
@@ -148,8 +147,7 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ЖИВАЯ ВЕРСИЯ
-        //  Анфиса, разбойники, магазин, вода, домой
+        //  MAZETALE — ЖИВАЯ ВЕРСИЯ (С РАЗБОЙНИКАМИ И МАГАЗИНОМ)
         // ═══════════════════════════════════════════════════
 
         const canvas = document.getElementById('gameCanvas');
@@ -164,12 +162,11 @@
         let gameOver = false;
         let inBattle = false;
         let currentChapter = 1;
-        let currentCity = 0; // 0=дом, 1=Айскристалл
+        let currentCity = 0;
         let reputation = 100;
         let gameTime = { hour: 14, minute: 30 };
         let achievements = [];
         let enemiesKilled = 0;
-        let bossesSpawned = 0;
 
         let flags = {
             talkedToAnfisa: false,
@@ -193,7 +190,7 @@
 
         // ─── КАРТЫ ───
 
-        // ДОМ (одна дверь)
+        // ДОМ
         const houseMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '⬜', '🧱'],
@@ -207,17 +204,17 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
-        // АЙСКРИСТАЛЛ (с NPC и дверью домой)
-        const aiskristallMap = [
+        // АЙСКРИСТАЛЛ (с разбойниками и магазином)
+        const baseAiskristallMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⛪', '🏦', '🏥', '🏪', '🏫', '🌲'],
             ['🌲', '🏰', '👑', '🏰', '🏬', '🏠', '🏭', '🏗', '🗻', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
-            ['🌲', '👩', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'], // Анфиса
+            ['🌲', '👩', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🛶', '🌊', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🚪', '🌲'],
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
@@ -290,7 +287,7 @@
                 }
             }
 
-            // Портал (в центре города, если не дом)
+            // Портал (в центре города)
             if (currentCity === 1) {
                 const px = 4 * tileSize,
                     py = 4 * tileSize;
@@ -396,6 +393,22 @@
             return null;
         }
 
+        // ─── СПАВН РАЗБОЙНИКОВ ───
+        function spawnBandits() {
+            const positions = [
+                [3, 2],
+                [5, 3],
+                [7, 5],
+                [2, 6],
+                [6, 8]
+            ];
+            positions.forEach(([r, c]) => {
+                if (currentMap[r] && currentMap[r][c] === '⬜') {
+                    currentMap[r][c] = '👹';
+                }
+            });
+        }
+
         // ─── ДВИЖЕНИЕ ───
         function movePlayer(dx, dy) {
             if (gameOver || inBattle) return;
@@ -405,7 +418,7 @@
             const tile = currentMap[nx][ny];
             if (tile === '🧱' || tile === '🌲') return;
 
-            // Вода — опасна!
+            // Вода
             if (tile === '🌊') {
                 hp -= 3;
                 dialog.innerHTML = '🌊 Вода ледяная! Ты теряешь 3 HP. ❤️ ' + hp;
@@ -420,7 +433,7 @@
             player.x = nx;
             player.y = ny;
 
-            // Встреча с разбойниками (👹)
+            // Разбойники
             if (tile === '👹') {
                 startBattle('Разбойник', 30, 6);
                 return;
@@ -443,7 +456,7 @@
                 return;
             }
 
-            // Дверь (выход из дома)
+            // Дверь (из дома)
             const doorPos = findDoorNearby();
             if (doorPos && currentCity === 0) {
                 dialog.innerHTML = '🚪 Ты открываешь дверь и выходишь в Айскристалл...';
@@ -451,7 +464,7 @@
                 return;
             }
 
-            // Дверь домой (в Айскристалле)
+            // Дверь домой
             if (doorPos && currentCity === 1) {
                 dialog.innerHTML = '🚪 Ты хочешь вернуться домой?';
                 choicesDiv.innerHTML = `
@@ -484,18 +497,24 @@
                 return;
             }
 
+            // МАГАЗИН (НУЖНО ПОДОЙТИ К 🏪)
+            if (tile === '🏪') {
+                openShop();
+                return;
+            }
+
             dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
         }
 
         // ─── ПЕРЕХОД В ГОРОД ───
         function goToCity(cityId) {
             const cityMap = {
-                1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' }
+                1: { map: baseAiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' }
             };
             const city = cityMap[cityId];
             if (!city) return;
 
-            currentMap = city.map;
+            currentMap = JSON.parse(JSON.stringify(city.map));
             currentLocation = city.loc;
             currentCity = cityId;
             player.x = 4;
@@ -503,6 +522,10 @@
             if (!flags.visitedCities.includes(cityId)) {
                 flags.visitedCities.push(cityId);
             }
+
+            // Спавним разбойников
+            spawnBandits();
+
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '🌆 Ты прибыл в ' + city.name + '!';
             drawMap();
@@ -564,10 +587,6 @@
 
         // ─── МАГАЗИН ───
         function openShop() {
-            if (currentCity !== 1) {
-                dialog.innerHTML = '🏪 Здесь нет магазина.';
-                return;
-            }
             dialog.innerHTML = '🏪 Добро пожаловать в магазин!<br>Выбери товар:';
             choicesDiv.innerHTML = `
                 <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
@@ -768,7 +787,6 @@
         function showAchievements() {
             const list = [
                 '🩸 Первая кровь — убить 5 врагов',
-                '👨‍👧 Малый папа — жениться на Анфисе',
                 '🌍 Путешественник — посетить город'
             ];
             let html = '🏆 <b>ДОСТИЖЕНИЯ:</b><br>';
@@ -822,8 +840,9 @@
         }
 
         function updateMapByCity() {
-            const maps = { 0: houseMap, 1: aiskristallMap };
-            currentMap = maps[currentCity] || houseMap;
+            const maps = { 0: houseMap, 1: baseAiskristallMap };
+            currentMap = JSON.parse(JSON.stringify(maps[currentCity] || houseMap));
+            if (currentCity === 1) spawnBandits();
             drawMap();
             updateUI();
         }
@@ -911,4 +930,4 @@
         updateUI();
     </script>
 </body>
-</html>
+                </html>
