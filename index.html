@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MazeTale — Полная версия</title>
     <style>
+        /* ─── БАЗОВЫЕ СТИЛИ (без изменений) ─── */
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; touch-action: manipulation; }
         * { box-sizing: border-box; }
         #gameScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 12px; max-width: 600px; width: 100%; box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); text-align: center; }
@@ -37,16 +38,26 @@
         #gameOverScreen .go-text { color: #ff0000; font-size: 48px; font-weight: 900; text-shadow: 0 0 30px rgba(255, 0, 0, 0.8); }
         #gameOverScreen .go-sub { color: #888; font-size: 16px; margin-top: 16px; font-family: Georgia, serif; }
         #gameOverScreen .go-btn { margin-top: 24px; background: #FFD700; color: #000; border: none; padding: 10px 24px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; }
-        #storyScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 30px 20px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(255, 215, 0, 0.2); margin: 20px auto; }
+        #storyScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 30px 20px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(255, 215, 0, 0.2); margin: 20px auto; position: relative; }
         #storyScreen h1 { color: #FFD700; font-size: 32px; margin: 0; }
         #storyScreen .sub { color: #aaa; font-size: 16px; font-family: Georgia, serif; font-style: italic; }
         #introText { background: #111; border: 2px solid #FFD700; border-radius: 8px; padding: 16px; min-height: 100px; color: #e0e0e0; font-family: Georgia, serif; font-size: 15px; text-align: left; line-height: 1.6; margin: 12px 0; }
         #introText #cursor { display: inline-block; width: 2px; height: 18px; background: #FFD700; animation: blink 0.8s step-end infinite; }
         @keyframes blink { 0%,100%{ opacity:1 } 50%{ opacity:0 } }
         #startBtn { display: none; background: #FFD700; color: #000; border: none; padding: 12px 30px; border-radius: 8px; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); margin-top: 12px; }
+        #skipIntroBtn { position: absolute; top: 10px; right: 10px; background: #222; color: #aaa; border: 1px solid #444; padding: 4px 12px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: 0.2s; font-family: 'Courier New', monospace; }
+        #skipIntroBtn:hover { background: #333; color: #FFD700; border-color: #FFD700; }
         .time-display { color: #44ff88; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #44ff88; }
         .reputation-display { color: #ff8844; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #ff8844; }
-        @media (max-width: 500px) { .btn { font-size: 11px; padding: 4px 10px; } #storyScreen h1 { font-size: 24px; } #introText { font-size: 13px; padding: 12px; } }
+        .stat-bar { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; font-size: 10px; margin: 2px 0; }
+        .stat-bar .stat-item { background: #111; padding: 2px 8px; border-radius: 12px; border: 1px solid #333; display: flex; align-items: center; gap: 4px; }
+        .stat-bar .stat-item .fill-bar { display: inline-flex; gap: 1px; }
+        .stat-bar .stat-item .fill-bar span { width: 8px; height: 8px; border-radius: 2px; background: #333; }
+        .stat-bar .stat-item .fill-bar span.filled { background: #44ff88; }
+        .stat-bar .stat-item .fill-bar span.filled.hunger { background: #ff8844; }
+        .stat-bar .stat-item .fill-bar span.filled.fatigue { background: #4488ff; }
+        .stat-bar .stat-item .fill-bar span.filled.energy { background: #44ff88; }
+        @media (max-width: 500px) { .btn { font-size: 11px; padding: 4px 10px; } #storyScreen h1 { font-size: 24px; } #introText { font-size: 13px; padding: 12px; } .stat-bar .stat-item { font-size: 9px; padding: 1px 6px; } }
         #achievementNotification {
             position: fixed;
             top: 20px;
@@ -73,6 +84,37 @@
         #achievementNotification .text { display: flex; flex-direction: column; }
         #achievementNotification .title { font-weight: bold; color: #FFD700; font-size: 13px; }
         #achievementNotification .desc { color: #aaa; font-size: 11px; }
+
+        /* ─── МЕНЮ ПОСЛЕ БОЯ ─── */
+        #battleResultScreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9998;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #battleResultScreen .result-box {
+            background: #0a0a0a;
+            border: 2px solid #FFD700;
+            border-radius: 16px;
+            padding: 24px 30px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.2);
+        }
+        #battleResultScreen .result-box h2 { color: #FFD700; margin: 0 0 12px 0; font-size: 20px; }
+        #battleResultScreen .result-box .stat-line { display: flex; justify-content: space-between; color: #ccc; font-size: 14px; padding: 4px 0; border-bottom: 1px solid #222; }
+        #battleResultScreen .result-box .stat-line:last-child { border-bottom: none; }
+        #battleResultScreen .result-box .stat-line .label { color: #888; }
+        #battleResultScreen .result-box .stat-line .value { color: #FFD700; font-weight: bold; }
+        #battleResultScreen .result-box .btn { margin-top: 12px; }
     </style>
 </head>
 <body>
@@ -86,8 +128,21 @@
         </div>
     </div>
 
+    <!-- МЕНЮ ПОСЛЕ БОЯ -->
+    <div id="battleResultScreen">
+        <div class="result-box">
+            <h2>⚔️ ИТОГИ БОЯ</h2>
+            <div class="stat-line"><span class="label">💥 Урон по врагу</span><span class="value" id="resultDmgDealt">0</span></div>
+            <div class="stat-line"><span class="label">🩸 Урон по игроку</span><span class="value" id="resultDmgTaken">0</span></div>
+            <div class="stat-line"><span class="label">❤️ Исцелено</span><span class="value" id="resultHealed">0</span></div>
+            <div class="stat-line"><span class="label">💰 Заработано</span><span class="value" id="resultCoins">0</span></div>
+            <button class="btn btn-gold" onclick="closeBattleResult()">✅ ПРОДОЛЖИТЬ</button>
+        </div>
+    </div>
+
     <!-- ИНТРО -->
     <div id="storyScreen">
+        <button id="skipIntroBtn" onclick="skipIntro()">⏭️ ПРОПУСТИТЬ</button>
         <h1>🗺️ MAZETALE</h1>
         <div class="sub">Глава 1: Пробуждение</div>
         <div id="introText">
@@ -110,6 +165,14 @@
             <span class="reputation-display" id="reputationDisplay">⭐ 100</span>
             <span id="bossStatus" style="color:#ff4444;display:none;">⚔️ БОСС</span>
         </div>
+
+        <!-- НОВЫЕ ШКАЛЫ: ГОЛОД, УСТАЛОСТЬ, ЭНЕРГИЯ -->
+        <div class="stat-bar" id="statBar">
+            <div class="stat-item">🍗 <span class="fill-bar" id="hungerBar"><span class="filled hunger"></span><span class="filled hunger"></span><span class="filled hunger"></span><span class="filled hunger"></span><span></span></span></div>
+            <div class="stat-item">🌛 <span class="fill-bar" id="fatigueBar"><span class="filled fatigue"></span><span class="filled fatigue"></span><span class="filled fatigue"></span><span class="filled fatigue"></span><span></span></span></div>
+            <div class="stat-item">⚡ <span class="fill-bar" id="energyBar"><span class="filled energy"></span><span class="filled energy"></span><span class="filled energy"></span><span class="filled energy"></span><span></span></span></div>
+        </div>
+
         <canvas id="gameCanvas" width="500" height="500"></canvas>
 
         <div id="bossBar" class="boss-bar hidden">
@@ -146,7 +209,9 @@
     <script>
         // ═══════════════════════════════════════════════════
         //  MAZETALE — ПОЛНАЯ ВЕРСИЯ
-        //  Айскристалл → Вайбер → Диско-Сити → Валахарм
+        //  + ПРОПУСК ИНТРО
+        //  + ШКАЛЫ (ГОЛОД, УСТАЛОСТЬ, ЭНЕРГИЯ)
+        //  + МЕНЮ ПОСЛЕ БОЯ
         // ═══════════════════════════════════════════════════
 
         const canvas = document.getElementById('gameCanvas');
@@ -169,8 +234,21 @@
         let playerName = 'Эйнар Айсхарт';
         let hasAnfisa = false;
         let banditsDefeated = false;
-        let bossPhase = 0; // 0=нет, 1=Валахарм фаза 1, 2=Валахарм фаза 2
+        let bossPhase = 0;
         let comboCount = 0;
+
+        // ─── НОВЫЕ ШКАЛЫ ───
+        let hunger = 100; // 0-100, если 0 → смерть
+        let fatigue = 0; // 0-100, если 100 → сон
+        let energy = 100; // 0-100, если 0 → слабые атаки
+
+        // ─── СТАТИСТИКА БОЯ ───
+        let battleStats = {
+            dmgDealt: 0,
+            dmgTaken: 0,
+            healed: 0,
+            coinsEarned: 0
+        };
 
         let flags = {
             talkedToAnfisa: false,
@@ -184,7 +262,8 @@
             talkedToKing: false,
             gotMap: false,
             discoCleared: false,
-            valaharmDefeated: false
+            valaharmDefeated: false,
+            anfisaRecruited: false
         };
 
         let battle = {
@@ -199,8 +278,6 @@
         };
 
         // ─── КАРТЫ ───
-
-        // ДОМ
         const houseMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '⬜', '🧱'],
@@ -214,7 +291,6 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
-        // АЙСКРИСТАЛЛ
         const baseAiskristallMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⛪', '🏦', '🏥', '🏪', '🏫', '🌲'],
@@ -228,7 +304,6 @@
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
-        // ЗАМОК
         const castleMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲',
                 '🌲', '🌲'
@@ -276,15 +351,14 @@
             ]
         ];
 
-        // ДИСКО-СИТИ
         const discoMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏠', '🔲', '🐴', '🔲', '⚠️', '🔲', '🏪', '🔲', '🧱'],
-            ['🧱', '🔲', '🚗', '🔲', '🤠', '🔲', '🔲', '🔲', '🔲', '🧱'],
+            ['🧱', '🏠', '🔲', '🔲', '🔲', '⚠️', '🔲', '🏪', '🔲', '🧱'],
+            ['🧱', '🔲', '🚗', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
             ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🚙', '🔲', '🙎', '🔲', '🔲', '🚛', '🔲', '🧱'],
+            ['🧱', '🔲', '🚙', '🔲', '🔲', '🔲', '🔲', '🚛', '🔲', '🧱'],
             ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🪩', '🪩', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🪩', '🤴', '🔲', '🧱'],
+            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🪩', '🔲', '🔲', '🧱'],
             ['🧱', '🔲', '🏥', '🔲', '🔲', '🔲', '🪩', '🔲', '🔲', '🧱'],
             ['🧱', '🔲', '🔲', '🔲', '🔲', '⚠️', '🔲', '🏤', '🔲', '🧱'],
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
@@ -309,6 +383,11 @@
         const bossName = document.getElementById('bossName');
         const timeDisplay = document.getElementById('timeDisplay');
         const reputationDisplay = document.getElementById('reputationDisplay');
+
+        // ─── ШКАЛЫ ───
+        const hungerBar = document.getElementById('hungerBar');
+        const fatigueBar = document.getElementById('fatigueBar');
+        const energyBar = document.getElementById('energyBar');
 
         // ─── СМС ───
         const notification = document.getElementById('achievementNotification');
@@ -338,6 +417,38 @@
             reputationDisplay.textContent = '⭐ ' + reputation;
             const chapters = ['', 'Пробуждение', 'Айскристалл', 'Замок', 'Диско-Сити'];
             chapterTitle.textContent = 'Глава ' + currentChapter + ': ' + (chapters[currentChapter] || '');
+
+            // Обновляем шкалы
+            updateStatBars();
+        }
+
+        function updateStatBars() {
+            // Голод (5 сегментов)
+            const hungerLevel = Math.floor(hunger / 20);
+            hungerBar.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const span = document.createElement('span');
+                if (i < hungerLevel) span.className = 'filled hunger';
+                hungerBar.appendChild(span);
+            }
+
+            // Усталость (5 сегментов)
+            const fatigueLevel = Math.floor(fatigue / 20);
+            fatigueBar.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const span = document.createElement('span');
+                if (i < fatigueLevel) span.className = 'filled fatigue';
+                fatigueBar.appendChild(span);
+            }
+
+            // Энергия (5 сегментов)
+            const energyLevel = Math.floor(energy / 20);
+            energyBar.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                const span = document.createElement('span');
+                if (i < energyLevel) span.className = 'filled energy';
+                energyBar.appendChild(span);
+            }
         }
 
         // ─── РИСОВАНИЕ ───
@@ -373,7 +484,7 @@
             ctx.font = (tileSize * 0.5) + 'px sans-serif';
             ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
 
-            // Анфиса (если с нами)
+            // Анфиса
             if (flags.hasAnfisa) {
                 const ax = (player.y + 1) * tileSize,
                     ay = player.x * tileSize;
@@ -434,7 +545,10 @@
             const tile = currentMap[nx][ny];
             if (tile === '🧱' || tile === '🌲' || tile === '⬛') return;
 
-            // Вода
+            // Энергия тратится при движении
+            energy = Math.max(0, energy - 1);
+            updateUI();
+
             if (tile === '🌊') {
                 hp -= 3;
                 dialog.innerHTML = '🌊 Вода ледяная! Ты теряешь 3 HP. ❤️ ' + hp;
@@ -449,13 +563,11 @@
             player.x = nx;
             player.y = ny;
 
-            // Разбойники в Айскристалле
             if (tile === '👹') {
                 startBattle('Разбойник', 30, 6);
                 return;
             }
 
-            // Враги в Диско-Сити
             if (currentCity === 2) {
                 if (tile === '🤠') {
                     startBattle('Солдат Валахии', 30, 6, false, '🐴🤠');
@@ -471,7 +583,6 @@
                 }
             }
 
-            // Король в замке
             if (tile === '👑' && currentCity === 3) {
                 if (!flags.talkedToKing) {
                     talkToKing();
@@ -527,7 +638,14 @@
             }
 
             if (tile === '🏪') {
-                openShop();
+                dialog.innerHTML = '🏪 Добро пожаловать в магазин!<br>Выбери товар:';
+                choicesDiv.innerHTML = `
+                    <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
+                    <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
+                    <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
+                    <button class="btn" onclick="buyItem('food')">🍗 Еда (8💰)</button>
+                    <button class="btn btn-danger" onclick="dialog.innerHTML='🏪 Ты вышел из магазина.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>
+                `;
                 return;
             }
 
@@ -539,6 +657,26 @@
             }
 
             dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
+        }
+
+        // ─── ПОКУПКА ───
+        function buyItem(item) {
+            const prices = { apple: 5, sword: 20, shield: 15, food: 8 };
+            const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит', food: '🍗 Еда' };
+            if (coins >= prices[item]) {
+                coins -= prices[item];
+                inventory.push(names[item]);
+                if (item === 'sword') flags.hasSword = true;
+                if (item === 'shield') flags.hasShield = true;
+                if (item === 'apple') flags.hasApple = true;
+                if (item === 'food') { hunger = Math.min(100, hunger + 30);
+                    updateUI(); }
+                dialog.innerHTML = `✅ Ты купил ${names[item]}!`;
+                updateUI();
+                saveProgress();
+            } else {
+                dialog.innerHTML = `❌ Не хватает монет! (нужно ${prices[item]})`;
+            }
         }
 
         // ─── ПЕРЕХОД В ГОРОД ───
@@ -561,6 +699,26 @@
             }
 
             if (cityId === 1) spawnBandits();
+
+            if (cityId === 2) {
+                const enemies = [
+                    [1, 3],
+                    [2, 4],
+                    [4, 4],
+                    [6, 7]
+                ];
+                enemies.forEach(([r, c]) => {
+                    if (currentMap[r] && currentMap[r][c] === '🔲') {
+                        currentMap[r][c] = '🤠';
+                    }
+                });
+                if (currentMap[6] && currentMap[6][1] === '🔲') {
+                    currentMap[6][1] = '🙎';
+                }
+                if (currentMap[5] && currentMap[5][5] === '🔲') {
+                    currentMap[5][5] = '🤴';
+                }
+            }
 
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '🌆 Ты прибыл в ' + city.name + '!';
@@ -585,6 +743,11 @@
 
         // ─── ДИАЛОГ С АНФИСОЙ ───
         function talkToAnfisa() {
+            if (flags.anfisaRecruited) {
+                dialog.innerHTML = '👩 Анфиса: «Я с тобой, Эйнар!»';
+                return;
+            }
+
             if (!flags.talkedToAnfisa) {
                 flags.talkedToAnfisa = true;
                 dialog.innerHTML = '👩 Анфиса: «О, ты проснулся! Город захватили разбойники. Помоги нам!»';
@@ -600,47 +763,26 @@
         function helpAnfisa(choice) {
             if (choice) {
                 coins += 15;
-                flags.helpedAnfisa = true;
                 flags.hasAnfisa = true;
+                flags.anfisaRecruited = true;
                 hasAnfisa = true;
-                dialog.innerHTML = '👩 Анфиса: «Спасибо! Иди в магазин, купи оружие и припасы.»';
+
+                for (let r = 0; r < currentMap.length; r++) {
+                    for (let c = 0; c < currentMap[r].length; c++) {
+                        if (currentMap[r][c] === '👩') {
+                            currentMap[r][c] = '⬜';
+                        }
+                    }
+                }
+
+                dialog.innerHTML = '👩 Анфиса: «Спасибо! Я пойду с тобой. Вместе мы сила!»';
+                drawMap();
+                updateUI();
             } else {
                 dialog.innerHTML = '👩 Анфиса грустно: «Я понимаю...»';
             }
             choicesDiv.innerHTML = '';
-            updateUI();
             saveProgress();
-        }
-
-        // ─── МАГАЗИН ───
-        function openShop() {
-            dialog.innerHTML = '🏪 Добро пожаловать в магазин!<br>Выбери товар:';
-            choicesDiv.innerHTML = `
-                <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
-                <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
-                <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
-                <button class="btn" onclick="buyItem('heal_potion')">🧪 Зелье исцеления (10💰)</button>
-                <button class="btn" onclick="buyItem('damage_potion')">🔥 Зелье урона (15💰)</button>
-                <button class="btn btn-danger" onclick="dialog.innerHTML='🏪 Ты вышел из магазина.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>
-            `;
-        }
-
-        function buyItem(item) {
-            const prices = { apple: 5, sword: 20, shield: 15, heal_potion: 10, damage_potion: 15 };
-            const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит', heal_potion: '🧪 Зелье исцеления',
-                damage_potion: '🔥 Зелье урона' };
-            if (coins >= prices[item]) {
-                coins -= prices[item];
-                inventory.push(names[item]);
-                if (item === 'sword') flags.hasSword = true;
-                if (item === 'shield') flags.hasShield = true;
-                if (item === 'apple') flags.hasApple = true;
-                dialog.innerHTML = `✅ Ты купил ${names[item]}!`;
-                updateUI();
-                saveProgress();
-            } else {
-                dialog.innerHTML = `❌ Не хватает монет! (нужно ${prices[item]})`;
-            }
         }
 
         // ─── ДИАЛОГ С КОРОЛЁМ ───
@@ -684,7 +826,7 @@
             }
         }
 
-        // ─── ВЫХОД ИЗ ЗАМКА + ДИАЛОГ С АНФИСОЙ ───
+        // ─── ВЫХОД ИЗ ЗАМКА ───
         function exitCastle() {
             dialog.innerHTML = `
                 🗣️ Анфиса: «Классно мы их победили!»
@@ -712,7 +854,6 @@
             `;
         }
 
-        // ─── ВСТРЕЧА С ВАЙБЕРОМ ───
         function goToBush() {
             flags.gotMap = true;
             inventory.push('🗺️ Карта Кальдеры');
@@ -739,7 +880,6 @@
             `;
         }
 
-        // ─── ПОРТАЛ В ДИСКО-СИТИ ───
         function goToDiscoPortal() {
             dialog.innerHTML = '🌀 Портал открывается...';
             choicesDiv.innerHTML = '';
@@ -747,28 +887,6 @@
                 goToCity(2);
                 dialog.innerHTML = '🌆 Добро пожаловать в Диско-Сити! Город оккупирован Валахией. Освободи его!';
                 choicesDiv.innerHTML = '';
-                // Спавним врагов в Диско-Сити
-                if (currentCity === 2) {
-                    const discoEnemies = [
-                        [1, 3],
-                        [2, 4],
-                        [4, 4],
-                        [6, 7]
-                    ];
-                    discoEnemies.forEach(([r, c]) => {
-                        if (currentMap[r] && currentMap[r][c] === '🔲') {
-                            currentMap[r][c] = '🤠';
-                        }
-                    });
-                    // Сержант
-                    if (currentMap[6] && currentMap[6][1] === '🔲') {
-                        currentMap[6][1] = '🙎';
-                    }
-                    // Капитан (босс)
-                    if (currentMap[6] && currentMap[6][7] === '🤴') {
-                        // уже есть
-                    }
-                }
                 drawMap();
                 updateUI();
                 saveProgress();
@@ -787,6 +905,12 @@
             battle.isBoss = isBoss;
             battle.phase = 0;
 
+            // Сбрасываем статистику боя
+            battleStats.dmgDealt = 0;
+            battleStats.dmgTaken = 0;
+            battleStats.healed = 0;
+            battleStats.coinsEarned = 0;
+
             bossName.textContent = (isBoss ? '👑 ' : '') + name;
             bossBar.classList.remove('hidden');
             bossHealthBar.classList.remove('hidden');
@@ -794,23 +918,27 @@
             updateBossUI();
 
             let dialogText = `⚔️ ${name}: «Ты посмел прийти сюда?!»`;
-            if (name === 'Солдат Валахии') {
-                dialogText = '🐴🤠 Солдат: «Очередной герой? Ты даже не заметишь, что умрёшь.»';
-            } else if (name === 'Сержант Валахии') {
-                dialogText = '🐴🙎‍♂️ Сержант: «А-а, снова герои. Ну держитесь!»';
-            } else if (name === 'Капитан Валахии') {
-                dialogText = '🐴🤴 Капитан: «Ты думаешь, что сможешь остановить Валахию?»';
-            }
+            if (name === 'Солдат Валахии') dialogText = '🐴🤠 Солдат: «Очередной герой? Ты даже не заметишь, что умрёшь.»';
+            if (name === 'Сержант Валахии') dialogText =
+            '🐴🙎‍♂️ Сержант: «А-а, снова герои. Ну держитесь!»';
+            if (name === 'Капитан Валахии') dialogText =
+            '🐴🤴 Капитан: «Ты думаешь, что сможешь остановить Валахию?»';
 
             dialog.innerHTML = dialogText;
-            choicesDiv.innerHTML = `
+            renderBattleButtons();
+        }
+
+        function renderBattleButtons() {
+            let buttons = `
                 <button class="btn" onclick="battleAction('attack')">⚔️ АТАКОВАТЬ</button>
                 <button class="btn" onclick="battleAction('defend')">🛡️ ЗАЩИТА</button>
-                <button class="btn" onclick="battleAction('item')">🍎 ЯБЛОКО</button>
-                ${inventory.includes('🧪 Зелье исцеления') ? '<button class="btn" onclick="battleAction(\'heal_potion\')">🧪 ЗЕЛЬЕ ИСЦЕЛЕНИЯ</button>' : ''}
-                ${inventory.includes('🔥 Зелье урона') ? '<button class="btn" onclick="battleAction(\'damage_potion\')">🔥 ЗЕЛЬЕ УРОНА</button>' : ''}
-                ${comboCount < 2 ? '<button class="btn btn-gold" onclick="comboAttack()">⚡ КОМБО-УДАР</button>' : ''}
+                <button class="btn" onclick="battleAction('heal')">🧪 ИСЦЕЛЕНИЕ (+15 HP)</button>
+                <button class="btn btn-gold" onclick="battleAction('damage')">🔥 УРОН (+10 к атаке)</button>
             `;
+            if (comboCount < 2) {
+                buttons += `<button class="btn btn-gold" onclick="comboAttack()">⚡ КОМБО-УДАР</button>`;
+            }
+            choicesDiv.innerHTML = buttons;
         }
 
         function comboAttack() {
@@ -824,13 +952,14 @@
                 <button class="btn" onclick="comboChoice('sword')">🗡️ МЕЧ</button>
                 <button class="btn" onclick="comboChoice('fire')">🔥 ОГОНЬ</button>
                 <button class="btn" onclick="comboChoice('ice')">❄️ ЛЁД</button>
-                <button class="btn btn-danger" onclick="battleAction('attack')">🔙 ОТМЕНА</button>
+                <button class="btn btn-danger" onclick="renderBattleButtons()">🔙 ОТМЕНА</button>
             `;
         }
 
         function comboChoice(type) {
             const dmg = battle.playerAttack + Math.floor(Math.random() * 12) + 5;
             battle.enemyHP -= dmg;
+            battleStats.dmgDealt += dmg;
             comboCount = 0;
             let log = `⚡ Комбо-удар! Ты нанёс ${dmg} урона! (💀 ${battle.enemyHP}/${battle.enemyMaxHP})`;
             if (type === 'fire') log += ' 🔥 Огненный урон!';
@@ -840,7 +969,6 @@
                 endBattle(log);
                 return;
             }
-
             enemyAttackPhase(log);
         }
 
@@ -851,43 +979,23 @@
             if (action === 'attack') {
                 const dmg = battle.playerAttack + Math.floor(Math.random() * 8);
                 battle.enemyHP -= dmg;
+                battleStats.dmgDealt += dmg;
                 log = `⚔️ Ты нанёс ${dmg} урона! (💀 ${battle.enemyHP}/${battle.enemyMaxHP})`;
                 comboCount = 0;
             } else if (action === 'defend') {
                 battle.defense = true;
                 log = '🛡️ Ты приготовился к защите!';
                 comboCount = 0;
-            } else if (action === 'item') {
-                if (flags.hasApple) {
-                    hp = Math.min(hp + 15, 100);
-                    flags.hasApple = false;
-                    inventory = inventory.filter(i => i !== '🍎 Яблоко');
-                    log = `🍎 Ты съел яблоко! ❤️ +15 (теперь ${hp})`;
-                    updateUI();
-                } else {
-                    log = '❌ У тебя нет яблок!';
-                }
+            } else if (action === 'heal') {
+                const healAmt = 15;
+                hp = Math.min(hp + healAmt, 100);
+                battleStats.healed += healAmt;
+                log = `🧪 Ты исцелился! ❤️ +15 (теперь ${hp})`;
                 comboCount = 0;
-            } else if (action === 'heal_potion') {
-                if (inventory.includes('🧪 Зелье исцеления')) {
-                    hp = Math.min(hp + 25, 100);
-                    inventory = inventory.filter(i => i !== '🧪 Зелье исцеления');
-                    log = `🧪 Ты использовал зелье исцеления! ❤️ +25 (теперь ${hp})`;
-                    updateUI();
-                } else {
-                    log = '❌ У тебя нет зелья!';
-                }
-                comboCount = 0;
-            } else if (action === 'damage_potion') {
-                if (inventory.includes('🔥 Зелье урона')) {
-                    const extraDmg = 15 + Math.floor(Math.random() * 10);
-                    battle.enemyHP -= extraDmg;
-                    inventory = inventory.filter(i => i !== '🔥 Зелье урона');
-                    log = `🔥 Ты использовал зелье урона! +${extraDmg} урона! (💀 ${battle.enemyHP}/${battle.enemyMaxHP})`;
-                    updateUI();
-                } else {
-                    log = '❌ У тебя нет зелья!';
-                }
+                updateUI();
+            } else if (action === 'damage') {
+                battle.playerAttack += 10;
+                log = `🔥 Ты усилил атаку! +10 к урону (теперь ${battle.playerAttack})`;
                 comboCount = 0;
             }
 
@@ -903,8 +1011,13 @@
             let dmg = battle.enemyAttack - (battle.defense ? 4 : 0);
             if (dmg < 0) dmg = 0;
             hp -= dmg;
+            battleStats.dmgTaken += dmg;
             battle.defense = false;
             log += `<br>💀 Враг атакует! -${dmg} HP (❤️ ${hp})`;
+
+            // Энергия падает от боёв
+            energy = Math.max(0, energy - 5);
+            updateUI();
 
             if (hp <= 0) {
                 gameOver = true;
@@ -918,14 +1031,7 @@
             dialog.innerHTML = log;
             updateUI();
             updateBossUI();
-            choicesDiv.innerHTML = `
-                <button class="btn" onclick="battleAction('attack')">⚔️ АТАКОВАТЬ</button>
-                <button class="btn" onclick="battleAction('defend')">🛡️ ЗАЩИТА</button>
-                <button class="btn" onclick="battleAction('item')">🍎 ЯБЛОКО</button>
-                ${inventory.includes('🧪 Зелье исцеления') ? '<button class="btn" onclick="battleAction(\'heal_potion\')">🧪 ЗЕЛЬЕ ИСЦЕЛЕНИЯ</button>' : ''}
-                ${inventory.includes('🔥 Зелье урона') ? '<button class="btn" onclick="battleAction(\'damage_potion\')">🔥 ЗЕЛЬЕ УРОНА</button>' : ''}
-                ${comboCount < 2 ? '<button class="btn btn-gold" onclick="comboAttack()">⚡ КОМБО-УДАР</button>' : ''}
-            `;
+            renderBattleButtons();
             saveProgress();
         }
 
@@ -937,10 +1043,14 @@
             enemiesKilled++;
             comboCount = 0;
 
+            // Монеты за победу
+            const coinsEarned = 5 + Math.floor(Math.random() * 10);
+            coins += coinsEarned;
+            battleStats.coinsEarned = coinsEarned;
+
             const x = player.x;
             const y = player.y;
             if (currentMap[x] && currentMap[x][y] !== '🧱') {
-                // Если это был враг в Диско-Сити, удаляем его
                 if (currentCity === 2 && (currentMap[x][y] === '🤠' || currentMap[x][y] === '🙎' || currentMap[x][y] ===
                         '🤴')) {
                     currentMap[x][y] = '🔲';
@@ -961,13 +1071,12 @@
                     }
                 }
                 if (!enemiesLeft && !flags.valaharmDefeated) {
-                    // Начинаем бой с Валахармом
                     startValaharmBattle();
                     return;
                 }
             }
 
-            // Проверяем разбойников в Айскристалле
+            // Разбойники в Айскристалле
             if (currentCity === 1) {
                 let banditsLeft = false;
                 for (let r = 0; r < currentMap.length; r++) {
@@ -983,6 +1092,7 @@
                     drawMap();
                     saveProgress();
                     checkAchievements();
+                    showBattleResult();
                     return;
                 }
             }
@@ -994,6 +1104,20 @@
             drawMap();
             saveProgress();
             checkAchievements();
+            showBattleResult();
+        }
+
+        // ─── МЕНЮ ПОСЛЕ БОЯ ───
+        function showBattleResult() {
+            document.getElementById('resultDmgDealt').textContent = battleStats.dmgDealt;
+            document.getElementById('resultDmgTaken').textContent = battleStats.dmgTaken;
+            document.getElementById('resultHealed').textContent = battleStats.healed;
+            document.getElementById('resultCoins').textContent = battleStats.coinsEarned;
+            document.getElementById('battleResultScreen').style.display = 'flex';
+        }
+
+        function closeBattleResult() {
+            document.getElementById('battleResultScreen').style.display = 'none';
         }
 
         // ─── БОЙ С ВАЛАХАРМОМ ───
@@ -1008,6 +1132,11 @@
             battle.isBoss = true;
             inBattle = true;
 
+            battleStats.dmgDealt = 0;
+            battleStats.dmgTaken = 0;
+            battleStats.healed = 0;
+            battleStats.coinsEarned = 0;
+
             bossName.textContent = '👑 Валахарм';
             bossBar.classList.remove('hidden');
             bossHealthBar.classList.remove('hidden');
@@ -1015,42 +1144,25 @@
             updateBossUI();
 
             dialog.innerHTML = '👑 Валахарм: «Как ты смог их одолеть?»<br>🗣️ Эйнар: «Всё очень просто, когда есть союзники.»<br>👑 Валахарм: «За 200 лет меня ещё никто не победил! Это твой последний день!»';
-            choicesDiv.innerHTML = `
-                <button class="btn" onclick="battleAction('attack')">⚔️ АТАКОВАТЬ</button>
-                <button class="btn" onclick="battleAction('defend')">🛡️ ЗАЩИТА</button>
-                <button class="btn" onclick="battleAction('item')">🍎 ЯБЛОКО</button>
-                ${inventory.includes('🧪 Зелье исцеления') ? '<button class="btn" onclick="battleAction(\'heal_potion\')">🧪 ЗЕЛЬЕ ИСЦЕЛЕНИЯ</button>' : ''}
-                ${inventory.includes('🔥 Зелье урона') ? '<button class="btn" onclick="battleAction(\'damage_potion\')">🔥 ЗЕЛЬЕ УРОНА</button>' : ''}
-                ${comboCount < 2 ? '<button class="btn btn-gold" onclick="comboAttack()">⚡ КОМБО-УДАР</button>' : ''}
-            `;
+            renderBattleButtons();
             updateUI();
         }
 
-        // Переопределяем endBattle для обработки Валахарма
+        // Переопределяем endBattle для Валахарма
         const originalEndBattle = endBattle;
         endBattle = function(log) {
-            // Если это был Валахарм
             if (battle.isBoss && battle.enemyName === 'Валахарм') {
                 if (battle.phase === 0) {
-                    // Первая фаза — переходим ко второй
                     battle.phase = 1;
                     battle.enemyHP = 80;
                     battle.enemyMaxHP = 80;
                     battle.enemyAttack = 10;
                     dialog.innerHTML = log + '<br>👑 Валахарм: «НЕ-ЕТ! Я НЕ УМРУ...»<br>⚔️ Валахарм встаёт с новыми силами!';
                     updateBossUI();
-                    choicesDiv.innerHTML = `
-                        <button class="btn" onclick="battleAction('attack')">⚔️ АТАКОВАТЬ</button>
-                        <button class="btn" onclick="battleAction('defend')">🛡️ ЗАЩИТА</button>
-                        <button class="btn" onclick="battleAction('item')">🍎 ЯБЛОКО</button>
-                        ${inventory.includes('🧪 Зелье исцеления') ? '<button class="btn" onclick="battleAction(\'heal_potion\')">🧪 ЗЕЛЬЕ ИСЦЕЛЕНИЯ</button>' : ''}
-                        ${inventory.includes('🔥 Зелье урона') ? '<button class="btn" onclick="battleAction(\'damage_potion\')">🔥 ЗЕЛЬЕ УРОНА</button>' : ''}
-                        ${comboCount < 2 ? '<button class="btn btn-gold" onclick="comboAttack()">⚡ КОМБО-УДАР</button>' : ''}
-                    `;
+                    renderBattleButtons();
                     updateUI();
                     return;
                 } else {
-                    // Вторая фаза — победа
                     inBattle = false;
                     bossBar.classList.add('hidden');
                     bossHealthBar.classList.add('hidden');
@@ -1066,6 +1178,7 @@
                     drawMap();
                     saveProgress();
                     checkAchievements();
+                    showBattleResult();
                     return;
                 }
             }
@@ -1119,6 +1232,7 @@
                     drawMap();
                     saveProgress();
                     checkAchievements();
+                    showBattleResult();
                     return;
                 }
             }
@@ -1130,6 +1244,7 @@
             drawMap();
             saveProgress();
             checkAchievements();
+            showBattleResult();
         };
 
         // ─── ПРАЗДНОВАНИЕ ───
@@ -1214,6 +1329,11 @@
                     dialog.innerHTML = '📖 «Айскристалл — город магии. Будь осторожен.»';
                 } else if (item.includes('Карта')) {
                     dialog.innerHTML = '🗺️ Ты смотришь на карту Кальдеры. Путь к ней лежит через Диско-Сити.';
+                } else if (item.includes('Еда')) {
+                    hunger = Math.min(100, hunger + 30);
+                    inventory.splice(index, 1);
+                    dialog.innerHTML = `🍗 Ты поел! Голод восстановлен.`;
+                    updateUI();
                 } else {
                     dialog.innerHTML = `❌ Нельзя использовать ${item}.`;
                 }
@@ -1273,10 +1393,41 @@
             saveProgress();
         }
 
+        // ─── ТАЙМЕРЫ ДЛЯ ШКАЛ ───
+        function updateStats() {
+            // Голод убывает каждые 30 секунд
+            hunger = Math.max(0, hunger - 1);
+            // Усталость растёт
+            fatigue = Math.min(100, fatigue + 1);
+            // Энергия восстанавливается медленно
+            energy = Math.min(100, energy + 0.5);
+
+            // Если голод 0 → смерть
+            if (hunger <= 0) {
+                gameOver = true;
+                dialog.innerHTML = '💀 Ты умер от голода...';
+                document.getElementById('gameOverScreen').style.display = 'flex';
+                updateUI();
+                return;
+            }
+
+            // Если усталость 100 → сон
+            if (fatigue >= 100) {
+                fatigue = 50;
+                hp = Math.min(100, hp + 20);
+                dialog.innerHTML = '😴 Ты уснул от усталости. ❤️ +20';
+                updateUI();
+            }
+
+            // Если энергия 0 → слабые атаки (уже работает через battle.playerAttack)
+            updateUI();
+        }
+
         // ─── СОХРАНЕНИЕ ───
         function saveProgress() {
             const data = { hp, coins, inventory, flags, playerX: player.x, playerY: player.y, currentCity, currentLocation,
-                reputation, gameTime, achievements, enemiesKilled, banditsDefeated, bossPhase, comboCount, hasAnfisa };
+                reputation, gameTime, achievements, enemiesKilled, banditsDefeated, bossPhase, comboCount, hasAnfisa,
+                hunger, fatigue, energy };
             try { localStorage.setItem('mazetale_save', JSON.stringify(data)); } catch (e) {}
         }
 
@@ -1301,6 +1452,9 @@
                 bossPhase = data.bossPhase || 0;
                 comboCount = data.comboCount || 0;
                 hasAnfisa = data.hasAnfisa || false;
+                hunger = data.hunger || 100;
+                fatigue = data.fatigue || 0;
+                energy = data.energy || 100;
                 updateMapByCity();
                 return true;
             } catch (e) { return false; }
@@ -1312,6 +1466,13 @@
             if (currentCity === 1) spawnBandits();
             drawMap();
             updateUI();
+        }
+
+        // ─── ПРОПУСК ИНТРО ───
+        function skipIntro() {
+            document.getElementById('storyScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            resetGame();
         }
 
         // ─── СБРОС ───
@@ -1333,7 +1494,8 @@
                 talkedToKing: false,
                 gotMap: false,
                 discoCleared: false,
-                valaharmDefeated: false
+                valaharmDefeated: false,
+                anfisaRecruited: false
             };
             gameOver = false;
             inBattle = false;
@@ -1349,6 +1511,9 @@
             hasAnfisa = false;
             bossPhase = 0;
             comboCount = 0;
+            hunger = 100;
+            fatigue = 0;
+            energy = 100;
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
             bossBar.classList.add('hidden');
@@ -1404,6 +1569,22 @@
         if (!loadProgress()) { resetGame(); }
         drawMap();
         updateUI();
+
+        // ─── ЗАПУСКАЕМ ТАЙМЕР ДЛЯ ШКАЛ (каждые 5 секунд) ───
+        setInterval(() => {
+            if (!gameOver && !inBattle) {
+                updateStats();
+                // Время идёт быстрее
+                gameTime.minute += 2;
+                if (gameTime.minute >= 60) {
+                    gameTime.minute = 0;
+                    gameTime.hour++;
+                    if (gameTime.hour >= 24) gameTime.hour = 0;
+                }
+                updateUI();
+                saveProgress();
+            }
+        }, 5000);
     </script>
 </body>
     </html>
