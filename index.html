@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MazeTale — Радиус взаимодействия</title>
+    <title>MazeTale — Исправлено</title>
     <style>
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
         * { box-sizing: border-box; }
@@ -75,7 +75,7 @@
     <div id="choices"></div>
     <div style="margin-top:4px;">
         <span class="valahia-tag">🏰 MazeTale</span>
-        <span class="valahia-tag neon-flicker">🎮 Радиус взаимодействия</span>
+        <span class="valahia-tag neon-flicker">🎮 Исправлено</span>
     </div>
 </div>
 
@@ -88,8 +88,9 @@
 
 <script>
 // ═══════════════════════════════════════════════════
-//  MAZETALE — РАДИУС ВЗАИМОДЕЙСТВИЯ
-//  Дверь можно открыть, стоя рядом (радиус 1 клетка)
+//  MAZETALE — ИСПРАВЛЕННАЯ ВЕРСИЯ
+//  Полоска босса скрыта до битвы
+//  Взаимодействие работает правильно
 // ═══════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -136,20 +137,6 @@ const shopMap = [
     ['🧱','⬜','⬜','⬜','⬜','⬜','⬜','⬜','⬜','🧱'],
     ['🧱','⬜','⬜','⬜','⬜','⬜','⬜','⬜','💰','🧱'],
     ['🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱','🧱']
-];
-
-// Карта замка (10x10)
-const castleMap = [
-    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','🏰','🏰','🏰','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','👹','⚔️','👺','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','⬜','⬜','⬜','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲'],
-    ['🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲','🌲']
 ];
 
 // ─── СОСТОЯНИЕ ───
@@ -228,8 +215,7 @@ function drawMap() {
         }
     }
     
-    // ─── ПОДСВЕТКА ДВЕРИ (РАДИУС) ───
-    // Проверяем, есть ли дверь рядом с игроком
+    // Подсветка двери
     const doorPos = findDoorNearby();
     if (doorPos && !doorOpen) {
         const dx = doorPos.y * tileSize;
@@ -259,7 +245,6 @@ function drawMap() {
     ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
 }
 
-// ─── ПОИСК ДВЕРИ РЯДОМ ───
 function findDoorNearby() {
     const dirs = [
         [-1, -1], [-1, 0], [-1, 1],
@@ -287,16 +272,14 @@ function movePlayer(dx, dy) {
     const tile = currentMap[nx][ny];
     if (tile === '🧱' || tile === '🌲') return;
     
-    // Дверь — можно пройти только если открыта
     if (tile === '🚪' && !doorOpen) {
-        dialog.innerHTML = '🚪 Дверь заперта. Нажми "ВЗАИМОДЕЙСТВОВАТЬ", чтобы открыть (можно стоять рядом).';
+        dialog.innerHTML = '🚪 Дверь заперта. Нажми "ВЗАИМОДЕЙСТВОВАТЬ" рядом с ней.';
         return;
     }
     
     player.x = nx;
     player.y = ny;
     
-    // Проверка на врагов (👹)
     if (tile === '👹' || tile === '⚔️' || tile === '👺') {
         if (!flags.kingDefeated) {
             startBattle('Король разбойников', 120, 12);
@@ -309,22 +292,53 @@ function movePlayer(dx, dy) {
     updateUI();
 }
 
-// ─── ВЗАИМОДЕЙСТВИЕ (С РАДИУСОМ) ───
+// ─── ВЗАИМОДЕЙСТВИЕ (ИСПРАВЛЕНО) ───
 function interact() {
     if (gameOver || inBattle) return;
-    const x = player.x, y = player.y;
-    const tile = currentMap[x][y];
     
-    // ─── СНАЧАЛА ПРОВЕРЯЕМ, ЕСТЬ ЛИ ДВЕРЬ РЯДОМ ───
+    // 1. Дверь рядом
     const doorNear = findDoorNearby();
     if (doorNear && !doorOpen) {
         doorOpen = true;
-        dialog.innerHTML = '🚪 Ты открываешь дверь (стоя рядом с ней)! Теперь можно пройти.';
+        dialog.innerHTML = '🚪 Ты открываешь дверь (стоя рядом)! Теперь можно пройти.';
         drawMap();
         return;
     }
     
-    // Если игрок стоит на двери
+    // 2. Проверяем, на чём стоит игрок
+    const x = player.x, y = player.y;
+    const tile = currentMap[x][y];
+    
+    // Сундук
+    if (tile === '📦') {
+        if (!flags.hasNote) {
+            flags.hasNote = true;
+            inventory.push('📜 Старая записка');
+            dialog.innerHTML = '📦 Ты открываешь сундук. Внутри лежит старая записка.';
+            updateUI();
+        } else {
+            dialog.innerHTML = '📦 Сундук пуст.';
+        }
+        return;
+    }
+    
+    // NPC
+    if (tile === '👩') {
+        talkToAnfisa();
+        return;
+    }
+    
+    if (tile === '🧑') {
+        dialog.innerHTML = '🧑 Продавец: «Что желаешь купить?»';
+        choicesDiv.innerHTML = `
+            <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
+            <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
+            <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
+        `;
+        return;
+    }
+    
+    // Дверь (если игрок стоит на ней)
     if (tile === '🚪') {
         if (!doorOpen) {
             doorOpen = true;
@@ -336,46 +350,6 @@ function interact() {
         return;
     }
     
-    // Сундук
-    if (tile === '📦') {
-        if (!flags.hasNote) {
-            flags.hasNote = true;
-            inventory.push('📜 Старая записка');
-            dialog.innerHTML = '📦 Ты открываешь сундук. Внутри лежит старая записка.';
-            updateUI();
-        } else {
-            dialog.innerHTML = '📦 Сундук пуст.';
-        }
-        return;
-    }
-    
-    // Переход на улицу (через дверь)
-    if (tile === '🚪' && doorOpen && currentLocation === 'ДОМ' && player.x === 0) {
-        currentLocation = 'УЛИЦА';
-        currentMap = streetMap;
-        player.x = 4; player.y = 4;
-        drawMap();
-        dialog.innerHTML = '🌳 Ты выходишь на улицу. Перед тобой Анфиса.';
-        updateUI();
-        return;
-    }
-    
-    // NPC
-    if (tile === '👩') {
-        talkToAnfisa();
-        return;
-    }
-    
-    if (tile === '🧑') {
-        dialog.innerHTML = '🧑 Продавец: «Что желаешь купить?»';
-        choicesDiv.innerHTML = `
-            <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
-            <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
-            <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
-        `;
-        return;
-    }
-    
     dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
 }
 
@@ -446,6 +420,7 @@ function startBattle(name, hpMax, atk) {
     battle.playerAttack = 8 + (flags.hasSword ? 5 : 0);
     battle.defense = false;
     
+    // ПОЛОСКА ПОЯВЛЯЕТСЯ ТОЛЬКО ЗДЕСЬ
     bossName.textContent = '👑 ' + name;
     bossBar.classList.remove('hidden');
     bossHealthBar.classList.remove('hidden');
@@ -485,259 +460,7 @@ function battleAction(action) {
     
     if (battle.enemyHP <= 0) {
         inBattle = false;
-        bossBar.classList.add('hidden');
-        bossHealthBar.classList.add('hidden');
-        bossStatus.style.display = 'none';
-        flags.kingDefeated = true;
-        currentChapter = 2;
-        dialog.innerHTML = log + '<br>🏆 Ты победил короля разбойников!<br>🌆 Теперь ты можешь идти в Диско-Сити.';
-        choicesDiv.innerHTML = '';
-        updateUI();
-        return;
-    }
-    
-    let dmg = battle.enemyAttack - (battle.defense ? 4 : 0);
-    if (dmg < 0) dmg = 0;
-    hp -= dmg;
-    battle.defense = false;
-    lotLocation;
-    invDisplay.textContent = inventory.length ? inventory.join(', ') : 'пусто';
-    coinDisplay.textContent = coins;
-    hpDisplay.textContent = Math.max(0, hp);
-    const chapters = ['', 'Пробуждение', 'Сердце города', 'Диско-Сити'];
-    chapterTitle.textContent = `Глава ${currentChapter}: ${chapters[currentChapter] || ''}`;
-}
-
-// ─── РИСОВАНИЕ ───
-function drawMap() {
-    ctx.clearRect(0, 0, 500, 500);
-    const tileSize = 500 / currentMap.length;
-    
-    for (let r = 0; r < currentMap.length; r++) {
-        for (let c = 0; c < currentMap[r].length; c++) {
-            const x = c * tileSize, y = r * tileSize;
-            const tile = currentMap[r][c];
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(x, y, tileSize, tileSize);
-            if (tile !== '⬜' && tile !== '0') {
-                ctx.fillStyle = '#aaa';
-                ctx.font = (tileSize * 0.55) + 'px serif';
-                ctx.fillText(tile, x + tileSize * 0.2, y + tileSize * 0.7);
-            }
-        }
-    }
-    
-    // Игрок
-    const px = player.y * tileSize, py = player.x * tileSize;
-    ctx.fillStyle = '#FFD700';
-    ctx.shadowColor = '#FFD700';
-    ctx.shadowBlur = 20;
-    ctx.beginPath();
-    ctx.arc(px + tileSize/2, py + tileSize/2, tileSize * 0.35, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#000';
-    ctx.font = (tileSize * 0.5) + 'px sans-serif';
-    ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
-}
-
-// ─── ДВИЖЕНИЕ ───
-function movePlayer(dx, dy) {
-    if (gameOver || inBattle) return;
-    const nx = player.x + dx;
-    const ny = player.y + dy;
-    if (nx < 0 || nx >= currentMap.length || ny < 0 || ny >= currentMap[0].length) return;
-    const tile = currentMap[nx][ny];
-    if (tile === '🧱' || tile === '🌲') return;
-    
-    // Дверь — можно пройти только если открыта
-    if (tile === '🚪' && !doorOpen) {
-        dialog.innerHTML = '🚪 Дверь заперта. Нажми "ВЗАИМОДЕЙСТВОВАТЬ", чтобы открыть.';
-        return;
-    }
-    
-    player.x = nx;
-    player.y = ny;
-    
-    // Проверка на врагов (👹)
-    if (tile === '👹' || tile === '⚔️' || tile === '👺') {
-        if (!flags.kingDefeated) {
-            startBattle('Король разбойников', 120, 12);
-            return;
-        }
-    }
-    
-    dialog.innerHTML = `📍 ${currentLocation} — пустое место.`;
-    drawMap();
-    updateUI();
-}
-
-// ─── ВЗАИМОДЕЙСТВИЕ ───
-function interact() {
-    if (gameOver || inBattle) return;
-    const x = player.x, y = player.y;
-    const tile = currentMap[x][y];
-    
-    // Сундук
-    if (tile === '📦') {
-        if (!flags.hasNote) {
-            flags.hasNote = true;
-            inventory.push('📜 Старая записка');
-            dialog.innerHTML = '📦 Ты открываешь сундук. Внутри лежит старая записка.';
-            updateUI();
-        } else {
-            dialog.innerHTML = '📦 Сундук пуст.';
-        }
-        return;
-    }
-    
-    // ДВЕРЬ — ГЛАВНОЕ ИСПРАВЛЕНИЕ!
-    if (tile === '🚪') {
-        if (!doorOpen) {
-            doorOpen = true;
-            dialog.innerHTML = '🚪 Ты открываешь дверь. Теперь можно пройти.';
-        } else {
-            dialog.innerHTML = '🚪 Дверь уже открыта.';
-        }
-        return;
-    }
-    
-    // Переход на улицу (через дверь)
-    if (tile === '🚪' && doorOpen && currentLocation === 'ДОМ' && player.x === 0) {
-        currentLocation = 'УЛИЦА';
-        currentMap = streetMap;
-        player.x = 4; player.y = 4;
-        drawMap();
-        dialog.innerHTML = '🌳 Ты выходишь на улицу. Перед тобой Анфиса.';
-        updateUI();
-        return;
-    }
-    
-    // NPC
-    if (tile === '👩') {
-        talkToAnfisa();
-        return;
-    }
-    
-    if (tile === '🧑') {
-        dialog.innerHTML = '🧑 Продавец: «Что желаешь купить?»';
-        choicesDiv.innerHTML = `
-            <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
-            <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
-            <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
-        `;
-        return;
-    }
-    
-    dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
-}
-
-// ─── РАЗГОВОР ───
-function talk() {
-    if (gameOver || inBattle) return;
-    const x = player.x, y = player.y;
-    const tile = currentMap[x][y];
-    
-    if (tile === '👩') {
-        talkToAnfisa();
-    } else if (tile === '🧑') {
-        dialog.innerHTML = '🧑 Продавец: «Заходи, если хочешь что-то купить.»';
-    } else {
-        dialog.innerHTML = '💬 Здесь не с кем говорить.';
-    }
-}
-
-function talkToAnfisa() {
-    if (!flags.talkedToAnfisa) {
-        flags.talkedToAnfisa = true;
-        dialog.innerHTML = '👩 Анфиса: «О, ты проснулся! Город захватили разбойники. Помоги нам!»';
-        choicesDiv.innerHTML = `
-            <button class="btn btn-success" onclick="helpAnfisa(true)">⚔️ ПОМОЧЬ</button>
-            <button class="btn btn-danger" onclick="helpAnfisa(false)">❌ ОТКАЗАТЬСЯ</button>
-        `;
-    } else {
-        dialog.innerHTML = '👩 Анфиса: «Ты уже знаешь. Разбойники у замка.»';
-    }
-}
-
-function helpAnfisa(choice) {
-    if (choice) {
-        coins += 15;
-        flags.helpedAnfisa = true;
-        dialog.innerHTML = '👩 Анфиса: «Спасибо! Иди в магазин, купи оружие и припасы.»';
-    } else {
-        dialog.innerHTML = '👩 Анфиса грустно: «Я понимаю...»';
-    }
-    choicesDiv.innerHTML = '';
-    updateUI();
-}
-
-// ─── ПОКУПКА ───
-function buyItem(item) {
-    const prices = { apple: 5, sword: 20, shield: 15 };
-    const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит' };
-    if (coins >= prices[item]) {
-        coins -= prices[item];
-        inventory.push(names[item]);
-        if (item === 'sword') flags.hasSword = true;
-        if (item === 'shield') flags.hasShield = true;
-        if (item === 'apple') flags.hasApple = true;
-        dialog.innerHTML = `✅ Ты купил ${names[item]}!`;
-        updateUI();
-    } else {
-        dialog.innerHTML = `❌ Не хватает монет! (нужно ${prices[item]})`;
-    }
-}
-
-// ─── БИТВА ───
-function startBattle(name, hpMax, atk) {
-    inBattle = true;
-    battle.enemyName = name;
-    battle.enemyHP = hpMax;
-    battle.enemyMaxHP = hpMax;
-    battle.enemyAttack = atk;
-    battle.playerAttack = 8 + (flags.hasSword ? 5 : 0);
-    battle.defense = false;
-    
-    bossName.textContent = '👑 ' + name;
-    bossBar.classList.remove('hidden');
-    bossHealthBar.classList.remove('hidden');
-    bossStatus.style.display = 'inline';
-    updateBossUI();
-    
-    dialog.innerHTML = `👑 ${name}: «Ты посмел прийти сюда?!»`;
-    choicesDiv.innerHTML = `
-        <button class="btn" onclick="battleAction('attack')">⚔️ АТАКОВАТЬ</button>
-        <button class="btn" onclick="battleAction('defend')">🛡️ ЗАЩИТА</button>
-        <button class="btn" onclick="battleAction('item')">🍎 ЯБЛОКО</button>
-    `;
-}
-
-function battleAction(action) {
-    if (gameOver || battle.enemyHP <= 0) return;
-    let log = '';
-    
-    if (action === 'attack') {
-        const dmg = battle.playerAttack + Math.floor(Math.random() * 8);
-        battle.enemyHP -= dmg;
-        log = `⚔️ Ты нанёс ${dmg} урона! (💀 ${battle.enemyHP}/${battle.enemyMaxHP})`;
-    } else if (action === 'defend') {
-        battle.defense = true;
-        log = '🛡️ Ты приготовился к защите!';
-    } else if (action === 'item') {
-        if (flags.hasApple) {
-            hp = Math.min(hp + 15, 100);
-            flags.hasApple = false;
-            inventory = inventory.filter(i => i !== '🍎 Яблоко');
-            log = `🍎 Ты съел яблоко! ❤️ +15 (теперь ${hp})`;
-            updateUI();
-        } else {
-            log = '❌ У тебя нет яблок!';
-        }
-    }
-    
-    if (battle.enemyHP <= 0) {
-        inBattle = false;
+        // СКРЫВАЕМ ПОЛОСКУ ПОСЛЕ ПОБЕДЫ
         bossBar.classList.add('hidden');
         bossHealthBar.classList.add('hidden');
         bossStatus.style.display = 'none';
@@ -874,3 +597,4 @@ resetGame();
 </script>
 </body>
 </html>
+        
