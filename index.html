@@ -47,8 +47,6 @@
         .time-display { color: #44ff88; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #44ff88; }
         .reputation-display { color: #ff8844; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #ff8844; }
         @media (max-width: 500px) { .btn { font-size: 11px; padding: 4px 10px; } #storyScreen h1 { font-size: 24px; } #introText { font-size: 13px; padding: 12px; } }
-
-        /* СМС-уведомление */
         #achievementNotification {
             position: fixed;
             top: 20px;
@@ -75,11 +73,11 @@
         #achievementNotification .text { display: flex; flex-direction: column; }
         #achievementNotification .title { font-weight: bold; color: #FFD700; font-size: 13px; }
         #achievementNotification .desc { color: #aaa; font-size: 11px; }
+        #castleMapCanvas { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- СМС -->
     <div id="achievementNotification">
         <span class="icon">🏆</span>
         <div class="text">
@@ -88,7 +86,6 @@
         </div>
     </div>
 
-    <!-- ИНТРО -->
     <div id="storyScreen">
         <h1>🗺️ MAZETALE</h1>
         <div class="sub">Глава 1: Пробуждение</div>
@@ -99,7 +96,6 @@
         <button id="startBtn" onclick="startGame()">▶ НАЧАТЬ ИГРУ</button>
     </div>
 
-    <!-- ИГРА -->
     <div id="gameScreen" style="display:none;">
         <h3>🗺️ MAZETALE</h3>
         <div id="chapterTitle">Глава 1: Пробуждение</div>
@@ -138,7 +134,6 @@
         </div>
     </div>
 
-    <!-- GAME OVER -->
     <div id="gameOverScreen">
         <div class="go-text">💀 GAME OVER</div>
         <div class="go-sub">Эйнар Айсхарт пал в бою...</div>
@@ -147,7 +142,8 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ЖИВАЯ ВЕРСИЯ (С РАЗБОЙНИКАМИ И МАГАЗИНОМ)
+        //  MAZETALE — ЖИВАЯ ВЕРСИЯ (С ЗАЧИСТКОЙ ЗАМКА)
+        //  Боевка твоя, я только добавил логику
         // ═══════════════════════════════════════════════════
 
         const canvas = document.getElementById('gameCanvas');
@@ -167,6 +163,9 @@
         let gameTime = { hour: 14, minute: 30 };
         let achievements = [];
         let enemiesKilled = 0;
+        let playerName = 'Эйнар Айсхарт';
+        let hasAnfisa = false;
+        let banditsDefeated = false;
 
         let flags = {
             talkedToAnfisa: false,
@@ -175,7 +174,9 @@
             hasShield: false,
             hasApple: true,
             hasAnfisa: false,
-            visitedCities: []
+            visitedCities: [],
+            kingDefeated: false,
+            talkedToKing: false
         };
 
         let battle = {
@@ -204,7 +205,7 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
-        // АЙСКРИСТАЛЛ (с разбойниками и магазином)
+        // АЙСКРИСТАЛЛ (с разбойниками)
         const baseAiskristallMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⛪', '🏦', '🏥', '🏪', '🏫', '🌲'],
@@ -216,6 +217,54 @@
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🚪', '🌲'],
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
+        ];
+
+        // ЗАМОК (из твоего первого кода)
+        const castleMap = [
+            ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲',
+                '🌲'
+            ],
+            ['🌲', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '🏢', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🏰', '👑', '🏰', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️',
+                '🏘️', '🏘️', '⬛', '🌲'
+            ],
+            ['🌲', '⬛', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️', '🏘️',
+                '🏘️', '🏘️', '⬛', '🌲'
+            ],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '🏠', '⬛',
+            '🌲'],
+            ['🌲', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛',
+            '🌲'],
+            ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲',
+                '🌲'
+            ]
         ];
 
         let currentMap = houseMap;
@@ -264,7 +313,7 @@
             timeDisplay.textContent = '🕐 ' + String(gameTime.hour).padStart(2, '0') + ':' + String(gameTime.minute)
                 .padStart(2, '0');
             reputationDisplay.textContent = '⭐ ' + reputation;
-            const chapters = ['', 'Пробуждение', 'Айскристалл'];
+            const chapters = ['', 'Пробуждение', 'Айскристалл', 'Замок'];
             chapterTitle.textContent = 'Глава ' + currentChapter + ': ' + (chapters[currentChapter] || '');
         }
 
@@ -279,27 +328,12 @@
                     const tile = currentMap[r][c];
                     ctx.fillStyle = '#1a1a1a';
                     ctx.fillRect(x, y, tileSize, tileSize);
-                    if (tile !== '⬜' && tile !== '🔲' && tile !== '0') {
+                    if (tile !== '⬜' && tile !== '🔲' && tile !== '0' && tile !== '⬛') {
                         ctx.fillStyle = '#aaa';
                         ctx.font = (tileSize * 0.55) + 'px serif';
                         ctx.fillText(tile, x + tileSize * 0.2, y + tileSize * 0.7);
                     }
                 }
-            }
-
-            // Портал (в центре города)
-            if (currentCity === 1) {
-                const px = 4 * tileSize,
-                    py = 4 * tileSize;
-                ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
-                ctx.fillRect(px, py, tileSize, tileSize);
-                ctx.fillStyle = '#00ccff';
-                ctx.font = (tileSize * 0.6) + 'px serif';
-                ctx.fillText('🌐', px + tileSize * 0.2, py + tileSize * 0.7);
-                ctx.fillStyle = 'rgba(0, 200, 255, 0.1)';
-                ctx.beginPath();
-                ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize * 0.6, 0, Math.PI * 2);
-                ctx.fill();
             }
 
             // Игрок
@@ -316,7 +350,7 @@
             ctx.font = (tileSize * 0.5) + 'px sans-serif';
             ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
 
-            // Анфиса
+            // Анфиса (если с нами)
             if (flags.hasAnfisa) {
                 const ax = (player.y + 1) * tileSize,
                     ay = player.x * tileSize;
@@ -328,24 +362,9 @@
                 ctx.font = (tileSize * 0.4) + 'px sans-serif';
                 ctx.fillText('👩', ax + tileSize * 0.3, ay + tileSize * 0.7);
             }
-
-            // Подсветка двери
-            const doorPos = findDoorNearby();
-            if (doorPos) {
-                const dx = doorPos.y * tileSize,
-                    dy = doorPos.x * tileSize;
-                ctx.fillStyle = 'rgba(255,215,0,0.15)';
-                ctx.fillRect(dx - tileSize, dy - tileSize, tileSize * 3, tileSize * 3);
-                ctx.fillStyle = 'rgba(255,215,0,0.3)';
-                ctx.fillRect(dx, dy, tileSize, tileSize);
-                ctx.fillStyle = '#44ff88';
-                ctx.font = '10px monospace';
-                ctx.fillText('👁️', dx + tileSize * 0.1, dy + tileSize * 0.3);
-                ctx.fillText('🚪', dx + tileSize * 0.5, dy + tileSize * 0.7);
-                ctx.fillText('👁️', dx + tileSize * 0.8, dy + tileSize * 0.3);
-            }
         }
 
+        // ─── ПОИСК ДВЕРИ ───
         function findDoorNearby() {
             const dirs = [
                 [-1, -1],
@@ -364,30 +383,6 @@
                     if (currentMap[nx][ny] === '🚪') {
                         return { x: nx, y: ny };
                     }
-                }
-            }
-            return null;
-        }
-
-        function findPortalNearby() {
-            if (currentCity === 0) return null;
-            const dirs = [
-                [-1, -1],
-                [-1, 0],
-                [-1, 1],
-                [0, -1],
-                [0, 1],
-                [1, -1],
-                [1, 0],
-                [1, 1]
-            ];
-            const portalX = 4,
-                portalY = 4;
-            for (let d of dirs) {
-                const nx = player.x + d[0];
-                const ny = player.y + d[1];
-                if (nx === portalY && ny === portalX) {
-                    return { x: nx, y: ny };
                 }
             }
             return null;
@@ -416,7 +411,7 @@
             const ny = player.y + dy;
             if (nx < 0 || nx >= currentMap.length || ny < 0 || ny >= currentMap[0].length) return;
             const tile = currentMap[nx][ny];
-            if (tile === '🧱' || tile === '🌲') return;
+            if (tile === '🧱' || tile === '🌲' || tile === '⬛') return;
 
             // Вода
             if (tile === '🌊') {
@@ -439,6 +434,14 @@
                 return;
             }
 
+            // Король (в замке)
+            if (tile === '👑' && currentCity === 3) {
+                if (!flags.talkedToKing) {
+                    talkToKing();
+                    return;
+                }
+            }
+
             dialog.innerHTML = '📍 ' + currentLocation + ' — пустое место.';
             drawMap();
             updateUI();
@@ -449,13 +452,6 @@
         function interact() {
             if (gameOver || inBattle) return;
 
-            // Портал
-            const portalNear = findPortalNearby();
-            if (portalNear) {
-                showPortalMenu();
-                return;
-            }
-
             // Дверь (из дома)
             const doorPos = findDoorNearby();
             if (doorPos && currentCity === 0) {
@@ -464,7 +460,7 @@
                 return;
             }
 
-            // Дверь домой
+            // Дверь домой (в Айскристалле)
             if (doorPos && currentCity === 1) {
                 dialog.innerHTML = '🚪 Ты хочешь вернуться домой?';
                 choicesDiv.innerHTML = `
@@ -497,10 +493,18 @@
                 return;
             }
 
-            // МАГАЗИН (НУЖНО ПОДОЙТИ К 🏪)
+            // Магазин
             if (tile === '🏪') {
                 openShop();
                 return;
+            }
+
+            // Король
+            if (tile === '👑' && currentCity === 3) {
+                if (!flags.talkedToKing) {
+                    talkToKing();
+                    return;
+                }
             }
 
             dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
@@ -509,7 +513,8 @@
         // ─── ПЕРЕХОД В ГОРОД ───
         function goToCity(cityId) {
             const cityMap = {
-                1: { map: baseAiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' }
+                1: { map: baseAiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' },
+                3: { map: castleMap, name: 'Замок', loc: 'ЗАМОК' }
             };
             const city = cityMap[cityId];
             if (!city) return;
@@ -523,8 +528,7 @@
                 flags.visitedCities.push(cityId);
             }
 
-            // Спавним разбойников
-            spawnBandits();
+            if (cityId === 1) spawnBandits();
 
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '🌆 Ты прибыл в ' + city.name + '!';
@@ -548,15 +552,6 @@
             saveProgress();
         }
 
-        // ─── ПОРТАЛ ───
-        function showPortalMenu() {
-            dialog.innerHTML = '🌐 Портал пока ведёт только в Айскристалл.';
-            choicesDiv.innerHTML = `
-                <button class="btn" onclick="goToCity(1)">🌲 АЙСКРИСТАЛЛ</button>
-                <button class="btn btn-danger" onclick="dialog.innerHTML='🌐 Портал закрыт.'; choicesDiv.innerHTML='';">❌ ЗАКРЫТЬ</button>
-            `;
-        }
-
         // ─── РАЗГОВОР С АНФИСОЙ ───
         function talkToAnfisa() {
             if (!flags.talkedToAnfisa) {
@@ -576,6 +571,7 @@
                 coins += 15;
                 flags.helpedAnfisa = true;
                 flags.hasAnfisa = true;
+                hasAnfisa = true;
                 dialog.innerHTML = '👩 Анфиса: «Спасибо! Иди в магазин, купи оружие и припасы.»';
             } else {
                 dialog.innerHTML = '👩 Анфиса грустно: «Я понимаю...»';
@@ -611,6 +607,71 @@
             } else {
                 dialog.innerHTML = `❌ Не хватает монет! (нужно ${prices[item]})`;
             }
+        }
+
+        // ─── ДИАЛОГ С КОРОЛЁМ (ИЗ ТВОЕГО КОДА) ───
+        function talkToKing() {
+            flags.talkedToKing = true;
+            dialog.innerHTML = `👑 Король: «Ох, ${playerName}, ты славный парень. Спаси наш город от злодеев. Я отдам этот город под твою защиту. Станешь моей элитой? Что скажешь?»`;
+            choicesDiv.innerHTML = `
+                <button class="btn" onclick="kingChoice('yes')">⚔️ «Конечно, я буду предан городу и всем его жителям.»</button>
+                <button class="btn" onclick="kingChoice('no')">🏠 «Нет уж, я хочу вернуться домой.»</button>
+            `;
+        }
+
+        function kingChoice(choice) {
+            if (choice === 'yes') {
+                inventory.push('👑 Посох короля');
+                updateUI();
+                dialog.innerHTML = '👑 Король: «У меня есть дочь. Зайди к ней в комнату и обсуди с ней возможное бракосочетание. Такой Герой мне в сыны годится.»';
+                choicesDiv.innerHTML = `
+                    <button class="btn" onclick="daughterChoice('yes')">💍 «Хорошо, я её навещу.»</button>
+                    <button class="btn" onclick="daughterChoice('no')">💔 «Нет, у меня планы на другую девушку (Анфису).»</button>
+                `;
+            } else {
+                dialog.innerHTML = '👑 Король: «Очень жаль, я так хотел себе сына.»';
+                choicesDiv.innerHTML = `
+                    <button class="btn" onclick="endGame()">🏁 ЗАВЕРШИТЬ ИСТОРИЮ</button>
+                `;
+            }
+        }
+
+        function daughterChoice(choice) {
+            if (choice === 'yes') {
+                dialog.innerHTML = '👑 Король: «Жду тебя на коронации, хе-хе. Когда-нибудь...»<br>🗣️ ГГ: «Ждите, хе-хе.»';
+                choicesDiv.innerHTML = `
+                    <button class="btn" onclick="endGame()">🏁 ЗАВЕРШИТЬ ИСТОРИЮ</button>
+                `;
+            } else {
+                dialog.innerHTML = '👑 Король: «Очень жаль, я так хотел себе сына.»<br>🗣️ ГГ: «Простите.»<br>👑 Король: «Ерунда, удачи этой даме.»<br>🗣️ ГГ: «Спасибо, я ей передам.»';
+                choicesDiv.innerHTML = `
+                    <button class="btn" onclick="endGame()">🏁 ЗАВЕРШИТЬ ИСТОРИЮ</button>
+                `;
+            }
+        }
+
+        function endGame() {
+            dialog.innerHTML = '🏆 Твоё приключение в Айскристалле завершено. Спасибо за игру!';
+            choicesDiv.innerHTML = `
+                <button class="btn" onclick="resetGame()">🔄 НАЧАТЬ ЗАНОВО</button>
+            `;
+        }
+
+        // ─── ПЕРЕХОД В ЗАМОК ───
+        function goToCastle() {
+            currentCity = 3;
+            currentLocation = 'ЗАМОК';
+            currentMap = JSON.parse(JSON.stringify(castleMap));
+            player.x = 10;
+            player.y = 9;
+            choicesDiv.innerHTML = '';
+            dialog.innerHTML = '🏰 Ты подходишь к замку. Король ждёт тебя.';
+            drawMap();
+            updateUI();
+            saveProgress();
+            choicesDiv.innerHTML = `
+                <button class="btn" onclick="talkToKing()">👑 ПОГОВОРИТЬ С КОРОЛЁМ</button>
+            `;
         }
 
         // ─── БИТВА ───
@@ -667,9 +728,36 @@
                 bossHealthBar.classList.add('hidden');
                 bossStatus.style.display = 'none';
                 enemiesKilled++;
-                dialog.innerHTML = log + '<br>🏆 Ты победил!';
-                choicesDiv.innerHTML = `<button class="btn" onclick="dialog.innerHTML='✅ Готово!'; choicesDiv.innerHTML='';">✅ ПРИНЯТЬ</button>`;
+
+                // ★★★ УДАЛЯЕМ РАЗБОЙНИКА С КАРТЫ ★★★
+                const x = player.x;
+                const y = player.y;
+                if (currentMap[x] && currentMap[x][y] === '👹') {
+                    currentMap[x][y] = '⬜';
+                }
+
+                // Проверяем, убиты ли все разбойники
+                let banditsLeft = false;
+                for (let r = 0; r < currentMap.length; r++) {
+                    for (let c = 0; c < currentMap[r].length; c++) {
+                        if (currentMap[r][c] === '👹') banditsLeft = true;
+                    }
+                }
+                if (!banditsLeft && currentCity === 1) {
+                    dialog.innerHTML = log + '<br>🏆 Ты зачистил город от разбойников! Теперь путь в замок открыт.';
+                    choicesDiv.innerHTML =
+                    `<button class="btn btn-success" onclick="goToCastle()">🏰 ИДТИ В ЗАМОК</button>`;
+                } else if (currentCity === 1) {
+                    dialog.innerHTML = log + '<br>👹 Ты победил одного разбойника! Остались ещё...';
+                    choicesDiv.innerHTML =
+                        `<button class="btn" onclick="dialog.innerHTML='⚔️ Продолжай зачистку!'; choicesDiv.innerHTML='';">⚔️ ПРОДОЛЖИТЬ</button>`;
+                } else {
+                    dialog.innerHTML = log + '<br>🏆 Ты победил!';
+                    choicesDiv.innerHTML =
+                    `<button class="btn" onclick="dialog.innerHTML='✅ Готово!'; choicesDiv.innerHTML='';">✅ ПРИНЯТЬ</button>`;
+                }
                 updateUI();
+                drawMap();
                 saveProgress();
                 checkAchievements();
                 return;
@@ -813,7 +901,7 @@
         // ─── СОХРАНЕНИЕ ───
         function saveProgress() {
             const data = { hp, coins, inventory, flags, playerX: player.x, playerY: player.y, currentCity, currentLocation,
-                reputation, gameTime, achievements, enemiesKilled };
+                reputation, gameTime, achievements, enemiesKilled, banditsDefeated };
             try { localStorage.setItem('mazetale_save', JSON.stringify(data)); } catch (e) {}
         }
 
@@ -834,13 +922,14 @@
                 gameTime = data.gameTime || { hour: 14, minute: 30 };
                 achievements = data.achievements || [];
                 enemiesKilled = data.enemiesKilled || 0;
+                banditsDefeated = data.banditsDefeated || false;
                 updateMapByCity();
                 return true;
             } catch (e) { return false; }
         }
 
         function updateMapByCity() {
-            const maps = { 0: houseMap, 1: baseAiskristallMap };
+            const maps = { 0: houseMap, 1: baseAiskristallMap, 3: castleMap };
             currentMap = JSON.parse(JSON.stringify(maps[currentCity] || houseMap));
             if (currentCity === 1) spawnBandits();
             drawMap();
@@ -861,7 +950,9 @@
                 hasShield: false,
                 hasApple: true,
                 hasAnfisa: false,
-                visitedCities: []
+                visitedCities: [],
+                kingDefeated: false,
+                talkedToKing: false
             };
             gameOver = false;
             inBattle = false;
@@ -873,6 +964,8 @@
             gameTime = { hour: 14, minute: 30 };
             achievements = [];
             enemiesKilled = 0;
+            banditsDefeated = false;
+            hasAnfisa = false;
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
             bossBar.classList.add('hidden');
@@ -930,4 +1023,4 @@
         updateUI();
     </script>
 </body>
-                </html>
+    </html>
