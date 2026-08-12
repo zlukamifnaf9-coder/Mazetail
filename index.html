@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MazeTale — Полная версия</title>
+    <title>MazeTale — Живая версия</title>
     <style>
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; touch-action: manipulation; }
         * { box-sizing: border-box; }
@@ -48,7 +48,7 @@
         .reputation-display { color: #ff8844; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #ff8844; }
         @media (max-width: 500px) { .btn { font-size: 11px; padding: 4px 10px; } #storyScreen h1 { font-size: 24px; } #introText { font-size: 13px; padding: 12px; } }
 
-        /* ─── СМС-УВЕДОМЛЕНИЕ ДЛЯ ДОСТИЖЕНИЙ ─── */
+        /* СМС-уведомление */
         #achievementNotification {
             position: fixed;
             top: 20px;
@@ -70,30 +70,16 @@
             align-items: center;
             gap: 10px;
         }
-        #achievementNotification.show {
-            transform: translateX(0);
-        }
-        #achievementNotification .icon {
-            font-size: 28px;
-        }
-        #achievementNotification .text {
-            display: flex;
-            flex-direction: column;
-        }
-        #achievementNotification .title {
-            font-weight: bold;
-            color: #FFD700;
-            font-size: 13px;
-        }
-        #achievementNotification .desc {
-            color: #aaa;
-            font-size: 11px;
-        }
+        #achievementNotification.show { transform: translateX(0); }
+        #achievementNotification .icon { font-size: 28px; }
+        #achievementNotification .text { display: flex; flex-direction: column; }
+        #achievementNotification .title { font-weight: bold; color: #FFD700; font-size: 13px; }
+        #achievementNotification .desc { color: #aaa; font-size: 11px; }
     </style>
 </head>
 <body>
 
-    <!-- СМС-УВЕДОМЛЕНИЕ -->
+    <!-- СМС -->
     <div id="achievementNotification">
         <span class="icon">🏆</span>
         <div class="text">
@@ -143,12 +129,13 @@
             <button class="btn" onclick="talk()">💬 ГОВОРИТЬ</button>
             <button class="btn" onclick="showInventory()">🎒 ИНВЕНТАРЬ</button>
             <button class="btn" onclick="showAchievements()">🏆 ДОСТИЖЕНИЯ</button>
+            <button class="btn" onclick="openShop()">🏪 МАГАЗИН</button>
         </div>
         <div id="dialog">📍 Ты в доме. Рядом стоит старый сундук.</div>
         <div id="choices"></div>
         <div style="margin-top:4px; display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
             <span class="valahia-tag">🏰 MazeTale</span>
-            <span class="valahia-tag neon-flicker">🎮 Полная версия</span>
+            <span class="valahia-tag neon-flicker">🎮 Живая версия</span>
         </div>
     </div>
 
@@ -161,10 +148,8 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ПОЛНАЯ ВЕРСИЯ (ИСПРАВЛЕННАЯ)
-        //  Дверь открывается и сразу выходит
-        //  Портал ТОЛЬКО в городах
-        //  Достижения как СМС
+        //  MAZETALE — ЖИВАЯ ВЕРСИЯ
+        //  Анфиса, разбойники, магазин, вода, домой
         // ═══════════════════════════════════════════════════
 
         const canvas = document.getElementById('gameCanvas');
@@ -179,7 +164,7 @@
         let gameOver = false;
         let inBattle = false;
         let currentChapter = 1;
-        let currentCity = 0;
+        let currentCity = 0; // 0=дом, 1=Айскристалл
         let reputation = 100;
         let gameTime = { hour: 14, minute: 30 };
         let achievements = [];
@@ -192,15 +177,7 @@
             hasSword: false,
             hasShield: false,
             hasApple: true,
-            kingDefeated: false,
             hasAnfisa: false,
-            hasPass: false,
-            valahiaKingDefeated: false,
-            sanBanderosAllied: false,
-            lasTamperoSaved: false,
-            leopoldDefeated: false,
-            marriedAnfisa: false,
-            saidPantocrator: false,
             visitedCities: []
         };
 
@@ -216,11 +193,11 @@
 
         // ─── КАРТЫ ───
 
-        // ДОМ (БЕЗ ПОРТАЛА!)
+        // ДОМ (одна дверь)
         const houseMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '🚪', '🧱'],
-            ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '🚪', '🧱'],
+            ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '⬜', '🧱'],
+            ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '⬜', '🧱'],
             ['🧱', '🛋️', '🛋️', '⬜', '⬜', '⬜', '🪑', '🪑', '⬜', '🧱'],
             ['🧱', '🛋️', '🛋️', '⬜', '⬜', '⬜', '🪑', '🪑', '⬜', '🧱'],
             ['🧱', '⬜', '⬜', '⬜', '🛏️', '🛏️', '⬜', '⬜', '⬜', '🧱'],
@@ -230,13 +207,13 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
-        // АЙСКРИСТАЛЛ
+        // АЙСКРИСТАЛЛ (с NPC и дверью домой)
         const aiskristallMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⛪', '🏦', '🏥', '🏪', '🏫', '🌲'],
             ['🌲', '🏰', '👑', '🏰', '🏬', '🏠', '🏭', '🏗', '🗻', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '👩', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'], // Анфиса
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🛶', '🌊', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
@@ -244,79 +221,8 @@
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
-        // ДИСКО-СИТИ
-        const discoMap = [
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏠', '🔲', '🐴', '🔲', '⚠️', '🔲', '🏪', '🔲', '🧱'],
-            ['🧱', '🔲', '🚗', '🔲', '🤠', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🚙', '🔲', '🙎', '🔲', '🔲', '🚛', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🪩', '🪩', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🪩', '🤠', '🔲', '🧱'],
-            ['🧱', '🔲', '🏥', '🔲', '🔲', '🔲', '🪩', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '⚠️', '🔲', '🏤', '🔲', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // ВАЛАХИЯ
-        const valahiaMap = [
-            ['🛩️', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏰', '🔲', '🏦', '🔲', '🏫', '🔲', '🗺️', '🔲', '🧱'],
-            ['🧱', '🔲', '🧛', '🔲', '🧛‍♀️', '🔲', '🤴', '🔲', '🧱', '🧱'],
-            ['🧱', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🧱'],
-            ['🧱', '🚗', '🚐', '🚚', '🚛', '🚌', '🚔', '⛽', '🚏', '🧱'],
-            ['🧱', '🏭', '🔲', '🏟️', '🔲', '🎡', '🎢', '🛝', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🏠', '🔲', '🏠', '🔲', '🏠', '🔲', '🏠', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🌊', '🌊', '🌊', '🗽', '🔲', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // САН-БАНДЕРО
-        const sanBanderosMap = [
-            ['🦅', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏛️', '🔲', '🏦', '🔲', '🏫', '🔲', '🏬', '🔲', '🧱'],
-            ['🧱', '🔲', '🤠', '🔲', '👮', '🔲', '🧑‍🌾', '🔲', '🔲', '🧱'],
-            ['🧱', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🧱'],
-            ['🧱', '🚗', '🚕', '🚙', '🚐', '🚚', '🚛', '🚔', '⛽', '🧱'],
-            ['🧱', '🌽', '🔲', '🏟️', '🔲', '🎡', '🔲', '🍔', '🔲', '🧱'],
-            ['🧱', '🌽', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🏠', '🔲', '🏠', '🔲', '🏠', '🔲', '🏠', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🌊', '🌊', '🌊', '🕌', '🔲', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // ЛАС-ТАМПЭРО
-        const lasTamperoMap = [
-            ['✈️', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏢', '🏬', '🏢', '🏬', '🏢', '🏬', '🏢', '🏬', '🧱'],
-            ['🧱', '⛽', '🚧', '🚦', '🚥', '🚇', '🚏', '🚙', '🏍️', '🧱'],
-            ['🧱', '🚲', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🧱'],
-            ['🧱', '🚂', '🚃', '🚃', '🌉', '🌉', '🌉', '🛤️', '🛤️', '🧱'],
-            ['🧱', '🏠', '🏠', '🏠', '⛲', '⛩️', '💈', '🏠', '🏠', '🧱'],
-            ['🧱', '🧝', '🧝‍♂️', '🧝‍♀️', '⛲', '⛩️', '💈', '🔲', '🔲', '🧱'],
-            ['🧱', '🏰', '🏰', '🏰', '⛲', '⛩️', '💈', '🔲', '🔲', '🧱'],
-            ['🧱', '🏰', '🪆', '🏰', '🌊', '🌊', '🌊', '🛩️', '🚁', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // КАЛЬДЕРА
-        const calderaMap = [
-            ['🔥', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏛️', '🏛️', '🏛️', '🔲', '🗿', '🔲', '🏛️', '🏛️', '🧱'],
-            ['🧱', '🏛️', '🔥', '🏛️', '🔲', '🗿', '🔲', '🏛️', '🔥', '🧱'],
-            ['🧱', '🏛️', '🏛️', '🏛️', '🔲', '🗿', '🔲', '🏛️', '🏛️', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '⛲', '🔲', '⛲', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🔥', '🔲', '🏟️', '🏟️', '🏟️', '🔲', '🔥', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🏟️', '🐎', '🏟️', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🏟️', '🏟️', '🏟️', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🌊', '🌊', '🌊', '🌊', '🌊', '🔲', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
         let currentMap = houseMap;
         let currentLocation = 'ДОМ';
-        let currentCityName = 'Дом';
 
         // ─── ЭЛЕМЕНТЫ UI ───
         const dialog = document.getElementById('dialog');
@@ -335,7 +241,7 @@
         const timeDisplay = document.getElementById('timeDisplay');
         const reputationDisplay = document.getElementById('reputationDisplay');
 
-        // ─── СМС-УВЕДОМЛЕНИЕ ───
+        // ─── СМС ───
         const notification = document.getElementById('achievementNotification');
         const achTitle = document.getElementById('achTitle');
         const achDesc = document.getElementById('achDesc');
@@ -361,9 +267,7 @@
             timeDisplay.textContent = '🕐 ' + String(gameTime.hour).padStart(2, '0') + ':' + String(gameTime.minute)
                 .padStart(2, '0');
             reputationDisplay.textContent = '⭐ ' + reputation;
-            const chapters = ['', 'Пробуждение', 'Айскристалл', 'Диско-Сити', 'Валахия', 'Сан-Бандеро', 'Лас-Тампэро',
-                'Кальдера'
-            ];
+            const chapters = ['', 'Пробуждение', 'Айскристалл'];
             chapterTitle.textContent = 'Глава ' + currentChapter + ': ' + (chapters[currentChapter] || '');
         }
 
@@ -386,23 +290,19 @@
                 }
             }
 
-            // ─── ПОРТАЛ ТОЛЬКО В ГОРОДАХ (НЕ В ДОМЕ) ───
-            if (currentCity !== 0) {
-                const portalX = currentMap[0].length - 2;
-                const portalY = 1;
-                if (currentMap[portalY] && currentMap[portalY][portalX] && currentMap[portalY][portalX] !== '🧱') {
-                    const px = portalX * tileSize,
-                        py = portalY * tileSize;
-                    ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
-                    ctx.fillRect(px, py, tileSize, tileSize);
-                    ctx.fillStyle = '#00ccff';
-                    ctx.font = (tileSize * 0.6) + 'px serif';
-                    ctx.fillText('🌐', px + tileSize * 0.2, py + tileSize * 0.7);
-                    ctx.fillStyle = 'rgba(0, 200, 255, 0.1)';
-                    ctx.beginPath();
-                    ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize * 0.6, 0, Math.PI * 2);
-                    ctx.fill();
-                }
+            // Портал (в центре города, если не дом)
+            if (currentCity === 1) {
+                const px = 4 * tileSize,
+                    py = 4 * tileSize;
+                ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
+                ctx.fillRect(px, py, tileSize, tileSize);
+                ctx.fillStyle = '#00ccff';
+                ctx.font = (tileSize * 0.6) + 'px serif';
+                ctx.fillText('🌐', px + tileSize * 0.2, py + tileSize * 0.7);
+                ctx.fillStyle = 'rgba(0, 200, 255, 0.1)';
+                ctx.beginPath();
+                ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize * 0.6, 0, Math.PI * 2);
+                ctx.fill();
             }
 
             // Игрок
@@ -419,6 +319,7 @@
             ctx.font = (tileSize * 0.5) + 'px sans-serif';
             ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
 
+            // Анфиса
             if (flags.hasAnfisa) {
                 const ax = (player.y + 1) * tileSize,
                     ay = player.x * tileSize;
@@ -472,7 +373,7 @@
         }
 
         function findPortalNearby() {
-            if (currentCity === 0) return null; // В доме портала нет
+            if (currentCity === 0) return null;
             const dirs = [
                 [-1, -1],
                 [-1, 0],
@@ -483,8 +384,8 @@
                 [1, 0],
                 [1, 1]
             ];
-            const portalX = currentMap[0].length - 2;
-            const portalY = 1;
+            const portalX = 4,
+                portalY = 4;
             for (let d of dirs) {
                 const nx = player.x + d[0];
                 const ny = player.y + d[1];
@@ -504,20 +405,24 @@
             const tile = currentMap[nx][ny];
             if (tile === '🧱' || tile === '🌲') return;
 
-            // Враги в Кальдере
-            if (currentCity === 6 && tile === '👹') {
-                if (!flags.leopoldDefeated) {
-                    startBattle('Тварь Кальдеры', 40, 8);
-                    return;
+            // Вода — опасна!
+            if (tile === '🌊') {
+                hp -= 3;
+                dialog.innerHTML = '🌊 Вода ледяная! Ты теряешь 3 HP. ❤️ ' + hp;
+                updateUI();
+                if (hp <= 0) {
+                    gameOver = true;
+                    document.getElementById('gameOverScreen').style.display = 'flex';
                 }
+                return;
             }
 
             player.x = nx;
             player.y = ny;
 
-            // Проверка на боссов при входе на клетку
-            if (tile === '🤴' && currentCity === 3 && !flags.valahiaKingDefeated) {
-                startBattle('Король Валахии', 150, 16, true);
+            // Встреча с разбойниками (👹)
+            if (tile === '👹') {
+                startBattle('Разбойник', 30, 6);
                 return;
             }
 
@@ -531,25 +436,31 @@
         function interact() {
             if (gameOver || inBattle) return;
 
-            // 1. Проверяем портал (только в городах)
+            // Портал
             const portalNear = findPortalNearby();
             if (portalNear) {
                 showPortalMenu();
                 return;
             }
 
-            // 2. Проверяем дверь (радиус 1 клетка) — ОТКРЫВАЕМ И СРАЗУ ВЫХОДИМ!
+            // Дверь (выход из дома)
             const doorPos = findDoorNearby();
             if (doorPos && currentCity === 0) {
-                // Выход из дома в Айскристалл
-                dialog.innerHTML = '🚪 Ты открываешь дверь и выходишь на улицу...';
-                setTimeout(() => {
-                    goToCity(1);
-                }, 400);
+                dialog.innerHTML = '🚪 Ты открываешь дверь и выходишь в Айскристалл...';
+                setTimeout(() => goToCity(1), 400);
                 return;
             }
 
-            // 3. Остальные взаимодействия
+            // Дверь домой (в Айскристалле)
+            if (doorPos && currentCity === 1) {
+                dialog.innerHTML = '🚪 Ты хочешь вернуться домой?';
+                choicesDiv.innerHTML = `
+                    <button class="btn btn-success" onclick="goHome()">🏠 ДА, ВЕРНУТЬСЯ</button>
+                    <button class="btn btn-danger" onclick="dialog.innerHTML='🚪 Ты остаёшься в городе.'; choicesDiv.innerHTML='';">❌ ОСТАТЬСЯ</button>
+                `;
+                return;
+            }
+
             const x = player.x,
                 y = player.y;
             const tile = currentMap[x][y];
@@ -573,49 +484,13 @@
                 return;
             }
 
-            // Продавец
-            if (tile === '🧑') {
-                dialog.innerHTML = '🧑 Продавец: «Что желаешь купить?»';
-                choicesDiv.innerHTML = `
-                    <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
-                    <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
-                    <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
-                `;
-                return;
-            }
-
-            // Король Валахии
-            if (tile === '🤴' && currentCity === 3 && !flags.valahiaKingDefeated) {
-                startBattle('Король Валахии', 150, 16, true);
-                return;
-            }
-
-            // Мэр Сан-Бандеро
-            if (tile === '😺' && currentCity === 4) {
-                if (!flags.sanBanderosAllied) {
-                    dialog.innerHTML = '😺 Мэр Брайан Мяузер: «Приветствую! Ты ищешь союзников? Я помогу, если поможешь мне.»';
-                    choicesDiv.innerHTML = `
-                        <button class="btn btn-success" onclick="allyWithMayor()">🤝 ПОМОЧЬ МЭРУ</button>
-                        <button class="btn btn-danger" onclick="refuseMayor()">❌ ОТКАЗАТЬСЯ</button>
-                    `;
-                } else {
-                    dialog.innerHTML = '😺 Мэр Брайан Мяузер: «Рад видеть тебя снова, друг!»';
-                }
-                return;
-            }
-
             dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
         }
 
         // ─── ПЕРЕХОД В ГОРОД ───
         function goToCity(cityId) {
             const cityMap = {
-                1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' },
-                2: { map: discoMap, name: 'Диско-Сити', loc: 'ДИСКО-СИТИ' },
-                3: { map: valahiaMap, name: 'Валахия', loc: 'ВАЛАХИЯ' },
-                4: { map: sanBanderosMap, name: 'Сан-Бандеро', loc: 'САН-БАНДЕРО' },
-                5: { map: lasTamperoMap, name: 'Лас-Тампэро', loc: 'ЛАС-ТАМПЭРО' },
-                6: { map: calderaMap, name: 'Кальдера', loc: 'КАЛЬДЕРА' }
+                1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' }
             };
             const city = cityMap[cityId];
             if (!city) return;
@@ -623,7 +498,6 @@
             currentMap = city.map;
             currentLocation = city.loc;
             currentCity = cityId;
-            currentCityName = city.name;
             player.x = 4;
             player.y = 4;
             if (!flags.visitedCities.includes(cityId)) {
@@ -637,28 +511,27 @@
             checkAchievements();
         }
 
+        // ─── ВОЗВРАТ ДОМОЙ ───
+        function goHome() {
+            currentCity = 0;
+            currentLocation = 'ДОМ';
+            currentMap = houseMap;
+            player.x = 4;
+            player.y = 4;
+            choicesDiv.innerHTML = '';
+            dialog.innerHTML = '🏠 Ты вернулся домой.';
+            drawMap();
+            updateUI();
+            saveProgress();
+        }
+
         // ─── ПОРТАЛ ───
         function showPortalMenu() {
-            let cities = [
-                { name: 'Айскристалл', id: 1, unlocked: true },
-                { name: 'Диско-Сити', id: 2, unlocked: flags.kingDefeated },
-                { name: 'Валахия', id: 3, unlocked: flags.hasPass },
-                { name: 'Сан-Бандеро', id: 4, unlocked: flags.valahiaKingDefeated },
-                { name: 'Лас-Тампэро', id: 5, unlocked: flags.sanBanderosAllied },
-                { name: 'Кальдера', id: 6, unlocked: flags.lasTamperoSaved }
-            ];
-
-            let html = '🌐 <b>ВЫБЕРИ ГОРОД:</b><br>';
-            cities.forEach(c => {
-                if (c.unlocked) {
-                    html += `<button class="btn btn-sm" onclick="goToCity(${c.id})">${c.name}</button> `;
-                } else {
-                    html += `<span style="color:#555;">🔒 ${c.name}</span> `;
-                }
-            });
-            html += `<button class="btn btn-sm btn-danger" onclick="dialog.innerHTML='🌐 Портал закрыт.'; choicesDiv.innerHTML='';">❌ ЗАКРЫТЬ</button>`;
-            dialog.innerHTML = html;
-            choicesDiv.innerHTML = '';
+            dialog.innerHTML = '🌐 Портал пока ведёт только в Айскристалл.';
+            choicesDiv.innerHTML = `
+                <button class="btn" onclick="goToCity(1)">🌲 АЙСКРИСТАЛЛ</button>
+                <button class="btn btn-danger" onclick="dialog.innerHTML='🌐 Портал закрыт.'; choicesDiv.innerHTML='';">❌ ЗАКРЫТЬ</button>
+            `;
         }
 
         // ─── РАЗГОВОР С АНФИСОЙ ───
@@ -670,8 +543,6 @@
                     <button class="btn btn-success" onclick="helpAnfisa(true)">⚔️ ПОМОЧЬ</button>
                     <button class="btn btn-danger" onclick="helpAnfisa(false)">❌ ОТКАЗАТЬСЯ</button>
                 `;
-            } else if (flags.marriedAnfisa) {
-                dialog.innerHTML = '👩 Анфиса (твоя жена): «Любимый, я всегда с тобой!» ❤️';
             } else {
                 dialog.innerHTML = '👩 Анфиса: «Ты уже знаешь. Разбойники у замка.»';
             }
@@ -691,26 +562,21 @@
             saveProgress();
         }
 
-        function allyWithMayor() {
-            flags.sanBanderosAllied = true;
-            coins += 50;
-            inventory.push('🗡️ Ковбойский револьвер');
-            dialog.innerHTML = '😺 Мэр Брайан Мяузер: «Отлично! Ты наш союзник. Вот оружие и деньги в придачу.»';
-            choicesDiv.innerHTML = '';
-            updateUI();
-            saveProgress();
-            checkAchievements();
+        // ─── МАГАЗИН ───
+        function openShop() {
+            if (currentCity !== 1) {
+                dialog.innerHTML = '🏪 Здесь нет магазина.';
+                return;
+            }
+            dialog.innerHTML = '🏪 Добро пожаловать в магазин!<br>Выбери товар:';
+            choicesDiv.innerHTML = `
+                <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
+                <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
+                <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
+                <button class="btn btn-danger" onclick="dialog.innerHTML='🏪 Ты вышел из магазина.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>
+            `;
         }
 
-        function refuseMayor() {
-            reputation -= 10;
-            dialog.innerHTML = '😺 Мэр Брайан Мяузер: «Очень жаль. Удачи.»';
-            choicesDiv.innerHTML = '';
-            updateUI();
-            saveProgress();
-        }
-
-        // ─── ПОКУПКА ───
         function buyItem(item) {
             const prices = { apple: 5, sword: 20, shield: 15 };
             const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит' };
@@ -782,44 +648,6 @@
                 bossHealthBar.classList.add('hidden');
                 bossStatus.style.display = 'none';
                 enemiesKilled++;
-
-                if (battle.isBoss) {
-                    bossesSpawned++;
-                    if (battle.enemyName === 'Король Валахии') {
-                        flags.valahiaKingDefeated = true;
-                        currentChapter = 4;
-                        dialog.innerHTML = log + '<br>🏆 Ты победил короля Валахии! Теперь выбери нового правителя.';
-                        choicesDiv.innerHTML = '';
-                        updateUI();
-                        saveProgress();
-                        checkAchievements();
-                        showRulerChoice();
-                        return;
-                    }
-                    if (battle.enemyName === 'Леопольд Инферно') {
-                        flags.leopoldDefeated = true;
-                        triggerFinale();
-                        return;
-                    }
-                }
-
-                // Обычные враги в Кальдере
-                if (currentCity === 6) {
-                    const spawnX = Math.floor(Math.random() * 8) + 1;
-                    const spawnY = Math.floor(Math.random() * 8) + 1;
-                    if (currentMap[spawnX] && currentMap[spawnX][spawnY] === '🔲') {
-                        currentMap[spawnX][spawnY] = '👹';
-                    }
-                    dialog.innerHTML = log + '<br>👹 Тварь повержена! Остались ещё...';
-                    choicesDiv.innerHTML =
-                        `<button class="btn" onclick="dialog.innerHTML='⚔️ Продолжай битву!'; choicesDiv.innerHTML='';">⚔️ ПРОДОЛЖИТЬ</button>`;
-                    updateUI();
-                    drawMap();
-                    saveProgress();
-                    checkAchievements();
-                    return;
-                }
-
                 dialog.innerHTML = log + '<br>🏆 Ты победил!';
                 choicesDiv.innerHTML = `<button class="btn" onclick="dialog.innerHTML='✅ Готово!'; choicesDiv.innerHTML='';">✅ ПРИНЯТЬ</button>`;
                 updateUI();
@@ -859,65 +687,6 @@
             bossHealthFill.style.width = (battle.enemyHP / battle.enemyMaxHP * 100) + '%';
         }
 
-        // ─── ВЫБОР ПРАВИТЕЛЯ ───
-        function showRulerChoice() {
-            dialog.innerHTML = '👑 Выбери нового правителя Валахии:';
-            choicesDiv.innerHTML = `
-                <button class="btn" onclick="chooseRuler('anfisa')">👩 Анфиса</button>
-                <button class="btn" onclick="chooseRuler('wilhelm')">⚔️ Вильгельм Монбай</button>
-                <button class="btn" onclick="chooseRuler('madison')">👑 Мэддисон Кнайт</button>
-            `;
-        }
-
-        function chooseRuler(choice) {
-            let text = '';
-            if (choice === 'anfisa') {
-                text = 'Анфиса краснеет: «Не-а, королевство не мой конек.»';
-                dialog.innerHTML = text;
-                choicesDiv.innerHTML = `
-                    <button class="btn" onclick="chooseRuler('wilhelm')">⚔️ Вильгельм Монбай</button>
-                    <button class="btn" onclick="chooseRuler('madison')">👑 Мэддисон Кнайт</button>
-                `;
-                return;
-            } else if (choice === 'wilhelm') {
-                text =
-                    'Вильгельм: «Если вдруг понадобится отдать за тебя жизнь, я отдам её за Айскристалл.» Эйнар: «Надеюсь, я в тебе не ошибся.»';
-            } else if (choice === 'madison') {
-                text =
-                    'Мэддисон: «Оу да! Я знала, что тебе я понравилась. Знаешь, был бы ты постарше, может бы и стал наследником.» Эйнар: «Нет уж, я не пойду на пост наследника, я... Пантократор.»';
-                flags.saidPantocrator = true;
-                checkAchievements();
-            }
-            dialog.innerHTML = text + '<br>👑 Новый правитель Валахии назначен!';
-            choicesDiv.innerHTML = `<button class="btn" onclick="dialog.innerHTML='✅ Валахия теперь под новым управлением.'; choicesDiv.innerHTML='';">✅ ПРИНЯТЬ</button>`;
-            updateUI();
-            saveProgress();
-        }
-
-        // ─── ФИНАЛ ───
-        function triggerFinale() {
-            dialog.innerHTML = '🔥 Леопольд Инферно: «Легенда не врала...»<br>💥 ВЗРЫВ! Ты теряешь сознание...';
-            choicesDiv.innerHTML = '';
-            setTimeout(() => {
-                dialog.innerHTML =
-                    '🌅 Ты просыпаешься дома. Рядом — мама Алиса и друзья.<br>👩 Мама: «Эйнар! Ты очнулся! Мы так волновались!»<br>🚔 Полиция искала тебя несколько дней.<br>☕ Вечером ты сидишь на крыльце с мамой и пьёшь чай.<br><br>🏆 <b>КОНЕЦ ПЕРВОЙ ГЛАВЫ</b>';
-                choicesDiv.innerHTML = `
-                    <button class="btn btn-success" onclick="startNewGamePlus()">🔄 НОВАЯ ИГРА+</button>
-                    <button class="btn" onclick="location.reload()">🔁 НАЧАТЬ ЗАНОВО</button>
-                `;
-                checkAchievements();
-            }, 2000);
-        }
-
-        function startNewGamePlus() {
-            resetGame();
-            coins += 100;
-            dialog.innerHTML = '🔄 Новая игра+ начата! +100 монет в подарок.';
-            choicesDiv.innerHTML = '';
-            updateUI();
-            saveProgress();
-        }
-
         // ─── РАЗГОВОР ───
         function talk() {
             if (gameOver || inBattle) return;
@@ -927,8 +696,6 @@
 
             if (tile === '👩') {
                 talkToAnfisa();
-            } else if (tile === '🧑') {
-                dialog.innerHTML = '🧑 Продавец: «Заходи, если хочешь что-то купить.»';
             } else {
                 dialog.innerHTML = '💬 Здесь не с кем говорить.';
             }
@@ -997,17 +764,12 @@
             setTimeout(showInventory, 1500);
         }
 
-        // ─── ДОСТИЖЕНИЯ (СМС-УВЕДОМЛЕНИЯ) ───
+        // ─── ДОСТИЖЕНИЯ ───
         function showAchievements() {
             const list = [
                 '🩸 Первая кровь — убить 5 врагов',
-                '🤪 Безумец — убить 20 врагов',
-                '💔 Любовник магии — иметь отношения с 2+ девушками',
                 '👨‍👧 Малый папа — жениться на Анфисе',
-                '👑 Пантократор — сказать "Я... Пантократор"',
-                '💀 Всадник геноцида — не щадить ни одного босса',
-                '🌍 Путешественник — посетить все 6 городов',
-                '🏆 Завершитель — пройти игру'
+                '🌍 Путешественник — посетить город'
             ];
             let html = '🏆 <b>ДОСТИЖЕНИЯ:</b><br>';
             list.forEach(a => {
@@ -1019,51 +781,21 @@
         }
 
         function checkAchievements() {
-            let unlocked = false;
             if (enemiesKilled >= 5 && !achievements.includes('Первая кровь')) {
                 achievements.push('Первая кровь');
                 showAchievementSMS('ПЕРВАЯ КРОВЬ', 'Убито 5 врагов', '🩸');
-                unlocked = true;
             }
-            if (enemiesKilled >= 20 && !achievements.includes('Безумец')) {
-                achievements.push('Безумец');
-                showAchievementSMS('БЕЗУМЕЦ', 'Убито 20 врагов', '🤪');
-                unlocked = true;
-            }
-            if (flags.marriedAnfisa && !achievements.includes('Малый папа')) {
-                achievements.push('Малый папа');
-                showAchievementSMS('МАЛЫЙ ПАПА', 'Женитьба на Анфисе', '👨‍👧');
-                unlocked = true;
-            }
-            if (flags.saidPantocrator && !achievements.includes('Пантократор')) {
-                achievements.push('Пантократор');
-                showAchievementSMS('ПАНТОКРАТОР', 'Сказана легендарная фраза', '👑');
-                unlocked = true;
-            }
-            if (bossesSpawned >= 4 && !achievements.includes('Всадник геноцида')) {
-                achievements.push('Всадник геноцида');
-                showAchievementSMS('ВСАДНИК ГЕНОЦИДА', 'Не пощажён ни один босс', '💀');
-                unlocked = true;
-            }
-            if (flags.visitedCities.length >= 6 && !achievements.includes('Путешественник')) {
+            if (flags.visitedCities.length >= 1 && !achievements.includes('Путешественник')) {
                 achievements.push('Путешественник');
-                showAchievementSMS('ПУТЕШЕСТВЕННИК', 'Посещены все 6 городов', '🌍');
-                unlocked = true;
+                showAchievementSMS('ПУТЕШЕСТВЕННИК', 'Посещён Айскристалл', '🌍');
             }
-            if (flags.leopoldDefeated && !achievements.includes('Завершитель')) {
-                achievements.push('Завершитель');
-                showAchievementSMS('ЗАВЕРШИТЕЛЬ', 'Игра пройдена', '🏆');
-                unlocked = true;
-            }
-            if (unlocked) {
-                saveProgress();
-            }
+            saveProgress();
         }
 
         // ─── СОХРАНЕНИЕ ───
         function saveProgress() {
             const data = { hp, coins, inventory, flags, playerX: player.x, playerY: player.y, currentCity, currentLocation,
-                reputation, gameTime, achievements, enemiesKilled, bossesSpawned };
+                reputation, gameTime, achievements, enemiesKilled };
             try { localStorage.setItem('mazetale_save', JSON.stringify(data)); } catch (e) {}
         }
 
@@ -1084,15 +816,13 @@
                 gameTime = data.gameTime || { hour: 14, minute: 30 };
                 achievements = data.achievements || [];
                 enemiesKilled = data.enemiesKilled || 0;
-                bossesSpawned = data.bossesSpawned || 0;
                 updateMapByCity();
                 return true;
             } catch (e) { return false; }
         }
 
         function updateMapByCity() {
-            const maps = { 0: houseMap, 1: aiskristallMap, 2: discoMap, 3: valahiaMap, 4: sanBanderosMap, 5: lasTamperoMap,
-                6: calderaMap };
+            const maps = { 0: houseMap, 1: aiskristallMap };
             currentMap = maps[currentCity] || houseMap;
             drawMap();
             updateUI();
@@ -1111,15 +841,7 @@
                 hasSword: false,
                 hasShield: false,
                 hasApple: true,
-                kingDefeated: false,
                 hasAnfisa: false,
-                hasPass: false,
-                valahiaKingDefeated: false,
-                sanBanderosAllied: false,
-                lasTamperoSaved: false,
-                leopoldDefeated: false,
-                marriedAnfisa: false,
-                saidPantocrator: false,
                 visitedCities: []
             };
             gameOver = false;
@@ -1132,7 +854,6 @@
             gameTime = { hour: 14, minute: 30 };
             achievements = [];
             enemiesKilled = 0;
-            bossesSpawned = 0;
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
             bossBar.classList.add('hidden');
@@ -1190,4 +911,4 @@
         updateUI();
     </script>
 </body>
-    </html>
+</html>
