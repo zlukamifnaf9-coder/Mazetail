@@ -70,7 +70,6 @@
     <div id="controls">
         <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
         <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
-        <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
     </div>
 
     <div id="mobileDpad">
@@ -81,15 +80,15 @@
 
     <div style="text-align:center; margin-top:6px;">
         <span class="valahia-tag">🏰 MazeTale</span>
-        <span class="valahia-tag">📜 Версия 2.0</span>
+        <span class="valahia-tag">📜 Версия 3.0</span>
         <span class="valahia-tag neon-flicker">🎮 Полная игра</span>
     </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════
-//  MAZETALE — ПОЛНАЯ ИГРА (все акты в одном)
-//  СТАРТ С ДОМА + ПЕРЕХОД В ДИСКО-СИТИ ПОСЛЕ КОРОЛЯ
+//  MAZETALE — ПОЛНАЯ ИГРА (ИСПРАВЛЕННАЯ)
+//  Больше никаких "провокаций" в доме!
 // ═══════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -103,7 +102,6 @@ let hp = 100, maxHp = 100;
 let coins = 10;
 let suspicion = 0;
 let inventory = [];
-let gameState = 'explore';
 let gameOver = false;
 
 // ─── ФЛАГИ ───
@@ -124,6 +122,7 @@ let flags = {
     bossDefeated: false,
     talkedToCitizen: false,
     foundBasement: false,
+    inDisco: false,
 };
 
 // ─── БОЕВЫЕ ПАРАМЕТРЫ ───
@@ -226,6 +225,7 @@ const bossHealthFill = document.getElementById('bossHealthFill');
 const bossStatus = document.getElementById('bossStatus');
 const bossName = document.getElementById('bossName');
 const saveNotice = document.getElementById('saveNotice');
+const controlsDiv = document.getElementById('controls');
 
 // ─── СОХРАНЕНИЕ ───
 function saveProgress() {
@@ -290,7 +290,28 @@ function updateMap() {
         case 'Диско-Сити': currentMap = discoMap; mapCols = 20; mapRows = 15; break;
         default: currentMap = houseMap; mapCols = 10; mapRows = 10;
     }
+    updateControls();
     drawMap();
+}
+
+// ─── УПРАВЛЕНИЕ КНОПКАМИ ───
+function updateControls() {
+    let html = `
+        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
+        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
+    `;
+    
+    // Кнопка провокации ТОЛЬКО в Диско-Сити!
+    if (currentLocation === 'Диско-Сити') {
+        html += `<button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>`;
+    }
+    
+    // Кнопка выхода из Диско-Сити (если есть пропуск)
+    if (currentLocation === 'Диско-Сити' && flags.hasPass) {
+        html += `<button class="btn btn-sm btn-success" onclick="tryLeave()">🚪 ПОКИНУТЬ</button>`;
+    }
+    
+    controlsDiv.innerHTML = html;
 }
 
 // ─── РИСОВАНИЕ ───
@@ -387,9 +408,9 @@ function movePlayer(dx, dy) {
     player.x = nx;
     player.y = ny;
     
-    // ─── ПЕРЕХОДЫ МЕЖДУ ЛОКАЦИЯМИ ───
+    // ─── ПЕРЕХОДЫ ───
     
-    // 1. ИЗ ДОМА НА УЛИЦУ
+    // Дом → Улица
     if (currentLocation === 'Дом' && tile === '🚪' && player.x === 0) {
         currentLocation = 'Улица';
         player.x = 4; player.y = 4;
@@ -398,7 +419,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // 2. С УЛИЦЫ В ДОМ
+    // Улица → Дом
     if (currentLocation === 'Улица' && tile === '🏠' && player.x === 1 && player.y === 4) {
         currentLocation = 'Дом';
         player.x = 8; player.y = 4;
@@ -407,7 +428,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // 3. С УЛИЦЫ В МАГАЗИН
+    // Улица → Магазин
     if (currentLocation === 'Улица' && tile === '⬜' && player.x === 3 && player.y === 2) {
         currentLocation = 'Магазин';
         player.x = 1; player.y = 1;
@@ -416,7 +437,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // 4. ИЗ МАГАЗИНА НА УЛИЦУ
+    // Магазин → Улица
     if (currentLocation === 'Магазин' && tile === '🚪' && (player.x === 1 || player.x === 8)) {
         currentLocation = 'Улица';
         player.x = 3; player.y = 2;
@@ -425,7 +446,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // 5. С УЛИЦЫ В ЗАМОК
+    // Улица → Замок
     if (currentLocation === 'Улица' && tile === '🌲' && player.x === 8 && player.y === 0) {
         currentLocation = 'Замок';
         player.x = 1; player.y = 4;
@@ -434,7 +455,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // 6. ИЗ ЗАМКА НА УЛИЦУ
+    // Замок → Улица
     if (currentLocation === 'Замок' && tile === '🌲' && player.x === 0) {
         currentLocation = 'Улица';
         player.x = 8; player.y = 0;
@@ -443,23 +464,18 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // 7. В ДИСКО-СИТИ — ТОЛЬКО ПОСЛЕ ПОБЕДЫ НАД КОРОЛЁМ!
+    // Улица → Диско-Сити (только после победы над королём)
     if (currentLocation === 'Улица' && tile === '🌲' && player.x === 0 && player.y === 2 && flags.kingDefeated) {
         currentLocation = 'Диско-Сити';
         player.x = 7; player.y = 10;
         updateMap();
         dialogBox.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией. Тебе нужен пропуск.';
-        document.getElementById('controls').innerHTML = `
-            <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
-            <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
-            <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
-            <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn" style="display:none;">🚪 ПОКИНУТЬ</button>
-        `;
         return;
     }
     
     // ─── ВЗАИМОДЕЙСТВИЕ С ОБЪЕКТАМИ ───
-    // Сундук в доме
+    
+    // Сундук
     if (currentLocation === 'Дом' && tile === '📦' && player.x === 7 && player.y === 1) {
         if (!flags.hasNote) {
             flags.hasNote = true;
@@ -473,12 +489,12 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // Анфиса на улице
+    // Анфиса
     if (currentLocation === 'Улица' && tile === '👩' && player.x === 4 && player.y === 5) {
         if (!flags.talkedToAnfisa) {
             flags.talkedToAnfisa = true;
             dialogBox.innerHTML = '👩 Анфиса: «О, ты проснулся! Город захватили разбойники. Помоги нам!»';
-            document.getElementById('controls').innerHTML += `
+            controlsDiv.innerHTML += `
                 <button class="btn btn-success" onclick="helpAnfisa(true)">⚔️ ПОМОЧЬ</button>
                 <button class="btn btn-danger" onclick="helpAnfisa(false)">❌ ОТКАЗАТЬСЯ</button>
             `;
@@ -488,7 +504,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // Вход в замок (битва)
+    // Замок — битва
     if (currentLocation === 'Замок' && (tile === '🏰' || tile === '👹' || tile === '⚔️' || tile === '👺')) {
         if (!flags.kingDefeated) {
             startKingBattle();
@@ -498,10 +514,10 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // Магазин
+    // Продавец в магазине
     if (currentLocation === 'Магазин' && tile === '🧑' && player.x === 5 && player.y === 4) {
         dialogBox.innerHTML = '🧑 Продавец: «Что желаешь купить?»';
-        document.getElementById('controls').innerHTML += `
+        controlsDiv.innerHTML += `
             <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
             <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
             <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
@@ -556,11 +572,7 @@ function helpAnfisa(choice) {
     }
     updateUI();
     saveProgress();
-    document.getElementById('controls').innerHTML = `
-        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
-        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
-        <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
-    `;
+    updateControls();
 }
 
 // ─── ПОКУПКА ───
@@ -599,7 +611,7 @@ function startKingBattle() {
     updateBossUI();
     
     dialogBox.innerHTML = '👑 Король разбойников: «Как ты посмел войти в мой замок?!»';
-    document.getElementById('controls').innerHTML = `
+    controlsDiv.innerHTML = `
         <button class="btn" onclick="kingBattleAction('attack')">⚔️ АТАКОВАТЬ</button>
         <button class="btn" onclick="kingBattleAction('defend')">🛡️ ЗАЩИТА</button>
         <button class="btn" onclick="kingBattleAction('item')">🍎 ЯБЛОКО</button>
@@ -638,7 +650,7 @@ function kingBattleAction(action) {
         flags.kingDefeated = true;
         log += '<br>🏆 Ты победил короля разбойников!';
         dialogBox.innerHTML = log;
-        document.getElementById('controls').innerHTML = `
+        controlsDiv.innerHTML = `
             <button class="btn" onclick="kingDefeated()">👑 СЛУШАТЬ КОРОЛЯ</button>
         `;
         updateUI();
@@ -646,7 +658,6 @@ function kingBattleAction(action) {
         return;
     }
     
-    // Атака короля
     let enemyDamage = battle.enemyAttack - (battle.defense ? 4 : 0);
     if (enemyDamage < 0) enemyDamage = 0;
     hp -= enemyDamage;
@@ -671,30 +682,13 @@ function kingDefeated() {
     dialogBox.innerHTML = '👑 Король разбойников: «Ты истинный воин. Я ухожу в Тёплый утёс. Если придёшь — будешь нашим гостем.»';
     flags.isAllyWithBandits = true;
     flags.hasAnfisa = true;
-    document.getElementById('controls').innerHTML = `
-        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
-        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
-        <button class="btn btn-sm btn-success" onclick="goToDisco()">🌆 ИДТИ В ДИСКО-СИТИ</button>
-    `;
     battle.active = false;
     bossBar.classList.add('hidden');
     bossHealthBar.classList.add('hidden');
     bossStatus.style.display = 'none';
+    updateControls();
     saveProgress();
-}
-
-function goToDisco() {
-    currentLocation = 'Диско-Сити';
-    player.x = 7; player.y = 10;
-    updateMap();
-    dialogBox.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией. Тебе нужен пропуск.';
-    document.getElementById('controls').innerHTML = `
-        <button class="btn btn-sm" onclick="interact()">🗣️ ГОВОРИТЬ</button>
-        <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
-        <button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>
-        <button class="btn btn-sm btn-success" onclick="tryLeave()" id="leaveBtn" style="display:none;">🚪 ПОКИНУТЬ</button>
-    `;
-    saveProgress();
+    dialogBox.innerHTML += '<br>🌆 Теперь ты можешь идти в Диско-Сити.';
 }
 
 function updateBossUI() {
@@ -723,9 +717,13 @@ function openInventory() {
     dialogBox.innerHTML = items;
 }
 
-// ─── ПРОВОКАЦИЯ ───
+// ─── ПРОВОКАЦИЯ (ТОЛЬКО В ДИСКО-СИТИ!) ───
 function provoke() {
     if (gameOver || battle.active) return;
+    if (currentLocation !== 'Диско-Сити') {
+        dialogBox.innerHTML = '❌ Здесь нет патрулей.';
+        return;
+    }
     suspicion += 20;
     hp -= 5;
     dialogBox.innerHTML = `⚠️ Ты кричишь на патруль! Подозрение +20, HP -5.`;
@@ -744,7 +742,7 @@ function tryLeave() {
         return;
     }
     dialogBox.innerHTML = '🚪 Ты покидаешь Диско-Сити. Впереди — путь к следующим деревням.<br><span style="color:#44ff88;">✅ Игра пройдена!</span>';
-    document.getElementById('controls').innerHTML = `
+    controlsDiv.innerHTML = `
         <button class="btn btn-success" onclick="location.reload()">🌍 НАЧАТЬ ЗАНОВО</button>
     `;
     saveProgress();
@@ -761,6 +759,7 @@ function updateUI() {
 loadProgress();
 updateUI();
 drawMap();
+updateControls();
 
 // ─── АВТОСОХРАНЕНИЕ ───
 setInterval(saveProgress, 30000);
@@ -771,4 +770,4 @@ if (!loadProgress()) {
 }
 </script>
 </body>
-</html>
+    </html>
