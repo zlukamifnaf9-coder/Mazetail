@@ -7,7 +7,7 @@
     <style>
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; }
         * { box-sizing: border-box; }
-        #gameScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 16px; max-width: 560px; width: 100%; box-shadow: 0 0 40px rgba(255,215,0,0.2); text-align: center; }
+        #gameScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 16px; max-width: 600px; width: 100%; box-shadow: 0 0 40px rgba(255,215,0,0.2); text-align: center; }
         #gameScreen h3 { color: #FFD700; margin: 4px 0; }
         #chapterTitle { color: #ff8844; font-size: 14px; letter-spacing: 2px; margin: 2px 0; }
         #infoBar { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; color: #aaa; font-size: 12px; margin: 6px 0; }
@@ -82,16 +82,17 @@
 
 <script>
 // ═══════════════════════════════════════════════════
-//  MAZETALE — ПОЛНАЯ ИГРА (3 ГЛАВЫ В ОДНОМ ЭКРАНЕ)
+//  MAZETALE — ОДНА БОЛЬШАЯ КАРТА (20x20)
+//  Все три главы на одной карте!
 // ═══════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const TILE = 50;
-const COLS = 10, ROWS = 10;
+const TILE = 25; // 20x20 = 500px
+const COLS = 20, ROWS = 20;
 
 // ─── СОСТОЯНИЕ ИГРОКА ───
-let player = { x: 4, y: 4 };
+let player = { x: 5, y: 5 };
 let hp = 100, coins = 10;
 let inventory = [];
 let gameOver = false;
@@ -106,19 +107,19 @@ let flags = {
     hasShield: false,
     hasApple: true,
     kingDefeated: false,
-    // Акт 2
     helpedAnfisa: false,
     hasAnfisa: false,
     isAllyWithBandits: false,
-    // Акт 3
     hasPass: false,
     hasResistance: false,
     bossDefeated: false,
     talkedToCitizen: false,
     foundBasement: false,
-    // Контроль перехода
     chapter1Done: false,
-    chapter2Done: false
+    chapter2Done: false,
+    // Открытие зон
+    canEnterCastle: false,
+    canEnterDisco: false
 };
 
 // ─── БОЕВЫЕ ПАРАМЕТРЫ ───
@@ -131,67 +132,31 @@ let battle = {
     enemyName: ''
 };
 
-// ─── КАРТЫ (ЦИФРОВЫЕ) ───
-// 0 = пол, 1 = стена, 2 = дверь, 3 = сундук, 4 = NPC, 5 = враг
-
-// ГЛАВА 1: Дом
-const houseMap = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,0,0,0,2,1],
-    [1,0,0,0,0,0,0,0,2,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,3,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,2,1],
-    [1,1,1,1,1,1,1,1,1,1]
+// ─── ОДНА БОЛЬШАЯ КАРТА (20x20) ───
+// 0 = пол, 1 = стена, 2 = дверь, 3 = сундук, 4 = NPC, 5 = враг, 6 = переход
+const worldMap = [
+    //  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 0
+    [1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 1
+    [1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 4, 0, 0, 0, 0, 1], // 2
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 3
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 4
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 5 ← Старт игрока (5,5)
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 6
+    [1, 3, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 7
+    [1, 0, 0, 0, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 8
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 9  ← Граница между зонами
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], // 10
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 11
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 12
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 13
+    [1, 0, 0, 5, 5, 5, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 14 ← Замок (враги)
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 15
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 16
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 17
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1], // 18
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]  // 19
 ];
-
-// ГЛАВА 2: Улица и замок
-const streetMap = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,1,1,1,0,1,1,1,1,1],
-    [1,1,1,0,0,0,0,0,0,1],
-    [1,1,1,0,0,0,0,0,0,1],
-    [1,1,1,0,0,4,0,0,0,1],
-    [1,1,1,0,0,0,0,0,0,1],
-    [1,1,1,0,0,0,0,0,0,1],
-    [1,1,1,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1,1,1]
-];
-
-const castleMap = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,1,1,1,5,5,5,1,1,1],
-    [1,1,1,1,0,0,0,1,1,1],
-    [1,1,1,1,0,0,0,1,1,1],
-    [1,1,1,1,0,0,0,1,1,1],
-    [1,1,1,1,0,0,0,1,1,1],
-    [1,1,1,1,0,0,0,1,1,1],
-    [1,1,1,1,0,0,0,1,1,1],
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,1,1,1,1,1,1,1,1,1]
-];
-
-// ГЛАВА 3: Диско-Сити (10x10)
-const discoMap = [
-    [1,1,1,1,1,1,1,1,1,1],
-    [1,0,0,0,0,3,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,4,0,0,0,4,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,5,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,0,0,0,0,0,0,0,0,1],
-    [1,1,1,1,1,1,1,1,1,1]
-];
-
-// ─── ТЕКУЩАЯ КАРТА ───
-let currentMap = houseMap;
-let currentLocation = 'ДОМ';
 
 // ─── ЭЛЕМЕНТЫ UI ───
 const dialog = document.getElementById('dialog');
@@ -208,28 +173,40 @@ const bossHealthFill = document.getElementById('bossHealthFill');
 const bossStatus = document.getElementById('bossStatus');
 const bossName = document.getElementById('bossName');
 
+// ─── ОПРЕДЕЛЕНИЕ ЛОКАЦИИ ───
+function getLocation() {
+    const x = player.x, y = player.y;
+    if (x < 9 && y < 9) return 'ДОМ';
+    if (x < 9 && y > 10) return 'УЛИЦА';
+    if (x > 10 && y < 9) return 'ДИСКО-СИТИ';
+    if (x > 10 && y > 10) return 'ЗАМОК';
+    if (x === 9 || x === 10 || y === 9 || y === 10) return 'ГРАНИЦА';
+    return 'МИР';
+}
+
 // ─── ОБНОВЛЕНИЕ UI ───
 function updateUI() {
-    locDisplay.textContent = currentLocation;
+    locDisplay.textContent = getLocation();
     invDisplay.textContent = inventory.length ? inventory.join(', ') : 'пусто';
     coinDisplay.textContent = coins;
     hpDisplay.textContent = Math.max(0, hp);
-    chapterTitle.textContent = `Глава ${currentChapter}: ${currentChapter === 1 ? 'Пробуждение' : currentChapter === 2 ? 'Сердце города' : 'Диско-Сити'}`;
+    const chapters = ['', 'Пробуждение', 'Сердце города', 'Диско-Сити'];
+    chapterTitle.textContent = `Глава ${currentChapter}: ${chapters[currentChapter] || ''}`;
 }
 
 // ─── РИСОВАНИЕ КАРТЫ ───
 function drawMap() {
     ctx.clearRect(0, 0, 500, 500);
-    const tileSize = 500 / currentMap.length;
+    const tileSize = 500 / worldMap.length;
     
     const symbols = {
-        0: '⬜', 1: '🧱', 2: '🚪', 3: '📦', 4: '👤', 5: '👹'
+        0: '⬜', 1: '🧱', 2: '🚪', 3: '📦', 4: '👤', 5: '👹', 6: '🌉'
     };
     
-    for (let r = 0; r < currentMap.length; r++) {
-        for (let c = 0; c < currentMap[r].length; c++) {
+    for (let r = 0; r < worldMap.length; r++) {
+        for (let c = 0; c < worldMap[r].length; c++) {
             const x = c * tileSize, y = r * tileSize;
-            const tile = currentMap[r][c];
+            const tile = worldMap[r][c];
             ctx.fillStyle = '#1a1a1a';
             ctx.fillRect(x, y, tileSize, tileSize);
             if (tile !== 0) {
@@ -254,7 +231,7 @@ function drawMap() {
     ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
     
     // Анфиса (если с нами)
-    if (flags.hasAnfisa && currentChapter !== 3) {
+    if (flags.hasAnfisa) {
         const ax = (player.y + 1) * tileSize, ay = player.x * tileSize;
         ctx.fillStyle = '#ff69b4';
         ctx.beginPath();
@@ -271,95 +248,62 @@ function updateBossUI() {
     bossHealthFill.style.width = (battle.enemyHP / battle.enemyMaxHP * 100) + '%';
 }
 
-// ─── ПЕРЕХОД МЕЖДУ ГЛАВАМИ ───
-function nextChapter() {
-    if (currentChapter === 1 && flags.kingDefeated) {
-        currentChapter = 2;
-        currentLocation = 'УЛИЦА';
-        currentMap = streetMap;
-        player.x = 4; player.y = 4;
-        flags.chapter1Done = true;
-        dialog.innerHTML = '🌳 Ты победил короля! Теперь путь в Диско-Сити открыт. Найди вход в городе.';
-        drawMap();
-        updateUI();
-        return true;
-    }
-    if (currentChapter === 2 && flags.hasPass) {
-        currentChapter = 3;
-        currentLocation = 'ДИСКО-СИТИ';
-        currentMap = discoMap;
-        player.x = 4; player.y = 4;
-        flags.chapter2Done = true;
-        dialog.innerHTML = '🌆 Добро пожаловать в Диско-Сити! Город оккупирован Валахией. Найди пропуск.';
-        drawMap();
-        updateUI();
-        return true;
-    }
-    return false;
-}
-
 // ─── ДВИЖЕНИЕ ───
 function movePlayer(dx, dy) {
     if (gameOver || inBattle) return;
     const nx = player.x + dx;
     const ny = player.y + dy;
-    if (nx < 0 || nx >= currentMap.length || ny < 0 || ny >= currentMap[0].length) return;
-    const tile = currentMap[nx][ny];
+    if (nx < 0 || nx >= worldMap.length || ny < 0 || ny >= worldMap[0].length) return;
+    const tile = worldMap[nx][ny];
     if (tile === 1) return;
     
     player.x = nx;
     player.y = ny;
     
-    // ─── ПЕРЕХОДЫ ───
+    // ─── ПЕРЕХОДЫ МЕЖДУ ЗОНАМИ ───
+    const loc = getLocation();
     
-    // Глава 1: Дом → Улица
-    if (currentChapter === 1 && tile === 2 && player.x === 0) {
-        currentLocation = 'УЛИЦА';
-        currentMap = streetMap;
-        player.x = 4; player.y = 4;
+    // Из дома на улицу (через дверь)
+    if (loc === 'ДОМ' && tile === 2 && player.x === 1) {
+        dialog.innerHTML = '🚪 Ты выходишь из дома на улицу.';
         drawMap();
-        dialog.innerHTML = '🌳 Ты выходишь на улицу. Перед тобой Анфиса.';
         updateUI();
         return;
     }
     
-    // Глава 1: Улица → Дом
-    if (currentChapter === 1 && tile === 0 && player.x === 1 && player.y === 4) {
-        currentLocation = 'ДОМ';
-        currentMap = houseMap;
-        player.x = 8; player.y = 4;
+    // С улицы в дом
+    if (loc === 'УЛИЦА' && tile === 2 && player.x === 8) {
+        dialog.innerHTML = '🚪 Ты заходишь в дом.';
         drawMap();
-        dialog.innerHTML = '🏠 Ты возвращаешься в дом.';
         updateUI();
         return;
     }
     
-    // Глава 1: Улица → Замок
-    if (currentChapter === 1 && tile === 1 && player.x === 8 && player.y === 0) {
-        currentLocation = 'ЗАМОК';
-        currentMap = castleMap;
-        player.x = 1; player.y = 4;
-        drawMap();
-        dialog.innerHTML = '🏰 Ты подходишь к замку. Вокруг разбойники.';
-        updateUI();
+    // Переход в замок (только после разговора с Анфисой)
+    if (loc === 'УЛИЦА' && tile === 5 && player.x === 14 && flags.talkedToAnfisa) {
+        if (!flags.kingDefeated) {
+            startBattle('Король разбойников', 120, 12);
+            return;
+        }
+        dialog.innerHTML = '🏰 Замок пуст. Король побеждён.';
         return;
     }
     
-    // Глава 1: Замок → Улица
-    if (currentChapter === 1 && tile === 1 && player.x === 0) {
-        currentLocation = 'УЛИЦА';
-        currentMap = streetMap;
-        player.x = 8; player.y = 0;
-        drawMap();
-        dialog.innerHTML = '🌳 Ты возвращаешься в город.';
-        updateUI();
-        return;
+    // Переход в Диско-Сити (только после победы над королём)
+    if (loc === 'УЛИЦА' && tile === 0 && player.x === 11 && player.y === 17 && flags.kingDefeated) {
+        if (!flags.bossDefeated) {
+            currentChapter = 3;
+            dialog.innerHTML = '🌆 Ты входишь в Диско-Сити. Город оккупирован Валахией.';
+            drawMap();
+            updateUI();
+            return;
+        }
     }
     
     // ─── ВЗАИМОДЕЙСТВИЕ С ОБЪЕКТАМИ ───
     
     // Сундук (3)
-    if (tile === 3 && player.x === 7 && player.y === 1 && currentChapter === 1) {
+    if (tile === 3 && player.x === 7 && player.y === 1) {
         if (!flags.hasNote) {
             flags.hasNote = true;
             inventory.push('📜 Старая записка');
@@ -372,7 +316,7 @@ function movePlayer(dx, dy) {
     }
     
     // Анфиса (4)
-    if (tile === 4 && player.x === 4 && player.y === 5 && currentChapter === 1) {
+    if (tile === 4 && player.x === 2 && player.y === 14) {
         if (!flags.talkedToAnfisa) {
             flags.talkedToAnfisa = true;
             dialog.innerHTML = '👩 Анфиса: «О, ты проснулся! Город захватили разбойники. Помоги нам!»';
@@ -386,31 +330,7 @@ function movePlayer(dx, dy) {
         return;
     }
     
-    // Враг (5) — битва
-    if (tile === 5) {
-        if (currentChapter === 1 && !flags.kingDefeated) {
-            startBattle('Король разбойников', 120, 12);
-            return;
-        }
-        if (currentChapter === 3 && !flags.bossDefeated) {
-            startBattle('Комендант Валахии', 100, 14);
-            return;
-        }
-        dialog.innerHTML = '⚔️ Здесь уже никого нет.';
-        return;
-    }
-    
-    // Переход на Главу 2 (из улицы в Диско-Сити)
-    if (currentChapter === 1 && tile === 1 && player.x === 0 && player.y === 2 && flags.kingDefeated) {
-        if (nextChapter()) return;
-    }
-    
-    // Переход на Главу 3 (из Диско-Сити)
-    if (currentChapter === 2 && tile === 2 && player.x === 0 && flags.hasPass) {
-        if (nextChapter()) return;
-    }
-    
-    dialog.innerHTML = `📍 Ты стоишь на пустом месте.`;
+    dialog.innerHTML = `📍 ${getLocation()} — пустое место.`;
     drawMap();
     updateUI();
 }
@@ -477,17 +397,17 @@ function battleAction(action) {
     }
     
     if (battle.enemyHP <= 0) {
-        // Победа!
         inBattle = false;
         bossBar.classList.add('hidden');
         bossHealthBar.classList.add('hidden');
         bossStatus.style.display = 'none';
         
-        if (currentChapter === 1) {
+        if (battle.enemyName === 'Король разбойников') {
             flags.kingDefeated = true;
-            dialog.innerHTML = log + '<br>🏆 Ты победил короля разбойников!<br>🌆 Теперь ты можешь идти в Диско-Сити.';
-            choicesDiv.innerHTML = `<button class="btn btn-success" onclick="nextChapter()">🌆 ИДТИ В ДИСКО-СИТИ</button>`;
-        } else if (currentChapter === 3) {
+            currentChapter = 2;
+            dialog.innerHTML = log + '<br>🏆 Ты победил короля разбойников!<br>🌆 Теперь ты можешь идти в Диско-Сити (внизу справа).';
+            choicesDiv.innerHTML = '';
+        } else if (battle.enemyName === 'Комендант Валахии') {
             flags.bossDefeated = true;
             flags.hasPass = true;
             dialog.innerHTML = log + '<br>🏆 Ты победил Коменданта!<br>📜 Ты получил пропуск!';
@@ -497,7 +417,6 @@ function battleAction(action) {
         return;
     }
     
-    // Атака врага
     let dmg = battle.enemyAttack - (battle.defense ? 4 : 0);
     if (dmg < 0) dmg = 0;
     hp -= dmg;
@@ -553,11 +472,11 @@ function showInventory() {
 
 function interact() {
     if (gameOver || inBattle) return;
-    const tile = currentMap[player.x][player.y];
+    const tile = worldMap[player.x][player.y];
     if (tile === 0) {
         dialog.innerHTML = '📍 Здесь пусто.';
     } else {
-        const symbols = { 0: 'пол', 1: 'стена', 2: 'дверь', 3: 'сундук', 4: 'NPC', 5: 'враг' };
+        const symbols = { 0: 'пол', 1: 'стена', 2: 'дверь', 3: 'сундук', 4: 'NPC', 5: 'враг', 6: 'переход' };
         dialog.innerHTML = `📍 Здесь находится: ${symbols[tile] || 'неизвестно'}. Подойди ближе.`;
     }
 }
@@ -565,7 +484,7 @@ function interact() {
 // ─── СБРОС ───
 function resetGame() {
     document.getElementById('gameOverScreen').style.display = 'none';
-    player = { x: 4, y: 4 };
+    player = { x: 5, y: 5 };
     hp = 100;
     coins = 10;
     inventory = [];
@@ -574,13 +493,12 @@ function resetGame() {
         hasApple: true, kingDefeated: false, helpedAnfisa: false, hasAnfisa: false,
         isAllyWithBandits: false, hasPass: false, hasResistance: false,
         bossDefeated: false, talkedToCitizen: false, foundBasement: false,
-        chapter1Done: false, chapter2Done: false
+        chapter1Done: false, chapter2Done: false,
+        canEnterCastle: false, canEnterDisco: false
     };
     gameOver = false;
     inBattle = false;
     currentChapter = 1;
-    currentLocation = 'ДОМ';
-    currentMap = houseMap;
     choicesDiv.innerHTML = '';
     dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
     bossBar.classList.add('hidden');
