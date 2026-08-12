@@ -80,7 +80,7 @@
 
     <div style="text-align:center; margin-top:6px;">
         <span class="valahia-tag">🏰 MazeTale</span>
-        <span class="valahia-tag">📜 Версия 3.0</span>
+        <span class="valahia-tag">📜 Версия 4.0</span>
         <span class="valahia-tag neon-flicker">🎮 Полная игра</span>
     </div>
 </div>
@@ -88,7 +88,7 @@
 <script>
 // ═══════════════════════════════════════════════════
 //  MAZETALE — ПОЛНАЯ ИГРА (ИСПРАВЛЕННАЯ)
-//  Больше никаких "провокаций" в доме!
+//  Игрок теперь ВИДЕН на карте!
 // ═══════════════════════════════════════════════════
 
 const canvas = document.getElementById('gameCanvas');
@@ -97,7 +97,7 @@ const W = 600, H = 400;
 const TILE = 30;
 
 // ─── СОСТОЯНИЕ ИГРОКА ───
-let player = { x: 3, y: 2 };
+let player = { x: 3, y: 2 }; // x - строка (вниз), y - столбец (вправо)
 let hp = 100, maxHp = 100;
 let coins = 10;
 let suspicion = 0;
@@ -210,7 +210,6 @@ const discoMap = [
 // ─── ТЕКУЩАЯ КАРТА ───
 let currentMap = houseMap;
 let currentLocation = 'Дом';
-let mapCols = 10, mapRows = 10;
 
 // ─── ЭЛЕМЕНТЫ UI ───
 const dialogBox = document.getElementById('dialogBox');
@@ -283,12 +282,12 @@ function loadProgress() {
 // ─── ОБНОВЛЕНИЕ КАРТЫ ───
 function updateMap() {
     switch(currentLocation) {
-        case 'Дом': currentMap = houseMap; mapCols = 10; mapRows = 10; break;
-        case 'Улица': currentMap = streetMap; mapCols = 10; mapRows = 9; break;
-        case 'Магазин': currentMap = shopMap; mapCols = 10; mapRows = 10; break;
-        case 'Замок': currentMap = castleMap; mapCols = 20; mapRows = 9; break;
-        case 'Диско-Сити': currentMap = discoMap; mapCols = 20; mapRows = 15; break;
-        default: currentMap = houseMap; mapCols = 10; mapRows = 10;
+        case 'Дом': currentMap = houseMap; break;
+        case 'Улица': currentMap = streetMap; break;
+        case 'Магазин': currentMap = shopMap; break;
+        case 'Замок': currentMap = castleMap; break;
+        case 'Диско-Сити': currentMap = discoMap; break;
+        default: currentMap = houseMap;
     }
     updateControls();
     drawMap();
@@ -301,12 +300,10 @@ function updateControls() {
         <button class="btn btn-sm" onclick="openInventory()">🎒 ИНВЕНТАРЬ</button>
     `;
     
-    // Кнопка провокации ТОЛЬКО в Диско-Сити!
     if (currentLocation === 'Диско-Сити') {
         html += `<button class="btn btn-sm btn-danger" onclick="provoke()">⚠️ ПРОВОКАЦИЯ</button>`;
     }
     
-    // Кнопка выхода из Диско-Сити (если есть пропуск)
     if (currentLocation === 'Диско-Сити' && flags.hasPass) {
         html += `<button class="btn btn-sm btn-success" onclick="tryLeave()">🚪 ПОКИНУТЬ</button>`;
     }
@@ -321,6 +318,7 @@ function drawMap() {
     const rows = currentMap.length;
     const tileSize = Math.min(600 / cols, 400 / rows, TILE);
     
+    // Рисуем тайлы
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             const x = c * tileSize, y = r * tileSize;
@@ -364,8 +362,11 @@ function drawMap() {
         }
     }
     
-    // Игрок
-    const px = player.y * tileSize, py = player.x * tileSize;
+    // ─── ИГРОК (ИСПРАВЛЕНО!) ───
+    // player.x - строка (вниз), player.y - столбец (вправо)
+    const px = player.y * tileSize;
+    const py = player.x * tileSize;
+    
     ctx.fillStyle = '#FFD700';
     ctx.shadowColor = '#FFD700';
     ctx.shadowBlur = 15;
@@ -379,7 +380,8 @@ function drawMap() {
     
     // Анфиса (если с нами)
     if (flags.hasAnfisa && currentLocation !== 'Диско-Сити') {
-        const ax = (player.y + 1) * tileSize, ay = player.x * tileSize;
+        const ax = (player.y + 1) * tileSize;
+        const ay = player.x * tileSize;
         ctx.fillStyle = '#ff69b4';
         ctx.beginPath();
         ctx.arc(ax + tileSize/2, ay + tileSize/2, tileSize*0.25, 0, Math.PI*2);
@@ -395,8 +397,8 @@ function drawMap() {
 // ─── ДВИЖЕНИЕ ───
 function movePlayer(dx, dy) {
     if (gameOver || battle.active) return;
-    const nx = player.x + dx;
-    const ny = player.y + dy;
+    const nx = player.x + dx; // строка (вниз/вверх)
+    const ny = player.y + dy; // столбец (вправо/влево)
     const rows = currentMap.length;
     const cols = currentMap[0].length;
     if (nx < 0 || nx >= rows || ny < 0 || ny >= cols) return;
@@ -770,4 +772,4 @@ if (!loadProgress()) {
 }
 </script>
 </body>
-    </html>
+</html>
