@@ -47,9 +47,60 @@
         .time-display { color: #44ff88; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #44ff88; }
         .reputation-display { color: #ff8844; font-size: 11px; background: #111; padding: 2px 10px; border-radius: 12px; border: 1px solid #ff8844; }
         @media (max-width: 500px) { .btn { font-size: 11px; padding: 4px 10px; } #storyScreen h1 { font-size: 24px; } #introText { font-size: 13px; padding: 12px; } }
+
+        /* ─── СМС-УВЕДОМЛЕНИЕ ДЛЯ ДОСТИЖЕНИЙ ─── */
+        #achievementNotification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #FFD700;
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: #FFD700;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            z-index: 10000;
+            max-width: 300px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+            transform: translateX(120%);
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        #achievementNotification.show {
+            transform: translateX(0);
+        }
+        #achievementNotification .icon {
+            font-size: 28px;
+        }
+        #achievementNotification .text {
+            display: flex;
+            flex-direction: column;
+        }
+        #achievementNotification .title {
+            font-weight: bold;
+            color: #FFD700;
+            font-size: 13px;
+        }
+        #achievementNotification .desc {
+            color: #aaa;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
+
+    <!-- СМС-УВЕДОМЛЕНИЕ -->
+    <div id="achievementNotification">
+        <span class="icon">🏆</span>
+        <div class="text">
+            <span class="title" id="achTitle">ДОСТИЖЕНИЕ</span>
+            <span class="desc" id="achDesc">Описание</span>
+        </div>
+    </div>
 
     <!-- ИНТРО -->
     <div id="storyScreen">
@@ -110,8 +161,10 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ПОЛНАЯ ВЕРСИЯ (РАБОЧАЯ)
-        //  ВСЕ КАРТЫ 10x10, ДВЕРЬ РАБОТАЕТ ЧЕРЕЗ ВЗАИМОДЕЙСТВИЕ
+        //  MAZETALE — ПОЛНАЯ ВЕРСИЯ (ИСПРАВЛЕННАЯ)
+        //  Дверь открывается и сразу выходит
+        //  Портал ТОЛЬКО в городах
+        //  Достижения как СМС
         // ═══════════════════════════════════════════════════
 
         const canvas = document.getElementById('gameCanvas');
@@ -163,7 +216,7 @@
 
         // ─── КАРТЫ ───
 
-        // ДОМ
+        // ДОМ (БЕЗ ПОРТАЛА!)
         const houseMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '🚪', '🧱'],
@@ -282,13 +335,31 @@
         const timeDisplay = document.getElementById('timeDisplay');
         const reputationDisplay = document.getElementById('reputationDisplay');
 
+        // ─── СМС-УВЕДОМЛЕНИЕ ───
+        const notification = document.getElementById('achievementNotification');
+        const achTitle = document.getElementById('achTitle');
+        const achDesc = document.getElementById('achDesc');
+        let notificationTimeout = null;
+
+        function showAchievementSMS(title, desc, icon = '🏆') {
+            document.querySelector('#achievementNotification .icon').textContent = icon;
+            achTitle.textContent = title;
+            achDesc.textContent = desc;
+            notification.classList.add('show');
+            clearTimeout(notificationTimeout);
+            notificationTimeout = setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        // ─── ОБНОВЛЕНИЕ UI ───
         function updateUI() {
             locDisplay.textContent = currentLocation;
             invDisplay.textContent = inventory.length ? inventory.join(', ') : 'пусто';
             coinDisplay.textContent = coins;
             hpDisplay.textContent = Math.max(0, hp);
             timeDisplay.textContent = '🕐 ' + String(gameTime.hour).padStart(2, '0') + ':' + String(gameTime.minute)
-            .padStart(2, '0');
+                .padStart(2, '0');
             reputationDisplay.textContent = '⭐ ' + reputation;
             const chapters = ['', 'Пробуждение', 'Айскристалл', 'Диско-Сити', 'Валахия', 'Сан-Бандеро', 'Лас-Тампэро',
                 'Кальдера'
@@ -296,6 +367,7 @@
             chapterTitle.textContent = 'Глава ' + currentChapter + ': ' + (chapters[currentChapter] || '');
         }
 
+        // ─── РИСОВАНИЕ ───
         function drawMap() {
             ctx.clearRect(0, 0, 500, 500);
             const tileSize = 500 / currentMap.length;
@@ -314,21 +386,23 @@
                 }
             }
 
-            // Портал (в правом верхнем углу)
-            const portalX = currentMap[0].length - 2;
-            const portalY = 1;
-            if (currentMap[portalY] && currentMap[portalY][portalX] && currentMap[portalY][portalX] !== '🧱') {
-                const px = portalX * tileSize,
-                    py = portalY * tileSize;
-                ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
-                ctx.fillRect(px, py, tileSize, tileSize);
-                ctx.fillStyle = '#00ccff';
-                ctx.font = (tileSize * 0.6) + 'px serif';
-                ctx.fillText('🌐', px + tileSize * 0.2, py + tileSize * 0.7);
-                ctx.fillStyle = 'rgba(0, 200, 255, 0.1)';
-                ctx.beginPath();
-                ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize * 0.6, 0, Math.PI * 2);
-                ctx.fill();
+            // ─── ПОРТАЛ ТОЛЬКО В ГОРОДАХ (НЕ В ДОМЕ) ───
+            if (currentCity !== 0) {
+                const portalX = currentMap[0].length - 2;
+                const portalY = 1;
+                if (currentMap[portalY] && currentMap[portalY][portalX] && currentMap[portalY][portalX] !== '🧱') {
+                    const px = portalX * tileSize,
+                        py = portalY * tileSize;
+                    ctx.fillStyle = 'rgba(0, 200, 255, 0.2)';
+                    ctx.fillRect(px, py, tileSize, tileSize);
+                    ctx.fillStyle = '#00ccff';
+                    ctx.font = (tileSize * 0.6) + 'px serif';
+                    ctx.fillText('🌐', px + tileSize * 0.2, py + tileSize * 0.7);
+                    ctx.fillStyle = 'rgba(0, 200, 255, 0.1)';
+                    ctx.beginPath();
+                    ctx.arc(px + tileSize / 2, py + tileSize / 2, tileSize * 0.6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
             // Игрок
@@ -398,6 +472,7 @@
         }
 
         function findPortalNearby() {
+            if (currentCity === 0) return null; // В доме портала нет
             const dirs = [
                 [-1, -1],
                 [-1, 0],
@@ -456,28 +531,21 @@
         function interact() {
             if (gameOver || inBattle) return;
 
-            // 1. Проверяем портал
+            // 1. Проверяем портал (только в городах)
             const portalNear = findPortalNearby();
             if (portalNear) {
                 showPortalMenu();
                 return;
             }
 
-            // 2. Проверяем дверь (радиус 1 клетка)
+            // 2. Проверяем дверь (радиус 1 клетка) — ОТКРЫВАЕМ И СРАЗУ ВЫХОДИМ!
             const doorPos = findDoorNearby();
-            if (doorPos) {
-                if (currentCity === 0) {
-                    // Выход из дома в Айскристалл
-                    dialog.innerHTML = '🚪 Ты стоишь рядом с дверью. Выйти на улицу?';
-                    choicesDiv.innerHTML = `
-                        <button class="btn btn-success" onclick="goToCity(1)">🌳 ВЫЙТИ НА УЛИЦУ</button>
-                        <button class="btn btn-danger" onclick="dialog.innerHTML='🚪 Ты остаёшься в доме.'; choicesDiv.innerHTML='';">❌ ОСТАТЬСЯ</button>
-                    `;
-                } else {
-                    // Если дверь в другом городе — просто сообщение
-                    dialog.innerHTML = '🚪 Это дверь. Но она ведёт не в Айскристалл.';
-                    choicesDiv.innerHTML = '';
-                }
+            if (doorPos && currentCity === 0) {
+                // Выход из дома в Айскристалл
+                dialog.innerHTML = '🚪 Ты открываешь дверь и выходишь на улицу...';
+                setTimeout(() => {
+                    goToCity(1);
+                }, 400);
                 return;
             }
 
@@ -516,7 +584,7 @@
                 return;
             }
 
-            // Король Валахии (если не начат бой автоматически)
+            // Король Валахии
             if (tile === '🤴' && currentCity === 3 && !flags.valahiaKingDefeated) {
                 startBattle('Король Валахии', 150, 16, true);
                 return;
@@ -744,7 +812,7 @@
                     }
                     dialog.innerHTML = log + '<br>👹 Тварь повержена! Остались ещё...';
                     choicesDiv.innerHTML =
-                    `<button class="btn" onclick="dialog.innerHTML='⚔️ Продолжай битву!'; choicesDiv.innerHTML='';">⚔️ ПРОДОЛЖИТЬ</button>`;
+                        `<button class="btn" onclick="dialog.innerHTML='⚔️ Продолжай битву!'; choicesDiv.innerHTML='';">⚔️ ПРОДОЛЖИТЬ</button>`;
                     updateUI();
                     drawMap();
                     saveProgress();
@@ -813,10 +881,10 @@
                 return;
             } else if (choice === 'wilhelm') {
                 text =
-                'Вильгельм: «Если вдруг понадобится отдать за тебя жизнь, я отдам её за Айскристалл.» Эйнар: «Надеюсь, я в тебе не ошибся.»';
+                    'Вильгельм: «Если вдруг понадобится отдать за тебя жизнь, я отдам её за Айскристалл.» Эйнар: «Надеюсь, я в тебе не ошибся.»';
             } else if (choice === 'madison') {
                 text =
-                'Мэддисон: «Оу да! Я знала, что тебе я понравилась. Знаешь, был бы ты постарше, может бы и стал наследником.» Эйнар: «Нет уж, я не пойду на пост наследника, я... Пантократор.»';
+                    'Мэддисон: «Оу да! Я знала, что тебе я понравилась. Знаешь, был бы ты постарше, может бы и стал наследником.» Эйнар: «Нет уж, я не пойду на пост наследника, я... Пантократор.»';
                 flags.saidPantocrator = true;
                 checkAchievements();
             }
@@ -929,7 +997,7 @@
             setTimeout(showInventory, 1500);
         }
 
-        // ─── ДОСТИЖЕНИЯ ───
+        // ─── ДОСТИЖЕНИЯ (СМС-УВЕДОМЛЕНИЯ) ───
         function showAchievements() {
             const list = [
                 '🩸 Первая кровь — убить 5 врагов',
@@ -951,35 +1019,45 @@
         }
 
         function checkAchievements() {
+            let unlocked = false;
             if (enemiesKilled >= 5 && !achievements.includes('Первая кровь')) {
                 achievements.push('Первая кровь');
-                dialog.innerHTML = '🩸 Достижение разблокировано: ПЕРВАЯ КРОВЬ!';
+                showAchievementSMS('ПЕРВАЯ КРОВЬ', 'Убито 5 врагов', '🩸');
+                unlocked = true;
             }
             if (enemiesKilled >= 20 && !achievements.includes('Безумец')) {
                 achievements.push('Безумец');
-                dialog.innerHTML = '🤪 Достижение разблокировано: БЕЗУМЕЦ!';
+                showAchievementSMS('БЕЗУМЕЦ', 'Убито 20 врагов', '🤪');
+                unlocked = true;
             }
             if (flags.marriedAnfisa && !achievements.includes('Малый папа')) {
                 achievements.push('Малый папа');
-                dialog.innerHTML = '👨‍👧 Достижение разблокировано: МАЛЫЙ ПАПА!';
+                showAchievementSMS('МАЛЫЙ ПАПА', 'Женитьба на Анфисе', '👨‍👧');
+                unlocked = true;
             }
             if (flags.saidPantocrator && !achievements.includes('Пантократор')) {
                 achievements.push('Пантократор');
-                dialog.innerHTML = '👑 Достижение разблокировано: ПАНТОКРАТОР!';
+                showAchievementSMS('ПАНТОКРАТОР', 'Сказана легендарная фраза', '👑');
+                unlocked = true;
             }
             if (bossesSpawned >= 4 && !achievements.includes('Всадник геноцида')) {
                 achievements.push('Всадник геноцида');
-                dialog.innerHTML = '💀 Достижение разблокировано: ВСАДНИК ГЕНОЦИДА!';
+                showAchievementSMS('ВСАДНИК ГЕНОЦИДА', 'Не пощажён ни один босс', '💀');
+                unlocked = true;
             }
             if (flags.visitedCities.length >= 6 && !achievements.includes('Путешественник')) {
                 achievements.push('Путешественник');
-                dialog.innerHTML = '🌍 Достижение разблокировано: ПУТЕШЕСТВЕННИК!';
+                showAchievementSMS('ПУТЕШЕСТВЕННИК', 'Посещены все 6 городов', '🌍');
+                unlocked = true;
             }
             if (flags.leopoldDefeated && !achievements.includes('Завершитель')) {
                 achievements.push('Завершитель');
-                dialog.innerHTML = '🏆 Достижение разблокировано: ЗАВЕРШИТЕЛЬ!';
+                showAchievementSMS('ЗАВЕРШИТЕЛЬ', 'Игра пройдена', '🏆');
+                unlocked = true;
             }
-            saveProgress();
+            if (unlocked) {
+                saveProgress();
+            }
         }
 
         // ─── СОХРАНЕНИЕ ───
