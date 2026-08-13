@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MazeTale — Финальная версия</title>
+    <title>MazeTale — Полная версия</title>
     <style>
-        /* ─── БАЗОВЫЕ СТИЛИ ─── */
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; touch-action: manipulation; }
         * { box-sizing: border-box; }
         #gameScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 12px; max-width: 600px; width: 100%; box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); text-align: center; }
@@ -71,8 +70,6 @@
         #battleResultScreen .result-box .stat-line .label { color: #888; }
         #battleResultScreen .result-box .stat-line .value { color: #FFD700; font-weight: bold; }
         #battleResultScreen .result-box .btn { margin-top: 12px; }
-
-        /* ЗАГРУЗОЧНЫЙ ЭКРАН */
         #loadingScreen { background: #0a0a0a; border: 2px solid #FFD700; border-radius: 16px; padding: 30px 20px; max-width: 500px; width: 100%; text-align: center; box-shadow: 0 0 60px rgba(255, 215, 0, 0.2); margin: 20px auto; position: relative; min-height: 400px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         #loadingScreen .logo { max-width: 200px; width: 100%; border-radius: 16px; border: 2px solid #FFD700; box-shadow: 0 0 40px rgba(255, 215, 0, 0.2); margin-bottom: 16px; }
         #loadingScreen .dev { margin: 10px 0; color: #666; font-size: 12px; letter-spacing: 2px; }
@@ -83,14 +80,18 @@
         #loadingScreen .btn-load { background: #FFD700; color: #000; border: none; padding: 14px 40px; border-radius: 8px; font-size: 20px; font-weight: 700; cursor: pointer; box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); margin-top: 10px; width: 100%; max-width: 280px; }
         #loadingScreen .btn-settings { background: #222; color: #aaa; border: 2px solid #444; padding: 12px 40px; border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px; width: 100%; max-width: 280px; }
         #loadingScreen .version { color: #444; font-size: 9px; margin-top: 20px; letter-spacing: 4px; }
+        .cutscene { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; }
+        .cutscene .box { background: #111; border: 2px solid #FFD700; border-radius: 16px; padding: 24px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 0 60px rgba(255, 215, 0, 0.2); }
+        .cutscene .box .text { color: #e0e0e0; font-size: 16px; line-height: 1.8; font-family: Georgia, serif; text-align: left; margin: 12px 0; max-height: 300px; overflow-y: auto; }
+        .cutscene .box .title { color: #FFD700; font-size: 20px; font-family: 'Courier New', monospace; }
+        .cutscene .box .btn { margin-top: 12px; }
+        #cutsceneContainer { display: none; }
     </style>
 </head>
 <body>
 
-    <!-- ═══════ ЗВЁЗДЫ РОЗЫСКА ═══════ -->
-    <div id="wantedDisplay">🌟</div>
+    <div id="wantedDisplay">🌟🌟🌟🌟🌟</div>
 
-    <!-- ═══════ СМС ═══════ -->
     <div id="achievementNotification">
         <span class="icon">🏆</span>
         <div class="text">
@@ -99,7 +100,6 @@
         </div>
     </div>
 
-    <!-- ═══════ МЕНЮ ПОСЛЕ БОЯ ═══════ -->
     <div id="battleResultScreen">
         <div class="result-box">
             <h2>⚔️ ИТОГИ БОЯ</h2>
@@ -111,7 +111,6 @@
         </div>
     </div>
 
-    <!-- ═══════ ЗАГРУЗОЧНЫЙ ЭКРАН ═══════ -->
     <div id="loadingScreen">
         <img src="https://allwebs.ru/image/dce155c2970111f1bc7d566b1cffc49f-1.uSwX0S" alt="MazeTale Logo" class="logo">
         <div class="dev">
@@ -126,7 +125,6 @@
         <div class="version">v1.0 — 2026</div>
     </div>
 
-    <!-- ═══════ ИНТРО ═══════ -->
     <div id="storyScreen">
         <h1>🗺️ MAZETALE</h1>
         <div class="sub">Глава 1: Пробуждение</div>
@@ -137,7 +135,6 @@
         <button id="startBtn" onclick="startGame()">▶ НАЧАТЬ ИГРУ</button>
     </div>
 
-    <!-- ═══════ ИГРА ═══════ -->
     <div id="gameScreen" style="display:none;">
         <h3>🗺️ MAZETALE</h3>
         <div id="chapterTitle">Глава 1: Пробуждение</div>
@@ -175,21 +172,28 @@
         <div id="choices"></div>
         <div style="margin-top:4px; display:flex; justify-content:center; gap:6px; flex-wrap:wrap;">
             <span class="valahia-tag">🏰 MazeTale</span>
-            <span class="valahia-tag neon-flicker">🎮 Финальная версия</span>
+            <span class="valahia-tag neon-flicker">🎮 Полная версия</span>
         </div>
     </div>
 
-    <!-- ═══════ GAME OVER ═══════ -->
     <div id="gameOverScreen">
         <div class="go-text">💀 GAME OVER</div>
         <div class="go-sub">Эйнар Айсхарт пал в бою...</div>
         <button class="go-btn" onclick="resetGame()">🔄 НАЧАТЬ ЗАНОВО</button>
     </div>
 
+    <div id="cutsceneContainer" class="cutscene">
+        <div class="box">
+            <div class="title" id="cutsceneTitle">КАТ-СЦЕНА</div>
+            <div class="text" id="cutsceneText">Текст кат-сцены...</div>
+            <button class="btn btn-gold" onclick="closeCutscene()">✅ ПРОДОЛЖИТЬ</button>
+        </div>
+    </div>
+
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ФИНАЛЬНАЯ ВЕРСИЯ
-        //  ВСЁ В ОДНОМ ФАЙЛЕ
+        //  MAZETALE — ПОЛНАЯ ВЕРСИЯ (АЛЬФА 0.5)
+        //  СЮЖЕТ: ДОМ → АЙСКРИСТАЛЛ → ДИСКО-СИТИ → САН-БАНДЕРО
         // ═══════════════════════════════════════════════════
 
         // ─── ЗАГРУЗОЧНЫЙ ЭКРАН ───
@@ -243,7 +247,7 @@
             resetGame();
         }
 
-        // ─── ИГРА ───
+        // ─── ОСНОВНАЯ ИГРА ───
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const TILE = 50;
@@ -263,18 +267,19 @@
         let enemiesKilled = 0;
         let playerName = 'Эйнар Айсхарт';
         let hasAnfisa = false;
-        let banditsDefeated = false;
         let bossPhase = 0;
         let comboCount = 0;
-        let wantedLevel = 0; // 0-5
+        let wantedLevel = 0;
         let hunger = 100;
         let fatigue = 0;
         let energy = 100;
         let insideHouse = false;
-        let currentHouseMap = null;
         let currentHouseName = '';
+        let sanBanderosRevolution = false;
+        let anfisaMarried = false;
+        let elixirUsed = false;
+        let isAdult = false;
 
-        // ─── СТАТИСТИКА БОЯ ───
         let battleStats = {
             dmgDealt: 0,
             dmgTaken: 0,
@@ -282,7 +287,6 @@
             coinsEarned: 0
         };
 
-        // ─── ФЛАГИ ───
         let flags = {
             talkedToAnfisa: false,
             hasNote: false,
@@ -298,7 +302,10 @@
             valaharmDefeated: false,
             anfisaRecruited: false,
             sanBanderosAllied: false,
-            lasTamperoSaved: false
+            lasTamperoSaved: false,
+            revolutionStarted: false,
+            queenDefeated: false,
+            married: false
         };
 
         let battle = {
@@ -313,8 +320,6 @@
         };
 
         // ─── КАРТЫ ───
-
-        // ДОМ (стартовая)
         const houseMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '⬜', '🧱'],
@@ -328,7 +333,6 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
-        // АЙСКРИСТАЛЛ (город)
         const aiskristallMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '🏠', '🏠', '🏠', '🏪', '🏫', '🌲'],
@@ -342,7 +346,6 @@
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
-        // ДИСКО-СИТИ
         const discoMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🏠', '🔲', '🔲', '🔲', '⚠️', '🔲', '🏪', '🔲', '🧱'],
@@ -356,107 +359,34 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
-        // САН-БАНДЕРО
+        // САН-БАНДЕРО (ОСТРОВ)
         const sanBanderosMap = [
-            ['🦅', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🏛️', '🔲', '🏦', '🔲', '🏫', '🔲', '🏬', '🔲', '🧱'],
-            ['🧱', '🔲', '🤠', '🔲', '👮', '🔲', '🧑‍🌾', '🔲', '🔲', '🧱'],
-            ['🧱', '🛣️', '🛣️', '🛣️', '🌀', '🛣️', '🛣️', '🛣️', '🛣️', '🧱'],
-            ['🧱', '🚗', '🚕', '🚙', '🚐', '🚚', '🚛', '🚔', '⛽', '🧱'],
-            ['🧱', '🌽', '🔲', '🏟️', '🔲', '🎡', '🔲', '🍔', '🔲', '🧱'],
-            ['🧱', '🌽', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🏠', '🔲', '🏠', '🔲', '🏠', '🔲', '🏠', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🌊', '🌊', '🌊', '🕌', '🔲', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+            ['🇸', '🇦', '🇳', '🇧', '🇦', '🇳', '🇩', '🇪', '🇷', '🇴'],
+            ['🦈', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🐙'],
+            ['🌊', '🛤', '🛤', '🛤', '🛤', '🚂', '🚃', '🚃', '🛤', '🛤'],
+            ['🌊', '🏠', '🏠', '🧜‍♀️', '⛪', '🌺', '🏠', '🏠', '🧜‍', '🌊'],
+            ['🌊', '🦀', '🚚', '🍽', '🏢', '🌴', '🚛', '🧜‍♂️', '🌊', '🌊'],
+            ['🌊', '⛲', '🌴', '🏝️', '🏛️', '🏝️', '🌴', '👸', '🪦', '🌊'],
+            ['🌊', '🦭', '🦐', '🏝️', '🏩', '🏝️', '🐈‍⬛', '🐕‍🦺', '🧔🏻', '🌊'],
+            ['🌊', '🌴', '🛳', '🌴', '🚤', '🌴', '👩‍🍼', '🌴', '🐟', '🌊'],
+            ['🌊', '🌊', '🐠', '🐚', '🌊', '🌊', '⛴️', '🌊', '🌊', '🌊'],
+            ['🌊', '🚢', '🌊', '🌊', '🐡', '🌊', '🐬', '🐳', '🌊', '🌊']
         ];
 
-        // ─── КАРТЫ ДОМОВ ───
-
-        // Европрайм
-        const europeMap = [
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '🪟', '🧱'],
-            ['🧱', '🚪', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🚪', '🧱'],
-            ['🧱', '⬜', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '⬜', '🧱'],
-            ['🧱', '⬜', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '⬜', '🧱'],
-            ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+        // ЛАС-СИЛЕНД (ПОСЛЕ РЕВОЛЮЦИИ)
+        const lasSilendMap = [
+            ['🇱', '🇦', '🇸', '🇸', '🇮', '🇱', '🇪', '🇳', '🇩', '🏳'],
+            ['☠️', '🛶', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊'],
+            ['🌊', '🏝️', '🌊', '⛽', '🌊', '⛲', '🌊', '🌊', '🌊', '🌊'],
+            ['🚤', '🌊', '🇦🇸', '🤴', '🌻', '🐠', '🌴', '👮', '🌴', '🌊'],
+            ['🌊', '🌊', '🏢', '🇦🇸', '⛪', '🌺', '🏠', '🏠', '🌊', '🌊'],
+            ['🌊', '🌊', '🌊', '🌴', '🔥', '🥀', '🚗', '🌊', '🌊', '⛴️'],
+            ['🗼', '🌊', '🌼', '🌴', '🏝️', '🏝️', '🌴', '🌺', '🌊', '🌊'],
+            ['🌊', '🚢', '🌊', '🌊', '🏝️', '💍', '🏝️', '🌊', '🌊', '🌊'],
+            ['🌊', '🌊', '🌴', '🌺', '🐠', '🌴', '🌺', '🌴', '🐠', '🌊'],
+            ['🌊', '🌊', '🛳', '🌊', '🌊', '🌊', '🏩', '🏣', '🌊', '🌊']
         ];
 
-        // Нью-Йорк
-        const nyMap = [
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🔲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🔲', '🧱'],
-            ['🧱', '🔲', '⬜', '🛋️', '🛋️', '🪑', '🪑', '⬜', '🔲', '🧱'],
-            ['🧱', '🔲', '⬜', '🛋️', '🛋️', '🪑', '🪑', '⬜', '🔲', '🧱'],
-            ['🧱', '🔲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🔲', '🧱'],
-            ['🧱', '🔲', '⬜', '🛏️', '🛏️', '🛏️', '🛏️', '⬜', '🔲', '🧱'],
-            ['🧱', '🔲', '⬜', '🛏️', '🛏️', '🛏️', '🛏️', '⬜', '🔲', '🧱'],
-            ['🧱', '🔲', '🔲', '🔲', '🚪', '🚪', '🔲', '🔲', '🔲', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // Москоу Сити
-        const moscowMap = [
-            ['🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟'],
-            ['🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟'],
-            ['🪟', '⬜', '🖥️', '🖥️', '🪑', '🪑', '🖥️', '🖥️', '⬜', '🪟'],
-            ['🪟', '⬜', '🖥️', '🖥️', '🪑', '🪑', '🖥️', '🖥️', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '⬜', '🚪', '🚪', '⬜', '⬜', '⬜', '🪟'],
-            ['🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟']
-        ];
-
-        // VIP-квартира
-        const vipMap = [
-            ['🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟'],
-            ['🪟', '🛋️', '🛋️', '🖼️', '⬜', '⬜', '☎️', '💳', '🪪', '🪟'],
-            ['🪟', '🛋️', '🛋️', '🖼️', '⬜', '⬜', '☎️', '💳', '🪪', '🪟'],
-            ['🪟', '⬜', '⬜', '⬜', '🛁', '🛁', '🛁', '⬜', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '⬜', '🛁', '🛁', '🛁', '⬜', '⬜', '🪟'],
-            ['🪟', '🖥️', '🖥️', '⬜', '⬜', '⬜', '⬜', '📦', '📦', '🪟'],
-            ['🪟', '🖥️', '🖥️', '⬜', '⬜', '⬜', '⬜', '📦', '📦', '🪟'],
-            ['🪟', '⬜', '⬜', '🪞', '🪞', '⏰', '🗓️', '🗑️', '⬜', '🪟'],
-            ['🪟', '⬜', '⬜', '🪞', '🪞', '⏰', '🗓️', '🗑️', '⬜', '🪟'],
-            ['🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟']
-        ];
-
-        // Бабушкин дом
-        const babushkaMap = [
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🪟', '🪟', '🖼️', '🛏️', '🛏️', '🛋️', '🪑', '🚪', '🧱'],
-            ['🧱', '🪟', '🪟', '🖼️', '🛏️', '🛏️', '🛋️', '🪑', '📻', '🧱'],
-            ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
-            ['🧱', '⬜', '🪜', '⬜', '🪑', '🪑', '⬜', '🧺', '⬜', '🧱'],
-            ['🧱', '⬜', '⬜', '⬜', '🪑', '🪑', '⬜', '⬜', '⬜', '🧱'],
-            ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
-            ['🧱', '⬜', '🕰️', '🐈‍⬛', '🐕', '🐓', '🐕‍🦺', '⬜', '🕯️', '🧱'],
-            ['🧱', '⬜', '📗', '🧮', '🗑️', '📆', '⬜', '🧰', '🪟', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // Дом Очуры
-        const ochuryMap = [
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
-            ['🧱', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '⬜', '🛋️', '🛋️', '🪑', '🪑', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '⬜', '🛋️', '🛋️', '🪑', '🪑', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '🪵', '🪵', '🪵', '🪵', '⬜', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '🪵', '🪵', '🪵', '🪵', '⬜', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '🪟', '🧱'],
-            ['🧱', '🪟', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '🚪', '🧱'],
-            ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
-        ];
-
-        // ─── ТЕКУЩАЯ КАРТА ───
         let currentMap = houseMap;
         let currentLocation = 'ДОМ';
 
@@ -477,27 +407,24 @@
         const timeDisplay = document.getElementById('timeDisplay');
         const reputationDisplay = document.getElementById('reputationDisplay');
         const wantedDisplay = document.getElementById('wantedDisplay');
-
-        // ─── ШКАЛЫ ───
         const hungerBar = document.getElementById('hungerBar');
         const fatigueBar = document.getElementById('fatigueBar');
         const energyBar = document.getElementById('energyBar');
 
-        // ─── СМС ───
-        const notification = document.getElementById('achievementNotification');
-        const achTitle = document.getElementById('achTitle');
-        const achDesc = document.getElementById('achDesc');
-        let notificationTimeout = null;
+        // ─── КАТ-СЦЕНА ───
+        function showCutscene(title, text, callback) {
+            document.getElementById('cutsceneTitle').textContent = title;
+            document.getElementById('cutsceneText').textContent = text;
+            document.getElementById('cutsceneContainer').style.display = 'flex';
+            window._cutsceneCallback = callback || function() {};
+        }
 
-        function showAchievementSMS(title, desc, icon = '🏆') {
-            document.querySelector('#achievementNotification .icon').textContent = icon;
-            achTitle.textContent = title;
-            achDesc.textContent = desc;
-            notification.classList.add('show');
-            clearTimeout(notificationTimeout);
-            notificationTimeout = setTimeout(() => {
-                notification.classList.remove('show');
-            }, 4000);
+        function closeCutscene() {
+            document.getElementById('cutsceneContainer').style.display = 'none';
+            if (window._cutsceneCallback) {
+                window._cutsceneCallback();
+                window._cutsceneCallback = null;
+            }
         }
 
         // ─── ОБНОВЛЕНИЕ UI ───
@@ -509,13 +436,9 @@
             timeDisplay.textContent = '🕐 ' + String(gameTime.hour).padStart(2, '0') + ':' + String(gameTime.minute)
                 .padStart(2, '0');
             reputationDisplay.textContent = '⭐ ' + reputation;
-            const chapters = ['', 'Пробуждение', 'Айскристалл', 'Замок', 'Диско-Сити', 'Сан-Бандеро'];
+            const chapters = ['', 'Пробуждение', 'Айскристалл', 'Диско-Сити', 'Сан-Бандеро'];
             chapterTitle.textContent = 'Глава ' + currentChapter + ': ' + (chapters[currentChapter] || '');
-
-            // Звёзды розыска
             updateWantedStars();
-
-            // Шкалы
             updateStatBars();
         }
 
@@ -540,7 +463,6 @@
                 if (i < hungerLevel) span.className = 'filled hunger';
                 hungerBar.appendChild(span);
             }
-
             const fatigueLevel = Math.floor(fatigue / 20);
             fatigueBar.innerHTML = '';
             for (let i = 0; i < 5; i++) {
@@ -548,7 +470,6 @@
                 if (i < fatigueLevel) span.className = 'filled fatigue';
                 fatigueBar.appendChild(span);
             }
-
             const energyLevel = Math.floor(energy / 20);
             energyBar.innerHTML = '';
             for (let i = 0; i < 5; i++) {
@@ -569,14 +490,13 @@
                     const tile = currentMap[r][c];
                     ctx.fillStyle = '#1a1a1a';
                     ctx.fillRect(x, y, tileSize, tileSize);
-                    if (tile !== '⬜' && tile !== '🔲' && tile !== '0' && tile !== '⬛') {
+                    if (tile !== '⬜' && tile !== '🔲' && tile !== '0' && tile !== '⬛' && tile !== '🌊') {
                         ctx.fillStyle = '#aaa';
                         ctx.font = (tileSize * 0.55) + 'px serif';
                         ctx.fillText(tile, x + tileSize * 0.2, y + tileSize * 0.7);
                     }
                 }
             }
-
             // Подсветка портала
             for (let r = 0; r < currentMap.length; r++) {
                 for (let c = 0; c < currentMap[r].length; c++) {
@@ -598,7 +518,6 @@
                     }
                 }
             }
-
             // Игрок
             const px = player.y * tileSize,
                 py = player.x * tileSize;
@@ -612,8 +531,6 @@
             ctx.fillStyle = '#000';
             ctx.font = (tileSize * 0.5) + 'px sans-serif';
             ctx.fillText('🐱', px + tileSize * 0.25, py + tileSize * 0.7);
-
-            // Анфиса (если с нами)
             if (flags.hasAnfisa) {
                 const ax = (player.y + 1) * tileSize,
                     ay = player.x * tileSize;
@@ -623,11 +540,16 @@
                 ctx.fill();
                 ctx.fillStyle = '#000';
                 ctx.font = (tileSize * 0.4) + 'px sans-serif';
-                ctx.fillText('👩', ax + tileSize * 0.3, ay + tileSize * 0.7);
+                ctx.fillText(flags.married ? '👩‍❤️‍👨' : '👩', ax + tileSize * 0.3, ay + tileSize * 0.7);
+            }
+            // Проверка на взрослого Эйнара
+            if (isAdult) {
+                ctx.fillStyle = '#FFD700';
+                ctx.font = (tileSize * 0.3) + 'px sans-serif';
+                ctx.fillText('🧝‍♂️', px - 10, py - 10);
             }
         }
 
-        // ─── ПОИСК ДВЕРИ ───
         function findDoorNearby() {
             const dirs = [
                 [-1, -1],
@@ -685,13 +607,37 @@
                 [1, 0],
                 [1, 1]
             ];
+            const houseTypes = ['🏠', '🏙️', '🏚️'];
             for (let d of dirs) {
                 const nx = player.x + d[0];
                 const ny = player.y + d[1];
                 if (nx >= 0 && nx < currentMap.length && ny >= 0 && ny < currentMap[0].length) {
-                    const tile = currentMap[nx][ny];
-                    if (tile === '🏠' || tile === '🏙️' || tile === '🏚️' || tile === '💎') {
-                        return { x: nx, y: ny, type: tile };
+                    if (houseTypes.includes(currentMap[nx][ny])) {
+                        return { x: nx, y: ny, type: currentMap[nx][ny] };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function findNPCNearby() {
+            const dirs = [
+                [-1, -1],
+                [-1, 0],
+                [-1, 1],
+                [0, -1],
+                [0, 1],
+                [1, -1],
+                [1, 0],
+                [1, 1]
+            ];
+            const npcTypes = ['👸', '🧜‍♀️', '🧜‍', '🧜‍♂️', '🧔🏻', '👩‍🍼', '🐈‍⬛'];
+            for (let d of dirs) {
+                const nx = player.x + d[0];
+                const ny = player.y + d[1];
+                if (nx >= 0 && nx < currentMap.length && ny >= 0 && ny < currentMap[0].length) {
+                    if (npcTypes.includes(currentMap[nx][ny])) {
+                        return { x: nx, y: ny, type: currentMap[nx][ny] };
                     }
                 }
             }
@@ -745,7 +691,6 @@
             return null;
         }
 
-        // ─── СПАВН РАЗБОЙНИКОВ ───
         function spawnBandits() {
             const positions = [
                 [3, 2],
@@ -768,49 +713,34 @@
             const ny = player.y + dy;
             if (nx < 0 || nx >= currentMap.length || ny < 0 || ny >= currentMap[0].length) return;
             const tile = currentMap[nx][ny];
-            if (tile === '🧱' || tile === '🌲' || tile === '⬛') return;
+            if (tile === '🧱' || tile === '🌲' || tile === '⬛' || tile === '🌊') return;
 
-            // Энергия тратится при движении
             energy = Math.max(0, energy - 1);
             updateUI();
-
-            if (tile === '🌊') {
-                hp -= 3;
-                dialog.innerHTML = '🌊 Вода ледяная! Ты теряешь 3 HP. ❤️ ' + hp;
-                updateUI();
-                if (hp <= 0) {
-                    gameOver = true;
-                    document.getElementById('gameOverScreen').style.display = 'flex';
-                }
-                return;
-            }
 
             player.x = nx;
             player.y = ny;
 
-            // Разбойники
             if (tile === '👹') {
                 startBattle('Разбойник', 30, 6);
                 return;
             }
 
-            // Враги в Диско-Сити
             if (currentCity === 2) {
                 if (tile === '🤠') {
-                    startBattle('Солдат Валахии', 30, 6, false, '🐴🤠');
+                    startBattle('Солдат Валахии', 30, 6);
                     return;
                 }
                 if (tile === '🙎') {
-                    startBattle('Сержант Валахии', 50, 10, false, '🐴🙎‍♂️');
+                    startBattle('Сержант Валахии', 50, 10);
                     return;
                 }
                 if (tile === '🤴') {
-                    startBattle('Капитан Валахии', 100, 14, true, '🐴🤴');
+                    startBattle('Капитан Валахии', 100, 14, true);
                     return;
                 }
             }
 
-            // Король
             if (tile === '👑' && currentCity === 3) {
                 if (!flags.talkedToKing) {
                     talkToKing();
@@ -818,68 +748,96 @@
                 }
             }
 
+            // Взаимодействие с NPC на Сан-Бандеро
+            if (currentCity === 4) {
+                if (tile === '🧜‍♂️' && !sanBanderosRevolution) {
+                    talkToLelush();
+                    return;
+                }
+                if (tile === '👸' && sanBanderosRevolution && !flags.queenDefeated) {
+                    startQueenBattle();
+                    return;
+                }
+                if (tile === '🧜‍♀️' && currentCity === 4) {
+                    talkToMari();
+                    return;
+                }
+                if (tile === '🧔🏻') {
+                    talkToJoe();
+                    return;
+                }
+                if (tile === '👩‍🍼') {
+                    talkToGrace();
+                    return;
+                }
+                if (tile === '🐈‍⬛') {
+                    dialog.innerHTML = '🐈‍⬛ Негро смотрит на тебя и мурлычет. Похоже, он одобряет твой путь.';
+                    return;
+                }
+            }
+
             dialog.innerHTML = '📍 ' + currentLocation + ' — пустое место.';
             drawMap();
             updateUI();
-            checkAchievements();
         }
 
         // ─── ВЗАИМОДЕЙСТВИЕ ───
         function interact() {
             if (gameOver || inBattle) return;
 
-            // Если внутри дома — своя логика
             if (insideHouse) {
                 houseInteract();
                 return;
             }
 
-            // 1. Портал
             const portalNear = findPortalNearby();
             if (portalNear) {
                 showPortalMenu();
                 return;
             }
 
-            // 2. Дверь
             const doorPos = findDoorNearby();
-            if (doorPos && currentCity === 0) {
-                dialog.innerHTML = '🚪 Ты открываешь дверь и выходишь в Айскристалл...';
-                setTimeout(() => goToCity(1), 400);
+            if (doorPos) {
+                if (insideHouse) {
+                    dialog.innerHTML = '🚪 Выйти из дома?';
+                    choicesDiv.innerHTML = `
+                        <button class="btn btn-success" onclick="exitHouse()">🚪 ВЫЙТИ НА УЛИЦУ</button>
+                        <button class="btn btn-danger" onclick="dialog.innerHTML='🚪 Ты остаёшься в доме.'; choicesDiv.innerHTML='';">❌ ОСТАТЬСЯ</button>
+                    `;
+                    return;
+                } else if (currentCity === 0) {
+                    dialog.innerHTML = '🚪 Ты открываешь дверь и выходишь в Айскристалл...';
+                    setTimeout(() => goToCity(1), 400);
+                    return;
+                } else if (currentCity === 1) {
+                    dialog.innerHTML = '🚪 Ты хочешь вернуться домой?';
+                    choicesDiv.innerHTML = `
+                        <button class="btn btn-success" onclick="goHome()">🏠 ДА, ВЕРНУТЬСЯ</button>
+                        <button class="btn btn-danger" onclick="dialog.innerHTML='🚪 Ты остаёшься в городе.'; choicesDiv.innerHTML='';">❌ ОСТАТЬСЯ</button>
+                    `;
+                    return;
+                }
                 return;
             }
 
-            if (doorPos && currentCity === 1) {
-                dialog.innerHTML = '🚪 Ты хочешь вернуться домой?';
-                choicesDiv.innerHTML = `
-                    <button class="btn btn-success" onclick="goHome()">🏠 ДА, ВЕРНУТЬСЯ</button>
-                    <button class="btn btn-danger" onclick="dialog.innerHTML='🚪 Ты остаёшься в городе.'; choicesDiv.innerHTML='';">❌ ОСТАТЬСЯ</button>
-                `;
-                return;
-            }
-
-            // 3. Дом
             const houseNear = findHouseNearby();
-            if (houseNear) {
+            if (houseNear && !insideHouse) {
                 showHouseMenu(houseNear);
                 return;
             }
 
-            // 4. Автосалон
             const dealerNear = findDealerNearby();
             if (dealerNear) {
                 openCarDealer();
                 return;
             }
 
-            // 5. Машина
             const vehicleNear = findVehicleNearby();
             if (vehicleNear) {
                 interactWithVehicle(vehicleNear);
                 return;
             }
 
-            // 6. Обычные объекты
             const x = player.x,
                 y = player.y;
             const tile = currentMap[x][y];
@@ -906,11 +864,9 @@
                 return;
             }
 
-            if (tile === '👑' && currentCity === 3) {
-                if (!flags.talkedToKing) {
-                    talkToKing();
-                    return;
-                }
+            if (tile === '💍' && currentCity === 4 && flags.hasAnfisa && !flags.married) {
+                marryAnfisa();
+                return;
             }
 
             dialog.innerHTML = '🤝 Здесь не с чем взаимодействовать.';
@@ -922,36 +878,16 @@
                 y = player.y;
             const tile = currentMap[x][y];
 
-            // Верстак
             if (tile === '🧰') {
                 openWorkbench();
                 return;
             }
 
-            // Выход из дома
-            if (tile === '🚪' && (x === 0 || x === currentMap.length - 1 || y === 0 || y === currentMap[0].length -
-                1)) {
+            if (tile === '🚪' && (x === 0 || x === currentMap.length - 1 || y === 0 || y === currentMap[0].length - 1)) {
                 exitHouse();
                 return;
             }
 
-            // Выход во двор (если есть)
-            if (tile === '🚪' && currentHouseName === 'Очуры' && x === 8 && y === 8) {
-                exitToYard();
-                return;
-            }
-
-            // Балкон (для городских домов)
-            if (tile === '🪟' && (x === 0 || x === currentMap.length - 1)) {
-                dialog.innerHTML = '🪟 Ты выходишь на балкон. Красивый вид!';
-                return;
-            }
-
-            // Взаимодействие с предметами в доме
-            if (tile === '🛋️') {
-                dialog.innerHTML = '🛋️ Мягкий диван. Можно отдохнуть.';
-                return;
-            }
             if (tile === '🛏️') {
                 dialog.innerHTML = '🛏️ Кровать. Можно поспать.';
                 choicesDiv.innerHTML = `
@@ -960,111 +896,28 @@
                 `;
                 return;
             }
-            if (tile === '🪑') {
-                dialog.innerHTML = '🪑 Обычный стул.';
+
+            if (tile === '🪑' || tile === '🛋️' || tile === '🖼️' || tile === '🖥️' || tile === '☎️' || tile === '🛁' || tile ===
+                '🪞' || tile === '⏰' || tile === '🗓️' || tile === '🗑️' || tile === '🪜' || tile === '🧺' || tile === '🕰️' ||
+                tile === '🐈‍⬛' || tile === '🐕' || tile === '🐓' || tile === '🐕‍🦺' || tile === '🕯️' || tile === '📗' || tile ===
+                '🧮' || tile === '📆' || tile === '🪵') {
+                dialog.innerHTML = `📍 Это ${tile}.`;
                 return;
             }
-            if (tile === '🖼️') {
-                dialog.innerHTML = '🖼️ Красивая картина на стене.';
-                return;
-            }
-            if (tile === '🖥️') {
-                dialog.innerHTML = '🖥️ Компьютер. Похоже, здесь работают.';
-                return;
-            }
-            if (tile === '📦') {
-                dialog.innerHTML = '📦 Сейф. Нужен ключ, чтобы открыть.';
-                return;
-            }
-            if (tile === '☎️') {
-                dialog.innerHTML = '☎️ Телефон. Можно позвонить.';
-                return;
-            }
-            if (tile === '💳') {
-                dialog.innerHTML = '💳 Кредитная карта. Наверное, VIP-клиента.';
-                return;
-            }
+
             if (tile === '🪪') {
-                dialog.innerHTML = '🪪 VIP-пропуск. Можно попробовать взять.';
                 inventory.push('🪪 VIP-пропуск');
                 currentMap[x][y] = '⬜';
+                dialog.innerHTML = '🪪 Ты взял VIP-пропуск!';
                 updateUI();
                 return;
             }
-            if (tile === '🛁') {
-                dialog.innerHTML = '🛁 Джакузи. Можно расслабиться.';
-                return;
-            }
-            if (tile === '🪞') {
-                dialog.innerHTML = '🪞 Зеркало. Ты выглядишь уставшим.';
-                return;
-            }
-            if (tile === '⏰') {
-                dialog.innerHTML = '⏰ Дорогие часы. Стоят целое состояние.';
-                return;
-            }
-            if (tile === '🗓️') {
-                dialog.innerHTML = '🗓️ Календарь. Сегодня важный день.';
-                return;
-            }
-            if (tile === '🗑️') {
-                dialog.innerHTML = '🗑️ Корзина для бумаг. Там пусто.';
-                return;
-            }
-            if (tile === '🪜') {
-                dialog.innerHTML = '🪜 Лестница. Ведёт на чердак.';
-                return;
-            }
-            if (tile === '🧺') {
-                dialog.innerHTML = '🧺 Корзина для белья. Там что-то есть!';
+
+            if (tile === '📦') {
                 coins += 5;
                 currentMap[x][y] = '⬜';
-                dialog.innerHTML = '🧺 Ты нашёл 5 монет!';
+                dialog.innerHTML = '📦 Ты нашёл 5 монет!';
                 updateUI();
-                return;
-            }
-            if (tile === '🕰️') {
-                dialog.innerHTML = '🕰️ Старые часы с кукушкой. Стрелки застыли.';
-                return;
-            }
-            if (tile === '🐈‍⬛') {
-                dialog.innerHTML = '🐈‍⬛ Чёрный кот смотрит на тебя. Мурлычет.';
-                return;
-            }
-            if (tile === '🐕') {
-                dialog.innerHTML = '🐕 Собака виляет хвостом. Дружелюбная.';
-                return;
-            }
-            if (tile === '🐓') {
-                dialog.innerHTML = '🐓 Курица клюёт зерно.';
-                return;
-            }
-            if (tile === '🐕‍🦺') {
-                dialog.innerHTML = '🐕‍🦺 Пёс-охранник. Лучше не подходить.';
-                return;
-            }
-            if (tile === '🕯️') {
-                dialog.innerHTML = '🕯️ Свеча тускло горит.';
-                return;
-            }
-            if (tile === '📗') {
-                dialog.innerHTML = '📗 Старая книга. Похоже, дневник.';
-                return;
-            }
-            if (tile === '🧮') {
-                dialog.innerHTML = '🧮 Старые счёты. Их уже никто не использует.';
-                return;
-            }
-            if (tile === '📆') {
-                dialog.innerHTML = '📆 Отрывной календарь. Дата: 1985 год.';
-                return;
-            }
-            if (tile === '🧰') {
-                // Верстак уже обработан выше
-                return;
-            }
-            if (tile === '🪵') {
-                dialog.innerHTML = '🪵 Печь-голбец. Тепло и уютно.';
                 return;
             }
 
@@ -1074,27 +927,46 @@
         // ─── ВХОД В ДОМ ───
         function enterHouse(houseType) {
             insideHouse = true;
-            switch (houseType) {
-                case '🏠':
-                    currentMap = europeMap;
-                    currentHouseName = 'Европрайм';
-                    break;
-                case '🏙️':
-                    currentMap = nyMap;
-                    currentHouseName = 'Нью-Йорк';
-                    break;
-                case '🏚️':
-                    currentMap = babushkaMap;
-                    currentHouseName = 'Бабушкин дом';
-                    break;
-                case '💎':
-                    currentMap = vipMap;
-                    currentHouseName = 'VIP-квартира';
-                    break;
-                default:
-                    currentMap = europeMap;
-                    currentHouseName = 'Европрайм';
-            }
+            const houseMaps = {
+                '🏠': [
+                    ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
+                    ['🧱', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🧱'],
+                    ['🧱', '🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟', '🧱'],
+                    ['🧱', '🪟', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '🪟', '🧱'],
+                    ['🧱', '🪟', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '🪟', '🧱'],
+                    ['🧱', '🚪', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🚪', '🧱'],
+                    ['🧱', '⬜', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '⬜', '🧱'],
+                    ['🧱', '⬜', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '⬜', '🧱'],
+                    ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
+                    ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+                ],
+                '🏙️': [
+                    ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
+                    ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
+                    ['🧱', '🔲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🔲', '🧱'],
+                    ['🧱', '🔲', '⬜', '🛋️', '🛋️', '🪑', '🪑', '⬜', '🔲', '🧱'],
+                    ['🧱', '🔲', '⬜', '🛋️', '🛋️', '🪑', '🪑', '⬜', '🔲', '🧱'],
+                    ['🧱', '🔲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🔲', '🧱'],
+                    ['🧱', '🔲', '⬜', '🛏️', '🛏️', '🛏️', '🛏️', '⬜', '🔲', '🧱'],
+                    ['🧱', '🔲', '⬜', '🛏️', '🛏️', '🛏️', '🛏️', '⬜', '🔲', '🧱'],
+                    ['🧱', '🔲', '🔲', '🔲', '🚪', '🚪', '🔲', '🔲', '🔲', '🧱'],
+                    ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+                ],
+                '🏚️': [
+                    ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
+                    ['🧱', '🪟', '🪟', '🖼️', '🛏️', '🛏️', '🛋️', '🪑', '🚪', '🧱'],
+                    ['🧱', '🪟', '🪟', '🖼️', '🛏️', '🛏️', '🛋️', '🪑', '📻', '🧱'],
+                    ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
+                    ['🧱', '⬜', '🪜', '⬜', '🪑', '🪑', '⬜', '🧺', '⬜', '🧱'],
+                    ['🧱', '⬜', '⬜', '⬜', '🪑', '🪑', '⬜', '⬜', '⬜', '🧱'],
+                    ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
+                    ['🧱', '⬜', '🕰️', '🐈‍⬛', '🐕', '🐓', '🐕‍🦺', '⬜', '🕯️', '🧱'],
+                    ['🧱', '⬜', '📗', '🧮', '🗑️', '📆', '⬜', '🧰', '🪟', '🧱'],
+                    ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+                ]
+            };
+            currentMap = JSON.parse(JSON.stringify(houseMaps[houseType] || houseMaps['🏠']));
+            currentHouseName = houseType === '🏠' ? 'Европрайм' : houseType === '🏙️' ? 'Нью-Йорк' : 'Бабушкин дом';
             player.x = 4;
             player.y = 4;
             drawMap();
@@ -1103,7 +975,6 @@
             updateUI();
         }
 
-        // ─── ВЫХОД ИЗ ДОМА ───
         function exitHouse() {
             insideHouse = false;
             currentHouseName = '';
@@ -1114,12 +985,6 @@
             updateUI();
         }
 
-        function exitToYard() {
-            dialog.innerHTML = '🌿 Ты выходишь во двор.';
-            // Здесь будет логика двора
-        }
-
-        // ─── СОН ───
         function sleep() {
             hp = Math.min(100, hp + 20);
             energy = Math.min(100, energy + 20);
@@ -1132,14 +997,8 @@
 
         // ─── МЕНЮ ДОМА ───
         function showHouseMenu(house) {
-            const houseTypes = {
-                '🏠': 'Европрайм',
-                '🏙️': 'Нью-Йорк',
-                '🏚️': 'Бабушкин дом',
-                '💎': 'VIP-квартира'
-            };
+            const houseTypes = { '🏠': 'Европрайм', '🏙️': 'Нью-Йорк', '🏚️': 'Бабушкин дом' };
             const name = houseTypes[house.type] || 'Дом';
-
             let html = `
                 🏠 <b>${name}</b><br>
                 📍 Место: ${currentLocation}<br>
@@ -1156,42 +1015,22 @@
         }
 
         function getHouseOwner(type) {
-            const owners = {
-                '🏠': 'Иван Петров',
-                '🏙️': 'Джон Смит',
-                '🏚️': 'Мария Иванова',
-                '💎': 'Александр Волков'
-            };
+            const owners = { '🏠': 'Иван Петров', '🏙️': 'Джон Смит', '🏚️': 'Мария Иванова' };
             return owners[type] || 'Неизвестно';
         }
 
         function getHouseFamily(type) {
-            const families = {
-                '🏠': 'Петровы',
-                '🏙️': 'Смиты',
-                '🏚️': 'Ивановы',
-                '💎': 'Волковы'
-            };
+            const families = { '🏠': 'Петровы', '🏙️': 'Смиты', '🏚️': 'Ивановы' };
             return families[type] || 'Неизвестно';
         }
 
         function getHouseDate(type) {
-            const dates = {
-                '🏠': '12.05.2010',
-                '🏙️': '03.09.2015',
-                '🏚️': '15.11.1985',
-                '💎': '20.06.2020'
-            };
+            const dates = { '🏠': '12.05.2010', '🏙️': '03.09.2015', '🏚️': '15.11.1985' };
             return dates[type] || 'Неизвестно';
         }
 
         function robHouse(type) {
-            const rewards = {
-                '🏠': 20,
-                '🏙️': 35,
-                '🏚️': 15,
-                '💎': 50
-            };
+            const rewards = { '🏠': 20, '🏙️': 35, '🏚️': 15 };
             const reward = rewards[type] || 10;
             coins += reward;
             wantedLevel = Math.min(5, wantedLevel + 2);
@@ -1207,12 +1046,7 @@
             choicesDiv.innerHTML = '';
             updateUI();
             saveProgress();
-            checkGameOverByWanted();
-        }
-
-        function checkGameOverByWanted() {
             if (wantedLevel >= 5) {
-                dialog.innerHTML += '<br>🚔 Тебя поймали и отправили в тюрьму. 💀 GAME OVER';
                 gameOver = true;
                 document.getElementById('gameOverScreen').style.display = 'flex';
             }
@@ -1222,7 +1056,6 @@
         function interactWithVehicle(vehicle) {
             const vType = vehicle.type;
             if (vType === '🚗' || vType === '🚙' || vType === '🚛' || vType === '🚐' || vType === '🚌') {
-                // Машина — можно угнать
                 if (flags.ownsCar) {
                     dialog.innerHTML = '🚗 Ты садишься в свою машину и едешь.';
                     choicesDiv.innerHTML = `
@@ -1238,7 +1071,6 @@
                 }
             } else if (vType === '🛴' || vType === '🚲') {
                 dialog.innerHTML = `🛴 Ты садишься на ${vType === '🛴' ? 'самокат' : 'велосипед'} и едешь быстрее.`;
-                // Ускорение передвижения
                 flags.hasVehicle = true;
                 choicesDiv.innerHTML = `<button class="btn" onclick="dialog.innerHTML='🚲 Ты слез с транспорта.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>`;
             } else {
@@ -1256,7 +1088,6 @@
         }
 
         function driveToCity() {
-            // Быстрое перемещение в центр города
             player.x = 4;
             player.y = 4;
             dialog.innerHTML = '🏙️ Ты приехал в центр города.';
@@ -1279,21 +1110,9 @@
         }
 
         function buyVehicle(type) {
-            const prices = {
-                scooter: 150,
-                bicycle: 400,
-                car: 4500,
-                motorcycle: 3000,
-                truck: 5500
-            };
-            const names = {
-                scooter: '🛴 Самокат',
-                bicycle: '🚲 Велосипед',
-                car: '🚗 Легковушка',
-                motorcycle: '🏍️ Мотоцикл',
-                truck: '🚛 Грузовик'
-            };
-
+            const prices = { scooter: 150, bicycle: 400, car: 4500, motorcycle: 3000, truck: 5500 };
+            const names = { scooter: '🛴 Самокат', bicycle: '🚲 Велосипед', car: '🚗 Легковушка', motorcycle: '🏍️ Мотоцикл',
+                truck: '🚛 Грузовик' };
             if (coins >= prices[type]) {
                 coins -= prices[type];
                 inventory.push(names[type]);
@@ -1324,37 +1143,24 @@
 
         function craftItem(item) {
             const recipes = {
-                wooden_sword: { name: '🗡️ Деревянный меч', ingredients: ['Доска x3', 'Палка x2'], result: '🗡️ Деревянный меч',
-                    dmg: 5 },
+                wooden_sword: { name: '🗡️ Деревянный меч', ingredients: ['Доска x3', 'Палка x2'], result: '🗡️ Деревянный меч' },
                 stone_pickaxe: { name: '⛏️ Каменная кирка', ingredients: ['Булыжник x3', 'Палка x2'],
                     result: '⛏️ Каменная кирка' },
-                leather_chest: { name: '🛡️ Кожаный нагрудник', ingredients: ['Кожа x8'], result: '🛡️ Кожаный нагрудник',
-                    def: 3 },
+                leather_chest: { name: '🛡️ Кожаный нагрудник', ingredients: ['Кожа x8'], result: '🛡️ Кожаный нагрудник' },
                 iron_sword: { name: '🗡️ Железный меч', ingredients: ['Железный слиток x2', 'Палка x1'],
-                    result: '🗡️ Железный меч', dmg: 7 },
+                    result: '🗡️ Железный меч' },
                 diamond_sword: { name: '🗡️ Алмазный меч', ingredients: ['Алмаз x2', 'Палка x1'],
-                    result: '🗡️ Алмазный меч', dmg: 10 },
-                shield: { name: '🛡️ Щит', ingredients: ['Доска x6', 'Железный слиток x1'], result: '🛡️ Щит', def: 5 },
+                    result: '🗡️ Алмазный меч' },
+                shield: { name: '🛡️ Щит', ingredients: ['Доска x6', 'Железный слиток x1'], result: '🛡️ Щит' },
                 heal_potion: { name: '🧪 Зелье исцеления', ingredients: ['Стекло x1', 'Золото x1'],
-                    result: '🧪 Зелье исцеления', heal: 25 }
+                    result: '🧪 Зелье исцеления' }
             };
-
             const recipe = recipes[item];
             if (!recipe) return;
-
-            // Проверяем наличие ингредиентов (упрощённо — просто проверяем инвентарь)
-            let canCraft = true;
-            // Здесь можно добавить реальную проверку ресурсов
-            // Пока просто разрешаем крафт, если игрок уже имеет опыт
-
-            if (canCraft) {
-                inventory.push(recipe.result);
-                dialog.innerHTML = `✅ Ты скрафтил ${recipe.name}!`;
-                updateUI();
-                saveProgress();
-            } else {
-                dialog.innerHTML = `❌ Не хватает ресурсов для ${recipe.name}. Нужно: ${recipe.ingredients.join(', ')}`;
-            }
+            inventory.push(recipe.result);
+            dialog.innerHTML = `✅ Ты скрафтил ${recipe.name}!`;
+            updateUI();
+            saveProgress();
         }
 
         // ─── ПОРТАЛ ───
@@ -1362,11 +1168,8 @@
             const cities = [
                 { id: 1, name: 'Айскристалл', unlocked: true },
                 { id: 2, name: 'Диско-Сити', unlocked: flags.kingDefeated },
-                { id: 3, name: 'Сан-Бандеро', unlocked: flags.discoCleared },
-                { id: 4, name: 'Лас-Тампэро', unlocked: flags.sanBanderosAllied },
-                { id: 5, name: 'Кальдера', unlocked: flags.lasTamperoSaved }
+                { id: 4, name: 'Сан-Бандеро', unlocked: flags.discoCleared }
             ];
-
             let html = '🌀 <b>ВЫБЕРИ ГОРОД:</b><br>';
             cities.forEach(c => {
                 if (c.unlocked) {
@@ -1384,11 +1187,10 @@
             const cityMap = {
                 1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' },
                 2: { map: discoMap, name: 'Диско-Сити', loc: 'ДИСКО-СИТИ' },
-                3: { map: sanBanderosMap, name: 'Сан-Бандеро', loc: 'САН-БАНДЕРО' }
+                4: { map: sanBanderosMap, name: 'Сан-Бандеро', loc: 'САН-БАНДЕРО' }
             };
             const city = cityMap[cityId];
             if (!city) return;
-
             dialog.innerHTML = '🌀 Портал открывается...';
             choicesDiv.innerHTML = '';
             setTimeout(() => {
@@ -1401,11 +1203,21 @@
                 if (!flags.visitedCities.includes(cityId)) {
                     flags.visitedCities.push(cityId);
                 }
-                dialog.innerHTML = '🌆 Ты прибыл в ' + city.name + '!';
-                drawMap();
-                updateUI();
-                saveProgress();
-                checkAchievements();
+                if (cityId === 4 && !sanBanderosRevolution) {
+                    showCutscene('🏝️ САН-БАНДЕРО', 'Ребят переносит в мир Сан-Бандеро!\n\nЭйнар: Ого! Здесь столько воды...\nАнфиса: Да уж, многовато, я здесь первый раз, а ты?\nЭйнар: ...\nАнфиса: А, ой, хи-хи\nЭйнар: ... Ладно. Нам надо название нашему дуо.\nАнфиса: Хорошая идея! Как насчёт Шайка спасателей?\nЭйнар: Долговато, хм.. Синтократоры?\nАнфиса: Не знаю перевода.. Но согласна!', function() {
+                        achievements.push('Синтократоры');
+                        showAchievementSMS('СИНТОКРАТОРЫ', 'Вы стали синтократорами!', '⚡');
+                        dialog.innerHTML = '🌊 Ты прибыл в Сан-Бандеро!';
+                        drawMap();
+                        updateUI();
+                        saveProgress();
+                    });
+                } else {
+                    dialog.innerHTML = '🌆 Ты прибыл в ' + city.name + '!';
+                    drawMap();
+                    updateUI();
+                    saveProgress();
+                }
             }, 1200);
         }
 
@@ -1414,11 +1226,11 @@
             const cityMap = {
                 1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' },
                 2: { map: discoMap, name: 'Диско-Сити', loc: 'ДИСКО-СИТИ' },
-                3: { map: sanBanderosMap, name: 'Сан-Бандеро', loc: 'САН-БАНДЕРО' }
+                4: { map: sanBanderosRevolution ? lasSilendMap : sanBanderosMap, name: sanBanderosRevolution ? 'Лас-Силенд' :
+                        'Сан-Бандеро', loc: sanBanderosRevolution ? 'ЛАС-СИЛЕНД' : 'САН-БАНДЕРО' }
             };
             const city = cityMap[cityId];
             if (!city) return;
-
             currentMap = JSON.parse(JSON.stringify(city.map));
             currentLocation = city.loc;
             currentCity = cityId;
@@ -1427,9 +1239,7 @@
             if (!flags.visitedCities.includes(cityId)) {
                 flags.visitedCities.push(cityId);
             }
-
             if (cityId === 1) spawnBandits();
-
             if (cityId === 2) {
                 const enemies = [
                     [1, 3],
@@ -1442,20 +1252,14 @@
                         currentMap[r][c] = '🤠';
                     }
                 });
-                if (currentMap[6] && currentMap[6][1] === '🔲') {
-                    currentMap[6][1] = '🙎';
-                }
-                if (currentMap[5] && currentMap[5][5] === '🔲') {
-                    currentMap[5][5] = '🤴';
-                }
+                if (currentMap[6] && currentMap[6][1] === '🔲') currentMap[6][1] = '🙎';
+                if (currentMap[5] && currentMap[5][5] === '🔲') currentMap[5][5] = '🤴';
             }
-
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '🌆 Ты прибыл в ' + city.name + '!';
             drawMap();
             updateUI();
             saveProgress();
-            checkAchievements();
         }
 
         function goHome() {
@@ -1476,16 +1280,16 @@
         function openShop() {
             dialog.innerHTML = '🏪 Добро пожаловать в магазин!<br>Выбери товар:';
             choicesDiv.innerHTML = `
-                <button class="btn" onclick="buyItem('apple')">🍎 Яблоко (5💰)</button>
-                <button class="btn" onclick="buyItem('sword')">🗡️ Меч (20💰)</button>
-                <button class="btn" onclick="buyItem('shield')">🛡️ Щит (15💰)</button>
-                <button class="btn" onclick="buyItem('food')">🍗 Еда (8💰)</button>
-                <button class="btn" onclick="buyItem('potion')">🧪 Зелье исцеления (10💰)</button>
+                <button class="btn" onclick="buyShopItem('apple')">🍎 Яблоко (5💰)</button>
+                <button class="btn" onclick="buyShopItem('sword')">🗡️ Меч (20💰)</button>
+                <button class="btn" onclick="buyShopItem('shield')">🛡️ Щит (15💰)</button>
+                <button class="btn" onclick="buyShopItem('food')">🍗 Еда (8💰)</button>
+                <button class="btn" onclick="buyShopItem('potion')">🧪 Зелье исцеления (10💰)</button>
                 <button class="btn btn-danger" onclick="dialog.innerHTML='🏪 Ты вышел из магазина.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>
             `;
         }
 
-        function buyItem(item) {
+        function buyShopItem(item) {
             const prices = { apple: 5, sword: 20, shield: 15, food: 8, potion: 10 };
             const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит', food: '🍗 Еда', potion: '🧪 Зелье исцеления' };
             if (coins >= prices[item]) {
@@ -1507,10 +1311,10 @@
         // ─── РАЗГОВОР С АНФИСОЙ ───
         function talkToAnfisa() {
             if (flags.anfisaRecruited) {
-                dialog.innerHTML = '👩 Анфиса: «Я с тобой, Эйнар!»';
+                dialog.innerHTML = flags.married ? '👩 Анфиса (Жена): «Я с тобой, Эйнарик! ❤️»' :
+                    '👩 Анфиса: «Я с тобой, Эйнар!»';
                 return;
             }
-
             if (!flags.talkedToAnfisa) {
                 flags.talkedToAnfisa = true;
                 dialog.innerHTML = '👩 Анфиса: «О, ты проснулся! Город захватили разбойники. Помоги нам!»';
@@ -1529,15 +1333,11 @@
                 flags.hasAnfisa = true;
                 flags.anfisaRecruited = true;
                 hasAnfisa = true;
-
                 for (let r = 0; r < currentMap.length; r++) {
                     for (let c = 0; c < currentMap[r].length; c++) {
-                        if (currentMap[r][c] === '👩') {
-                            currentMap[r][c] = '⬜';
-                        }
+                        if (currentMap[r][c] === '👩') currentMap[r][c] = '⬜';
                     }
                 }
-
                 dialog.innerHTML = '👩 Анфиса: «Спасибо! Я пойду с тобой. Вместе мы сила!»';
                 drawMap();
                 updateUI();
@@ -1647,6 +1447,7 @@
             dialog.innerHTML = '🌀 Портал открывается...';
             choicesDiv.innerHTML = '';
             setTimeout(() => {
+                flags.kingDefeated = true;
                 goToCity(2);
                 dialog.innerHTML = '🌆 Добро пожаловать в Диско-Сити! Город оккупирован Валахией. Освободи его!';
                 choicesDiv.innerHTML = '';
@@ -1656,14 +1457,112 @@
             }, 1500);
         }
 
+        // ─── ДИАЛОГ С ЛЕЛУШЕМ (САН-БАНДЕРО) ───
+        function talkToLelush() {
+            if (sanBanderosRevolution) {
+                dialog.innerHTML = '🧜‍♂️ Лелуш: «Спасибо за помощь, друг! Свобода восторжествовала!»';
+                return;
+            }
+            dialog.innerHTML = '🧜‍♂️ Лелуш: «Пу-пу-пу, как мне надоели эти девушки...»\n🗣️ Эйнар: «Хэй! Привет!»\n🧜‍♂️ Лелуш: «Хм, а ты не похож на девушку.»\n🗣️ Эйнар: «Да, я гость, приехал помочь.»\n🧜‍♂️ Лелуш: «Помочь? С чем?»\n🗣️ Эйнар: «Тебе нужна помощь?»\n🧜‍♂️ Лелуш: «Приятель, только по секрету. Я на самом деле шёл из-за должности, никакой я нахрен не феминист, помоги мне устроить революцию! И спасти Сан-Бандеро, как идея?»';
+            choicesDiv.innerHTML = `
+                <button class="btn btn-success" onclick="startRevolution()">⚔️ ДА, ЗА СВОБОДУ!</button>
+                <button class="btn btn-danger" onclick="refuseRevolution()">❌ НЕТ</button>
+            `;
+        }
+
+        function startRevolution() {
+            sanBanderosRevolution = true;
+            flags.revolutionStarted = true;
+            showCutscene('⚔️ РЕВОЛЮЦИЯ!', 'Эйнар: Вперёд! За...\n🧜‍♂️ Лелуш: За Лас-Силенд!\nЭйнар: За Лас-Силенд!!!\n\nАнфиса: Вы про меня вообще забыли?\nЭйнар: А, ну да, говори.\nАнфиса: За свободу!!!\nЭйнар: Да!', function() {
+                dialog.innerHTML = '🔥 Революция началась! Вперёд к победе!';
+                choicesDiv.innerHTML = '';
+                drawMap();
+                updateUI();
+                saveProgress();
+                // Запускаем битву с королевой
+                setTimeout(() => {
+                    startQueenBattle();
+                }, 1000);
+            });
+        }
+
+        function refuseRevolution() {
+            dialog.innerHTML = '🧜‍♂️ Лелуш: «Блин, а говорил ещё помогаешь..»';
+            choicesDiv.innerHTML = `
+                <button class="btn btn-success" onclick="startRevolution()">🔄 ПЕРЕДУМАТЬ И ПОМОЧЬ</button>
+                <button class="btn btn-danger" onclick="leaveRevolution()">🚪 УЙТИ</button>
+            `;
+        }
+
+        function leaveRevolution() {
+            dialog.innerHTML = '🗣️ Эйнар: «Сорян, я пошёл, я не участвую в избиении девушек.»\n🧜‍♂️ Лелуш: «Мудро.»';
+            choicesDiv.innerHTML = '';
+        }
+
+        // ─── БИТВА С КОРОЛЕВОЙ ───
+        function startQueenBattle() {
+            if (flags.queenDefeated) {
+                dialog.innerHTML = '👸 Королева уже побеждена. Город свободен!';
+                return;
+            }
+            showCutscene('👸 БИТВА ЗА СВОБОДУ!', 'Королева: «Ты посмел поднять руку на матриархат?!»\nЭйнар: «Мы боремся за свободу всех!»\nНачинается битва!', function() {
+                startBattle('Королева Сан-Бандеро', 150, 16, true);
+            });
+        }
+
+        // ─── СВЯЩЕННЫЙ БРАК ───
+        function marryAnfisa() {
+            if (!flags.hasAnfisa) {
+                dialog.innerHTML = '💍 Анфиса должна быть с тобой, чтобы пожениться.';
+                return;
+            }
+            if (flags.married) {
+                dialog.innerHTML = '💍 Вы уже женаты!';
+                return;
+            }
+            if (!isAdult) {
+                dialog.innerHTML = '💍 Ты должен стать взрослым, чтобы жениться. Используй зелье взросления!';
+                return;
+            }
+            flags.married = true;
+            anfisaMarried = true;
+            achievements.push('Семья');
+            showAchievementSMS('СЕМЬЯ', 'Ты женился на Анфисе!', '💍');
+            dialog.innerHTML = '💍 Ты и Анфиса поженились! ❤️\n👩 Анфиса (Жена): «Я люблю тебя, Эйнарик!»';
+            choicesDiv.innerHTML = '';
+            updateUI();
+            saveProgress();
+        }
+
+        // ─── ЗЕЛЬЕ ВЗРОСЛЕНИЯ ───
+        function useElixir() {
+            if (elixirUsed || isAdult) {
+                dialog.innerHTML = '🧪 Ты уже взрослый!';
+                return;
+            }
+            if (!inventory.includes('🧪 Зелье взросления')) {
+                dialog.innerHTML = '🧪 У тебя нет зелья взросления. Найди его у русалок.';
+                return;
+            }
+            elixirUsed = true;
+            isAdult = true;
+            inventory = inventory.filter(i => i !== '🧪 Зелье взросления');
+            showCutscene('🧝‍♂️ ВЗРОСЛЕНИЕ', 'Анфиса протягивает флакон.\n— Выпей это.\nЭйнар делает глоток. Его тело меняется — он становится взрослым, сильным, брутальным магом (23 года).\nАнфиса смотрит на него с улыбкой.\n— Теперь ты выглядишь как настоящий герой.', function() {
+                dialog.innerHTML = '🧝‍♂️ Ты стал взрослым! Теперь ты — могущественный маг!';
+                choicesDiv.innerHTML = '';
+                updateUI();
+                saveProgress();
+            });
+        }
+
         // ─── БИТВА ───
-        function startBattle(name, hpMax, atk, isBoss = false, icon = '👹') {
+        function startBattle(name, hpMax, atk, isBoss = false) {
             inBattle = true;
             battle.enemyName = name;
             battle.enemyHP = hpMax;
             battle.enemyMaxHP = hpMax;
             battle.enemyAttack = atk;
-            battle.playerAttack = 8 + (flags.hasSword ? 5 : 0) + (flags.hasAnfisa ? 3 : 0);
+            battle.playerAttack = 8 + (flags.hasSword ? 5 : 0) + (flags.hasAnfisa ? 3 : 0) + (isAdult ? 10 : 0);
             battle.defense = false;
             battle.isBoss = isBoss;
             battle.phase = 0;
@@ -1680,11 +1579,10 @@
             updateBossUI();
 
             let dialogText = `⚔️ ${name}: «Ты посмел прийти сюда?!»`;
-            if (name === 'Солдат Валахии') dialogText = '🐴🤠 Солдат: «Очередной герой? Ты даже не заметишь, что умрёшь.»';
-            if (name === 'Сержант Валахии') dialogText =
-            '🐴🙎‍♂️ Сержант: «А-а, снова герои. Ну держитесь!»';
-            if (name === 'Капитан Валахии') dialogText =
-            '🐴🤴 Капитан: «Ты думаешь, что сможешь остановить Валахию?»';
+            if (name === 'Солдат Валахии') dialogText = '🤠 Солдат: «Очередной герой? Ты даже не заметишь, что умрёшь.»';
+            if (name === 'Сержант Валахии') dialogText = '🙎‍♂️ Сержант: «А-а, снова герои. Ну держитесь!»';
+            if (name === 'Капитан Валахии') dialogText = '🤴 Капитан: «Ты думаешь, что сможешь остановить Валахию?»';
+            if (name === 'Королева Сан-Бандеро') dialogText = '👸 Королева: «Ты посмел поднять руку на матриархат?!»';
 
             dialog.innerHTML = dialogText;
             renderBattleButtons();
@@ -1699,6 +1597,9 @@
             `;
             if (comboCount < 2) {
                 buttons += `<button class="btn btn-gold" onclick="comboAttack()">⚡ КОМБО-УДАР</button>`;
+            }
+            if (inventory.includes('🧪 Зелье взросления') && !elixirUsed) {
+                buttons += `<button class="btn btn-success" onclick="useElixir()">🧪 ЗЕЛЬЕ ВЗРОСЛЕНИЯ</button>`;
             }
             choicesDiv.innerHTML = buttons;
         }
@@ -1726,7 +1627,6 @@
             let log = `⚡ Комбо-удар! Ты нанёс ${dmg} урона! (💀 ${battle.enemyHP}/${battle.enemyMaxHP})`;
             if (type === 'fire') log += ' 🔥 Огненный урон!';
             if (type === 'ice') log += ' ❄️ Ледяной урон!';
-
             if (battle.enemyHP <= 0) {
                 endBattle(log);
                 return;
@@ -1765,7 +1665,6 @@
                 endBattle(log);
                 return;
             }
-
             enemyAttackPhase(log);
         }
 
@@ -1776,7 +1675,6 @@
             battleStats.dmgTaken += dmg;
             battle.defense = false;
             log += `<br>💀 Враг атакует! -${dmg} HP (❤️ ${hp})`;
-
             energy = Math.max(0, energy - 5);
             updateUI();
 
@@ -1804,7 +1702,7 @@
             enemiesKilled++;
             comboCount = 0;
 
-            const coinsEarned = 5 + Math.floor(Math.random() * 10);
+            const coinsEarned = 10 + Math.floor(Math.random() * 20);
             coins += coinsEarned;
             battleStats.coinsEarned = coinsEarned;
 
@@ -1820,6 +1718,25 @@
                 }
             }
 
+            // Победа над королевой
+            if (battle.isBoss && battle.enemyName === 'Королева Сан-Бандеро') {
+                flags.queenDefeated = true;
+                flags.discoCleared = true;
+                currentMap = JSON.parse(JSON.stringify(lasSilendMap));
+                currentLocation = 'ЛАС-СИЛЕНД';
+                showCutscene('🏴 СВОБОДА!', 'Город освобождён! Лазадор становится новым правителем.\nЭйнар: «Свобода восторжествовала!»\nАнфиса: «Мы сделали это!»', function() {
+                    dialog.innerHTML = '🏴 Ты освободил Сан-Бандеро! Теперь это Лас-Силенд!';
+                    choicesDiv.innerHTML = '';
+                    drawMap();
+                    updateUI();
+                    saveProgress();
+                    checkAchievements();
+                    showBattleResult();
+                });
+                return;
+            }
+
+            // Проверка на зачистку Диско-Сити
             if (currentCity === 2) {
                 let enemiesLeft = false;
                 for (let r = 0; r < currentMap.length; r++) {
@@ -1885,7 +1802,7 @@
             battle.enemyHP = 120;
             battle.enemyMaxHP = 120;
             battle.enemyAttack = 16;
-            battle.playerAttack = 8 + (flags.hasSword ? 5 : 0) + (flags.hasAnfisa ? 3 : 0);
+            battle.playerAttack = 8 + (flags.hasSword ? 5 : 0) + (flags.hasAnfisa ? 3 : 0) + (isAdult ? 10 : 0);
             battle.defense = false;
             battle.isBoss = true;
             inBattle = true;
@@ -2036,9 +1953,10 @@
             const x = player.x,
                 y = player.y;
             const tile = currentMap[x][y];
-
             if (tile === '👩') {
                 talkToAnfisa();
+            } else if (tile === '🧜‍♂️') {
+                talkToLelush();
             } else {
                 dialog.innerHTML = '💬 Здесь не с кем говорить.';
             }
@@ -2061,7 +1979,6 @@
         function useItem(index) {
             const item = inventory[index];
             if (!item) return;
-
             dialog.innerHTML = `
                 <b>${item}</b><br>
                 <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
@@ -2076,7 +1993,6 @@
         function useItemAction(index, action) {
             const item = inventory[index];
             if (!item) return;
-
             if (action === 'use') {
                 if (item.includes('Яблоко')) {
                     hp = Math.min(hp + 15, 100);
@@ -2086,7 +2002,7 @@
                 } else if (item.includes('Записка')) {
                     dialog.innerHTML = '📖 «Айскристалл — город магии. Будь осторожен.»';
                 } else if (item.includes('Карта')) {
-                    dialog.innerHTML = '🗺️ Ты смотришь на карту Кальдеры. Путь к ней лежит через Диско-Сити.';
+                    dialog.innerHTML = '🗺️ Карта Кальдеры. Путь к ней лежит через Сан-Бандеро.';
                 } else if (item.includes('Еда')) {
                     hunger = Math.min(100, hunger + 30);
                     inventory.splice(index, 1);
@@ -2097,6 +2013,8 @@
                     inventory.splice(index, 1);
                     dialog.innerHTML = `🧪 Ты выпил зелье исцеления! ❤️ +25 (теперь ${hp})`;
                     updateUI();
+                } else if (item.includes('Зелье взросления')) {
+                    useElixir();
                 } else {
                     dialog.innerHTML = `❌ Нельзя использовать ${item}.`;
                 }
@@ -2127,7 +2045,9 @@
                 '⚔️ Освободитель — зачистить Диско-Сити',
                 '👑 Победитель Валахарма — одолеть Валахарма',
                 '🚗 Угонщик — угнать машину',
-                '💎 Миллионер — накопить 1000 монет'
+                '💎 Миллионер — накопить 1000 монет',
+                '⚡ Синтократоры — стать синтократорами',
+                '💍 Семья — жениться на Анфисе'
             ];
             let html = '🏆 <b>ДОСТИЖЕНИЯ:</b><br>';
             list.forEach(a => {
@@ -2136,6 +2056,17 @@
             });
             dialog.innerHTML = html;
             choicesDiv.innerHTML = `<button class="btn btn-sm" onclick="dialog.innerHTML='📋 Достижения закрыты.'; choicesDiv.innerHTML='';">🔙 ЗАКРЫТЬ</button>`;
+        }
+
+        function showAchievementSMS(title, desc, icon = '🏆') {
+            document.querySelector('#achievementNotification .icon').textContent = icon;
+            document.getElementById('achTitle').textContent = title;
+            document.getElementById('achDesc').textContent = desc;
+            document.getElementById('achievementNotification').classList.add('show');
+            clearTimeout(window._achTimeout);
+            window._achTimeout = setTimeout(() => {
+                document.getElementById('achievementNotification').classList.remove('show');
+            }, 4000);
         }
 
         function checkAchievements() {
@@ -2163,15 +2094,21 @@
                 achievements.push('Миллионер');
                 showAchievementSMS('МИЛЛИОНЕР', 'Накоплено 1000 монет', '💎');
             }
+            if (achievements.includes('Синтократоры') && !achievements.includes('Синтократоры')) {
+                // уже добавлено
+            }
+            if (flags.married && !achievements.includes('Семья')) {
+                achievements.push('Семья');
+                showAchievementSMS('СЕМЬЯ', 'Ты женился на Анфисе!', '💍');
+            }
             saveProgress();
         }
 
-        // ─── ТАЙМЕРЫ ДЛЯ ШКАЛ ───
+        // ─── ТАЙМЕРЫ ───
         function updateStats() {
             hunger = Math.max(0, hunger - 1);
             fatigue = Math.min(100, fatigue + 1);
             energy = Math.min(100, energy + 0.5);
-
             if (hunger <= 0) {
                 gameOver = true;
                 dialog.innerHTML = '💀 Ты умер от голода...';
@@ -2179,22 +2116,20 @@
                 updateUI();
                 return;
             }
-
             if (fatigue >= 100) {
                 fatigue = 50;
                 hp = Math.min(100, hp + 20);
                 dialog.innerHTML = '😴 Ты уснул от усталости. ❤️ +20';
                 updateUI();
             }
-
             updateUI();
         }
 
         // ─── СОХРАНЕНИЕ ───
         function saveProgress() {
             const data = { hp, coins, inventory, flags, playerX: player.x, playerY: player.y, currentCity, currentLocation,
-                reputation, gameTime, achievements, enemiesKilled, banditsDefeated, bossPhase, comboCount, hasAnfisa,
-                hunger, fatigue, energy, wantedLevel, insideHouse, currentHouseName };
+                reputation, gameTime, achievements, enemiesKilled, bossPhase, comboCount, hasAnfisa, hunger, fatigue, energy,
+                wantedLevel, insideHouse, currentHouseName, sanBanderosRevolution, anfisaMarried, elixirUsed, isAdult };
             try { localStorage.setItem('mazetale_save', JSON.stringify(data)); } catch (e) {}
         }
 
@@ -2215,7 +2150,6 @@
                 gameTime = data.gameTime || { hour: 14, minute: 30 };
                 achievements = data.achievements || [];
                 enemiesKilled = data.enemiesKilled || 0;
-                banditsDefeated = data.banditsDefeated || false;
                 bossPhase = data.bossPhase || 0;
                 comboCount = data.comboCount || 0;
                 hasAnfisa = data.hasAnfisa || false;
@@ -2225,24 +2159,58 @@
                 wantedLevel = data.wantedLevel || 0;
                 insideHouse = data.insideHouse || false;
                 currentHouseName = data.currentHouseName || '';
+                sanBanderosRevolution = data.sanBanderosRevolution || false;
+                anfisaMarried = data.anfisaMarried || false;
+                elixirUsed = data.elixirUsed || false;
+                isAdult = data.isAdult || false;
                 updateMapByCity();
                 return true;
             } catch (e) { return false; }
         }
 
         function updateMapByCity() {
-            const maps = { 0: houseMap, 1: aiskristallMap, 2: discoMap, 3: sanBanderosMap };
+            const maps = { 0: houseMap, 1: aiskristallMap, 2: discoMap, 4: sanBanderosRevolution ? lasSilendMap :
+                sanBanderosMap };
             if (insideHouse) {
-                // Восстанавливаем карту дома
                 const houseMaps = {
-                    'Европрайм': europeMap,
-                    'Нью-Йорк': nyMap,
-                    'Москоу Сити': moscowMap,
-                    'VIP-квартира': vipMap,
-                    'Бабушкин дом': babushkaMap,
-                    'Очуры': ochuryMap
+                    'Европрайм': [
+                        ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
+                        ['🧱', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🪟', '🧱'],
+                        ['🧱', '🪟', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🪟', '🧱'],
+                        ['🧱', '🪟', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '🪟', '🧱'],
+                        ['🧱', '🪟', '⬜', '🛋️', '🛋️', '🛋️', '🛋️', '⬜', '🪟', '🧱'],
+                        ['🧱', '🚪', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🚪', '🧱'],
+                        ['🧱', '⬜', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '⬜', '🧱'],
+                        ['🧱', '⬜', '⬜', '🪑', '🪑', '🪑', '🪑', '⬜', '⬜', '🧱'],
+                        ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
+                        ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+                    ],
+                    'Нью-Йорк': [
+                        ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
+                        ['🧱', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🔲', '🧱'],
+                        ['🧱', '🔲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🔲', '🧱'],
+                        ['🧱', '🔲', '⬜', '🛋️', '🛋️', '🪑', '🪑', '⬜', '🔲', '🧱'],
+                        ['🧱', '🔲', '⬜', '🛋️', '🛋️', '🪑', '🪑', '⬜', '🔲', '🧱'],
+                        ['🧱', '🔲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🔲', '🧱'],
+                        ['🧱', '🔲', '⬜', '🛏️', '🛏️', '🛏️', '🛏️', '⬜', '🔲', '🧱'],
+                        ['🧱', '🔲', '⬜', '🛏️', '🛏️', '🛏️', '🛏️', '⬜', '🔲', '🧱'],
+                        ['🧱', '🔲', '🔲', '🔲', '🚪', '🚪', '🔲', '🔲', '🔲', '🧱'],
+                        ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+                    ],
+                    'Бабушкин дом': [
+                        ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
+                        ['🧱', '🪟', '🪟', '🖼️', '🛏️', '🛏️', '🛋️', '🪑', '🚪', '🧱'],
+                        ['🧱', '🪟', '🪟', '🖼️', '🛏️', '🛏️', '🛋️', '🪑', '📻', '🧱'],
+                        ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
+                        ['🧱', '⬜', '🪜', '⬜', '🪑', '🪑', '⬜', '🧺', '⬜', '🧱'],
+                        ['🧱', '⬜', '⬜', '⬜', '🪑', '🪑', '⬜', '⬜', '⬜', '🧱'],
+                        ['🧱', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🧱'],
+                        ['🧱', '⬜', '🕰️', '🐈‍⬛', '🐕', '🐓', '🐕‍🦺', '⬜', '🕯️', '🧱'],
+                        ['🧱', '⬜', '📗', '🧮', '🗑️', '📆', '⬜', '🧰', '🪟', '🧱'],
+                        ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
+                    ]
                 };
-                currentMap = houseMaps[currentHouseName] || europeMap;
+                currentMap = JSON.parse(JSON.stringify(houseMaps[currentHouseName] || houseMaps['Европрайм']));
             } else {
                 currentMap = JSON.parse(JSON.stringify(maps[currentCity] || houseMap));
                 if (currentCity === 1) spawnBandits();
@@ -2273,7 +2241,10 @@
                 valaharmDefeated: false,
                 anfisaRecruited: false,
                 sanBanderosAllied: false,
-                lasTamperoSaved: false
+                lasTamperoSaved: false,
+                revolutionStarted: false,
+                queenDefeated: false,
+                married: false
             };
             gameOver = false;
             inBattle = false;
@@ -2285,7 +2256,6 @@
             gameTime = { hour: 14, minute: 30 };
             achievements = [];
             enemiesKilled = 0;
-            banditsDefeated = false;
             hasAnfisa = false;
             bossPhase = 0;
             comboCount = 0;
@@ -2295,6 +2265,10 @@
             wantedLevel = 0;
             insideHouse = false;
             currentHouseName = '';
+            sanBanderosRevolution = false;
+            anfisaMarried = false;
+            elixirUsed = false;
+            isAdult = false;
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
             bossBar.classList.add('hidden');
@@ -2306,17 +2280,11 @@
         }
 
         // ─── ЗАПУСК ───
-        // Интро уже запускается через загрузочный экран
-        // При первом запуске — показываем загрузочный экран
-
-        // Если есть сохранение — сразу переходим в игру (но через интро)
         if (!loadProgress()) {
-            // Показываем загрузочный экран
             document.getElementById('loadingScreen').style.display = 'flex';
             document.getElementById('storyScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'none';
         } else {
-            // Если есть сохранение — пропускаем загрузочный экран и интро
             document.getElementById('loadingScreen').style.display = 'none';
             document.getElementById('storyScreen').style.display = 'none';
             document.getElementById('gameScreen').style.display = 'block';
@@ -2324,9 +2292,8 @@
             updateUI();
         }
 
-        // ─── ТАЙМЕР ДЛЯ ШКАЛ ───
         setInterval(() => {
-            if (!gameOver && !inBattle && !document.getElementById('loadingScreen').style.display === 'flex') {
+            if (!gameOver && !inBattle && document.getElementById('gameScreen').style.display !== 'none') {
                 updateStats();
                 gameTime.minute += 2;
                 if (gameTime.minute >= 60) {
