@@ -1,155 +1,168 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>🌍 Our Empire — демо</title>
+    <title>🌍 Our Empire Pro — Прототип</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: #0a0a12;
-            color: #cfd8e6;
+            background: #0a0e1a;
+            color: #c8d6e5;
             font-family: 'Segoe UI', sans-serif;
-            padding: 20px;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
         .container {
-            max-width: 720px;
+            max-width: 820px;
             width: 100%;
-            background: #141425;
-            border: 2px solid #7a8bff;
-            border-radius: 24px;
+            background: #141b2b;
+            border: 2px solid #3a5f8a;
+            border-radius: 28px;
             padding: 24px;
-            box-shadow: 0 0 40px rgba(90, 120, 255, 0.15);
+            box-shadow: 0 0 50px rgba(58, 95, 138, 0.2);
         }
         h1 {
             color: #b7c9ff;
             text-align: center;
-            font-size: 26px;
-            letter-spacing: 2px;
-            border-bottom: 1px solid #2a3a6a;
+            font-size: 28px;
+            border-bottom: 1px solid #2a3f6a;
             padding-bottom: 12px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
+            letter-spacing: 3px;
         }
         .stats {
             display: flex;
-            justify-content: space-around;
+            justify-content: space-between;
             flex-wrap: wrap;
-            gap: 10px;
-            background: #1a1f35;
-            padding: 12px;
+            background: #10182a;
+            padding: 14px 18px;
             border-radius: 16px;
-            margin-bottom: 20px;
-            border: 1px solid #2e3f7a;
-        }
-        .stats span {
+            border: 1px solid #2a3f6a;
+            margin-bottom: 18px;
             font-weight: bold;
-            color: #ffd866;
+            gap: 8px;
         }
+        .stats span { color: #ffd866; }
         .map {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
             margin: 16px 0;
         }
         .cell {
-            background: #1f284a;
-            border: 1px solid #3a4a7a;
-            border-radius: 12px;
-            padding: 12px 6px;
+            background: #1a2440;
+            border: 1px solid #2f4370;
+            border-radius: 10px;
+            padding: 8px 4px;
             text-align: center;
+            font-size: 12px;
             cursor: pointer;
             transition: 0.2s;
-            font-size: 13px;
             color: #b0c4f0;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        .cell:hover { transform: scale(1.02); border-color: #7a9aff; }
+        .cell:hover { transform: scale(1.03); border-color: #7a9aff; }
         .cell.own { border-color: #6fcf97; background: #1a3a2a; }
         .cell.enemy { border-color: #ff6b6b; background: #3a1a1a; }
-        .cell .name { font-weight: bold; font-size: 14px; }
+        .cell .name { font-weight: bold; font-size: 13px; }
         .cell .army { color: #ffaa66; }
         .cell .gold { color: #ffd700; }
+        .cell .defense { color: #66b3ff; }
+        .flex {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin: 12px 0;
+        }
         .btn {
-            background: #2a3f8a;
-            color: white;
+            background: #2a4a8a;
+            color: #fff;
             border: none;
-            padding: 10px 16px;
-            border-radius: 12px;
+            padding: 10px 20px;
+            border-radius: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
-            margin: 4px;
         }
-        .btn:hover { background: #4a6fcf; transform: scale(1.02); }
+        .btn:hover { background: #4a7acf; transform: scale(1.02); }
         .btn:active { transform: scale(0.95); }
         .log {
-            background: #0d0f1f;
-            border: 1px solid #2a3a6a;
-            border-radius: 12px;
+            background: #0b1120;
+            border: 1px solid #1f3460;
+            border-radius: 14px;
             padding: 12px;
             margin-top: 16px;
-            max-height: 120px;
+            max-height: 140px;
             overflow-y: auto;
-            font-size: 14px;
-            color: #aab8e6;
+            font-size: 13px;
+            line-height: 1.6;
         }
-        .log .highlight { color: #ffd866; font-weight: bold; }
-        .flex { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+        .log .highlight { color: #ffd866; }
+        .log .combat { color: #ff8a80; }
+        .log .win { color: #80d8a0; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🌍 Our Empire — Remake</h1>
+    <h1>🌍 Our Empire Pro — Прототип</h1>
 
     <div class="stats" id="stats">
-        <span>🪙 <span id="goldDisplay">100</span></span>
-        <span>⚔️ <span id="armyDisplay">20</span></span>
-        <span>🏰 <span id="territoryDisplay">1</span></span>
-        <span>⏳ <span id="timerDisplay">10</span>с</span>
+        <span>🪙 Золото: <span id="goldDisplay">100</span></span>
+        <span>⚔️ Армия: <span id="armyDisplay">30</span></span>
+        <span>🏰 Регионов: <span id="territoryDisplay">1</span></span>
+        <span>⏳ Ход: <span id="turnDisplay">0</span></span>
     </div>
 
     <div class="map" id="mapContainer"></div>
 
     <div class="flex">
         <button class="btn" onclick="trainArmy()">🎯 Тренировать войска (30 золота)</button>
-        <button class="btn" onclick="nextTurn()">⏩ Пропустить ход</button>
+        <button class="btn" onclick="nextTurn()">⏩ Следующий ход</button>
+        <button class="btn" onclick="resetGame()">🔄 Перезапуск</button>
     </div>
 
-    <div class="log" id="log">⚔️ Добро пожаловать в Our Empire! Захватывай соседние земли.</div>
+    <div class="log" id="log">⚔️ Добро пожаловать в Our Empire Pro! Выбери свою страну кликом.</div>
 </div>
 
 <script>
-    // === ИГРОВОЙ МИР ===
-    const NAMES = ['Нордланд', 'Эйфелия', 'Золотая Орда', 'Лесной Союз', 'Железный Трон', 'Морская Империя', 'Пустынный Клан', 'Северный Альянс', 'Королевство Огня', 'Ледяной Щит', 'Изумрудный Дом', 'Вольный Город', 'Теневой Совет', 'Стальной Легион', 'Драконья Скала', 'Серебряный Берег'];
-    
-    let world = [];
-    let playerIndex = 0; // игрок всегда на 0 позиции
-    let gold = 100;
-    let army = 20;
-    let turn = 0;
-    let timer = 10;
+    // === МИР (6×6) ===
+    const NAMES = [
+        'Россия', 'Украина', 'Германия', 'Франция', 'Италия', 'Испания',
+        'Великобритания', 'Польша', 'Турция', 'Греция', 'Египет', 'Сауд. Аравия',
+        'Индия', 'Китай', 'Япония', 'США', 'Канада', 'Мексика',
+        'Бразилия', 'Аргентина', 'ЮАР', 'Нигерия', 'Австралия', 'Казахстан',
+        'Швеция', 'Норвегия', 'Финляндия', 'Дания', 'Нидерланды', 'Бельгия',
+        'Швейцария', 'Австрия', 'Венгрия', 'Румыния', 'Болгария', 'Сербия'
+    ];
 
-    // === ИНИЦИАЛИЗАЦИЯ ===
+    let world = [];
+    let playerIndex = -1; // выбрана страна
+    let gold = 100;
+    let army = 30;
+    let turn = 0;
+
     function initWorld() {
-        world = [];
-        for (let i = 0; i < 16; i++) {
-            world.push({
-                id: i,
-                name: NAMES[i % NAMES.length] + (i >= NAMES.length ? ' ' + Math.floor(i/NAMES.length) : ''),
-                owner: i === 0 ? 0 : -1, // -1 = нейтральная
-                gold: 20 + Math.floor(Math.random() * 30),
-                army: 10 + Math.floor(Math.random() * 20),
-                defense: 5 + Math.floor(Math.random() * 10)
-            });
-        }
-        world[0].owner = 0; // игрок
-        world[0].gold = 100;
-        world[0].army = 30;
+        world = NAMES.map((name, i) => ({
+            id: i,
+            name: name,
+            owner: -1, // -1 = нейтрал, 0 = игрок, >0 = ИИ
+            gold: 15 + Math.floor(Math.random() * 30),
+            army: 8 + Math.floor(Math.random() * 18),
+            defense: 2 + Math.floor(Math.random() * 6)
+        }));
+        // Первая страна (Россия) изначально принадлежит игроку для примера
+        world[0].owner = 0;
+        playerIndex = 0;
+        gold = world[0].gold;
+        army = world[0].army;
     }
     initWorld();
 
-    // === ОТРИСОВКА КАРТЫ ===
     function renderMap() {
         const container = document.getElementById('mapContainer');
         container.innerHTML = '';
@@ -157,119 +170,178 @@
             const div = document.createElement('div');
             div.className = 'cell';
             if (cell.owner === 0) div.classList.add('own');
-            else if (cell.owner !== -1) div.classList.add('enemy');
+            else if (cell.owner > 0) div.classList.add('enemy');
+
             div.innerHTML = `
                 <div class="name">${cell.name}</div>
                 <div class="gold">🪙 ${cell.gold}</div>
                 <div class="army">⚔️ ${cell.army}</div>
-                ${cell.owner === -1 ? '<div style="color:#888;">🌿 нейтраль</div>' : ''}
+                <div class="defense">🛡️ ${cell.defense}</div>
+                ${cell.owner === -1 ? '<div style="color:#667;font-size:10px;">🌿 нейтр.</div>' : ''}
                 ${cell.owner === 0 ? '🏠' : ''}
+                ${cell.owner > 0 ? '🤖' : ''}
             `;
-            if (cell.owner !== 0 && cell.owner !== -1) {
+            // Выбор страны для игрока
+            if (cell.owner === -1 || cell.owner > 0) {
                 div.style.cursor = 'pointer';
-                div.onclick = () => attack(idx);
+                div.onclick = () => selectCountry(idx);
             }
             container.appendChild(div);
         });
-        document.getElementById('goldDisplay').textContent = gold;
-        document.getElementById('armyDisplay').textContent = army;
-        document.getElementById('territoryDisplay').textContent = world.filter(c => c.owner === 0).length;
+        updateStats();
     }
 
-    // === АТАКА ===
-    function attack(idx) {
+    function selectCountry(idx) {
+        if (world[idx].owner === 0) return;
+        // Если игрок уже имеет страну — сначала забрать ресурсы
+        if (playerIndex !== -1 && world[playerIndex].owner === 0) {
+            world[playerIndex].gold = gold;
+            world[playerIndex].army = army;
+            world[playerIndex].owner = -1; // освободить
+        }
+        // Захват выбранной страны (если нейтральная или ИИ)
+        if (world[idx].owner === -1) {
+            world[idx].owner = 0;
+            gold = world[idx].gold;
+            army = world[idx].army;
+            playerIndex = idx;
+            addLog(`✅ Ты выбрал ${world[idx].name}!`);
+        } else if (world[idx].owner > 0) {
+            // Бой с ИИ за страну
+            attackCountry(idx);
+        }
+        renderMap();
+    }
+
+    function attackCountry(idx) {
         const target = world[idx];
-        if (target.owner === 0) {
-            addLog('❌ Это твоя территория!');
-            return;
-        }
-        if (army <= 0) {
-            addLog('❌ У тебя нет войск!');
-            return;
-        }
+        if (army <= 0) { addLog('❌ Нет войск для атаки!'); return; }
         const playerPower = army + Math.floor(Math.random() * 10);
         const enemyPower = target.army + target.defense + Math.floor(Math.random() * 8);
         if (playerPower > enemyPower) {
-            const lost = Math.floor(army * 0.3) + Math.floor(Math.random() * 5);
+            const lost = Math.floor(army * 0.3) + Math.floor(Math.random() * 4);
             army -= lost;
-            const gained = Math.floor(target.army * 0.5);
+            const gained = Math.floor(target.army * 0.4);
             army += gained;
-            gold += Math.floor(target.gold * 0.6);
+            gold += Math.floor(target.gold * 0.5);
             target.owner = 0;
-            addLog(`⚔️ Победа! ${target.name} захвачен! Потеряно ${lost} войск, получено ${gained} + золото.`);
+            target.army = Math.max(5, target.army - Math.floor(target.army * 0.5));
+            target.gold = Math.floor(target.gold * 0.3);
+            playerIndex = idx;
+            addLog(`⚔️ Победа! ${target.name} захвачен. Потеряно ${lost} войск.`, 'win');
         } else {
-            const lost = Math.floor(army * 0.5) + Math.floor(Math.random() * 5);
+            const lost = Math.floor(army * 0.5) + Math.floor(Math.random() * 4);
             army = Math.max(0, army - lost);
             target.army = Math.max(5, target.army - Math.floor(target.army * 0.2));
-            addLog(`💀 Поражение! Потеряно ${lost} войск. ${target.name} защитился.`);
+            addLog(`💀 Поражение от ${target.name}! Потеряно ${lost} войск.`, 'combat');
         }
         renderMap();
         checkGameOver();
     }
 
-    // === ТРЕНИРОВКА ===
     function trainArmy() {
         if (gold >= 30) {
             gold -= 30;
-            army += 10 + Math.floor(Math.random() * 8);
-            addLog(`🎯 Войска обучены! +${10 + Math.floor(Math.random() * 8)} солдат.`);
+            const inc = 8 + Math.floor(Math.random() * 6);
+            army += inc;
+            addLog(`🎯 Войска обучены! +${inc} солдат.`);
             renderMap();
         } else {
             addLog('❌ Не хватает золота (нужно 30).');
         }
     }
 
-    // === ПРОПУСТИТЬ ХОД ===
     function nextTurn() {
-        // доход с территорий
+        // Доход с регионов
         const territories = world.filter(c => c.owner === 0);
-        const income = territories.length * 5 + Math.floor(Math.random() * 5);
+        const income = territories.length * 4 + Math.floor(Math.random() * 4);
         gold += income;
-        // враги укрепляются
+
+        // Враги укрепляются
         world.forEach(c => {
-            if (c.owner !== 0 && c.owner !== -1) {
-                c.army += Math.floor(Math.random() * 3);
+            if (c.owner > 0) {
+                c.army += Math.floor(Math.random() * 4);
                 c.defense += Math.floor(Math.random() * 2);
+                c.gold += Math.floor(Math.random() * 5);
             }
         });
+
+        // ИИ атакует друг друга (случайно)
+        const aiCountries = world.filter(c => c.owner > 0);
+        if (aiCountries.length > 1) {
+            const attacker = aiCountries[Math.floor(Math.random() * aiCountries.length)];
+            const targets = world.filter(c => c.owner !== attacker.owner && c.owner !== 0 && c.owner !== -1);
+            if (targets.length > 0) {
+                const target = targets[Math.floor(Math.random() * targets.length)];
+                const ap = attacker.army + Math.random() * 8;
+                const ep = target.army + target.defense + Math.random() * 6;
+                if (ap > ep) {
+                    const lost = Math.floor(attacker.army * 0.2);
+                    attacker.army -= lost;
+                    const gained = Math.floor(target.army * 0.3);
+                    attacker.army += gained;
+                    target.owner = attacker.owner;
+                    addLog(`🤖 ${attacker.name} захватил ${target.name}!`, 'combat');
+                } else {
+                    const lost = Math.floor(attacker.army * 0.3);
+                    attacker.army = Math.max(3, attacker.army - lost);
+                    addLog(`🤖 ${attacker.name} атаковал ${target.name}, но отступил.`, 'combat');
+                }
+            }
+        }
+
+        // Если игрок потерял все регионы — проигрыш
+        if (world.filter(c => c.owner === 0).length === 0 && playerIndex !== -1) {
+            addLog('💀 ТЫ ПОТЕРЯЛ ВСЕ РЕГИОНЫ! ИГРА ОКОНЧЕНА.', 'combat');
+            playerIndex = -1;
+        }
+
         turn++;
-        addLog(`⏳ Ход ${turn}. Доход: +${income} золота.`);
         renderMap();
-        timer = 10;
-        document.getElementById('timerDisplay').textContent = timer;
+        document.getElementById('turnDisplay').textContent = turn;
+        addLog(`⏳ Ход ${turn}. Доход: +${income} золота.`);
     }
 
-    // === ЛОГ ===
-    function addLog(msg) {
+    function addLog(msg, cls = '') {
         const log = document.getElementById('log');
-        log.innerHTML += `<div>${msg}</div>`;
+        log.innerHTML += `<div class="${cls}">${msg}</div>`;
         log.scrollTop = log.scrollHeight;
         if (log.children.length > 20) log.removeChild(log.firstChild);
     }
 
-    // === GAME OVER ===
+    function updateStats() {
+        document.getElementById('goldDisplay').textContent = gold;
+        document.getElementById('armyDisplay').textContent = army;
+        document.getElementById('territoryDisplay').textContent = world.filter(c => c.owner === 0).length;
+        document.getElementById('turnDisplay').textContent = turn;
+    }
+
     function checkGameOver() {
-        if (army <= 0) {
-            addLog('💀 ВСЕ ВОЙСКА ПОТЕРЯНЫ. ИГРА ОКОНЧЕНА.');
-            // можно перезапустить
+        if (world.filter(c => c.owner === 0).length >= 36) {
+            addLog('🏆 ТЫ ЗАХВАТИЛ ВЕСЬ МИР! ПОБЕДА!', 'win');
         }
-        if (world.filter(c => c.owner === 0).length >= 16) {
-            addLog('🏆 ТЫ ЗАХВАТИЛ ВЕСЬ МИР! ПОБЕДА!');
+        if (army <= 0 && playerIndex !== -1) {
+            addLog('💀 ВСЕ ВОЙСКА ПОТЕРЯНЫ. ИГРА ОКОНЧЕНА.', 'combat');
+            playerIndex = -1;
         }
     }
 
-    // === ТАЙМЕР ===
+    function resetGame() {
+        initWorld();
+        turn = 0;
+        document.getElementById('turnDisplay').textContent = '0';
+        document.getElementById('log').innerHTML = '🔄 Игра перезапущена. Выбери страну.';
+        renderMap();
+    }
+
+    // === ТАЙМЕР АВТО-ХОДА ===
     setInterval(() => {
-        timer--;
-        document.getElementById('timerDisplay').textContent = timer;
-        if (timer <= 0) {
-            nextTurn();
-        }
-    }, 1000);
+        if (playerIndex !== -1) nextTurn();
+    }, 12000);
 
     // === СТАРТ ===
     renderMap();
-    addLog('🌍 Игра начата! Атакуй соседей для расширения империи.');
+    addLog('👆 Кликни по любой нейтральной или вражеской стране, чтобы выбрать её.');
 </script>
 </body>
 </html>
