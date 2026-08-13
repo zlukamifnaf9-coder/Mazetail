@@ -2,238 +2,274 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>🏰 Наш Замок — демо</title>
+    <title>🌍 Our Empire — демо</title>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            background: #0d0d1a;
-            color: #e0d6b0;
+            background: #0a0a12;
+            color: #cfd8e6;
             font-family: 'Segoe UI', sans-serif;
-            min-height: 100vh;
+            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
         }
-        .castle {
-            background: #1a1a2e;
-            padding: 35px 30px;
-            border-radius: 30px;
-            max-width: 600px;
+        .container {
+            max-width: 720px;
             width: 100%;
-            border: 2px solid #b8860b;
-            box-shadow: 0 0 30px rgba(184, 134, 11, 0.3);
-            text-align: center;
+            background: #141425;
+            border: 2px solid #7a8bff;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 0 40px rgba(90, 120, 255, 0.15);
         }
         h1 {
-            color: #ffd700;
-            font-size: 28px;
+            color: #b7c9ff;
+            text-align: center;
+            font-size: 26px;
             letter-spacing: 2px;
+            border-bottom: 1px solid #2a3a6a;
+            padding-bottom: 12px;
             margin-bottom: 20px;
         }
-        .res {
+        .stats {
             display: flex;
+            justify-content: space-around;
             flex-wrap: wrap;
-            justify-content: center;
-            gap: 12px;
-            margin: 15px 0 20px;
-        }
-        .res span {
-            background: #0f3460;
-            padding: 8px 18px;
-            border-radius: 30px;
-            border: 1px solid #b8860b;
-            font-weight: bold;
-        }
-        .btn-group {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
             gap: 10px;
-            margin: 15px 0;
+            background: #1a1f35;
+            padding: 12px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            border: 1px solid #2e3f7a;
         }
+        .stats span {
+            font-weight: bold;
+            color: #ffd866;
+        }
+        .map {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin: 16px 0;
+        }
+        .cell {
+            background: #1f284a;
+            border: 1px solid #3a4a7a;
+            border-radius: 12px;
+            padding: 12px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+            color: #b0c4f0;
+        }
+        .cell:hover { transform: scale(1.02); border-color: #7a9aff; }
+        .cell.own { border-color: #6fcf97; background: #1a3a2a; }
+        .cell.enemy { border-color: #ff6b6b; background: #3a1a1a; }
+        .cell .name { font-weight: bold; font-size: 14px; }
+        .cell .army { color: #ffaa66; }
+        .cell .gold { color: #ffd700; }
         .btn {
-            background: #b8860b;
-            color: #fff;
+            background: #2a3f8a;
+            color: white;
             border: none;
             padding: 10px 16px;
             border-radius: 12px;
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
-            font-size: 14px;
+            margin: 4px;
         }
-        .btn:hover {
-            background: #d4af37;
-            transform: scale(1.03);
-        }
-        .btn:active {
-            transform: scale(0.95);
-        }
-        .msg {
-            background: #222233;
-            padding: 10px;
+        .btn:hover { background: #4a6fcf; transform: scale(1.02); }
+        .btn:active { transform: scale(0.95); }
+        .log {
+            background: #0d0f1f;
+            border: 1px solid #2a3a6a;
             border-radius: 12px;
-            margin: 15px 0 10px;
-            color: #ffd700;
-            min-height: 44px;
-            border: 1px dashed #b8860b;
+            padding: 12px;
+            margin-top: 16px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 14px;
+            color: #aab8e6;
         }
-        .stats {
-            margin-top: 20px;
-            text-align: left;
-            background: #111128;
-            padding: 15px 20px;
-            border-radius: 16px;
-            border: 1px solid #333366;
-        }
-        .stats p {
-            display: flex;
-            justify-content: space-between;
-            padding: 4px 0;
-            border-bottom: 1px solid #222244;
-        }
-        .stats p:last-child {
-            border-bottom: none;
-        }
-        .gold { color: #ffd700; }
-        .wood { color: #d2a86e; }
-        .food { color: #7ec87e; }
-        .wall { color: #8a8acb; }
+        .log .highlight { color: #ffd866; font-weight: bold; }
+        .flex { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
     </style>
 </head>
 <body>
+<div class="container">
+    <h1>🌍 Our Empire — Remake</h1>
 
-<div class="castle" id="app">
-    <h1>🏰 Замок Ремейка</h1>
-
-    <div class="res">
-        <span class="gold">🪙 <span id="gold">100</span></span>
-        <span class="wood">🪵 <span id="wood">50</span></span>
-        <span class="food">🍖 <span id="food">30</span></span>
-        <span class="wall">🧱 <span id="wall">0</span></span>
+    <div class="stats" id="stats">
+        <span>🪙 <span id="goldDisplay">100</span></span>
+        <span>⚔️ <span id="armyDisplay">20</span></span>
+        <span>🏰 <span id="territoryDisplay">1</span></span>
+        <span>⏳ <span id="timerDisplay">10</span>с</span>
     </div>
 
-    <div class="btn-group">
-        <button class="btn" onclick="buildWall()">🧱 Построить стену (10 дерева)</button>
-        <button class="btn" onclick="upgradeMine()">⛏️ Улучшить шахту (50 золота)</button>
-        <button class="btn" onclick="upgradeFarm()">🌾 Улучшить ферму (40 золота)</button>
+    <div class="map" id="mapContainer"></div>
+
+    <div class="flex">
+        <button class="btn" onclick="trainArmy()">🎯 Тренировать войска (30 золота)</button>
+        <button class="btn" onclick="nextTurn()">⏩ Пропустить ход</button>
     </div>
 
-    <div class="msg" id="msg">⚔️ Начни строить свой замок!</div>
-
-    <div class="stats">
-        <p><span>⛏️ Шахта (ур.)</span> <span id="mineLevel">1</span></p>
-        <p><span>🌾 Ферма (ур.)</span> <span id="farmLevel">1</span></p>
-        <p><span>🛡️ Защита стен</span> <span id="defense">0</span></p>
-        <p><span>⏳ До следующего хода</span> <span id="timer">5 сек</span></p>
-    </div>
+    <div class="log" id="log">⚔️ Добро пожаловать в Our Empire! Захватывай соседние земли.</div>
 </div>
 
 <script>
-    // === Игровое состояние ===
-    let game = {
-        gold: 100,
-        wood: 50,
-        food: 30,
-        wall: 0,
-        mine: 1,
-        farm: 1,
-        tickTimer: 5 // секунд до тика
-    };
+    // === ИГРОВОЙ МИР ===
+    const NAMES = ['Нордланд', 'Эйфелия', 'Золотая Орда', 'Лесной Союз', 'Железный Трон', 'Морская Империя', 'Пустынный Клан', 'Северный Альянс', 'Королевство Огня', 'Ледяной Щит', 'Изумрудный Дом', 'Вольный Город', 'Теневой Совет', 'Стальной Легион', 'Драконья Скала', 'Серебряный Берег'];
+    
+    let world = [];
+    let playerIndex = 0; // игрок всегда на 0 позиции
+    let gold = 100;
+    let army = 20;
+    let turn = 0;
+    let timer = 10;
 
-    // === DOM-ссылки ===
-    const $ = id => document.getElementById(id);
-    const goldEl = $('gold');
-    const woodEl = $('wood');
-    const foodEl = $('food');
-    const wallEl = $('wall');
-    const mineEl = $('mineLevel');
-    const farmEl = $('farmLevel');
-    const defenseEl = $('defense');
-    const timerEl = $('timer');
-    const msgEl = $('msg');
+    // === ИНИЦИАЛИЗАЦИЯ ===
+    function initWorld() {
+        world = [];
+        for (let i = 0; i < 16; i++) {
+            world.push({
+                id: i,
+                name: NAMES[i % NAMES.length] + (i >= NAMES.length ? ' ' + Math.floor(i/NAMES.length) : ''),
+                owner: i === 0 ? 0 : -1, // -1 = нейтральная
+                gold: 20 + Math.floor(Math.random() * 30),
+                army: 10 + Math.floor(Math.random() * 20),
+                defense: 5 + Math.floor(Math.random() * 10)
+            });
+        }
+        world[0].owner = 0; // игрок
+        world[0].gold = 100;
+        world[0].army = 30;
+    }
+    initWorld();
 
-    // === Отрисовка ===
-    function render() {
-        goldEl.textContent = game.gold;
-        woodEl.textContent = game.wood;
-        foodEl.textContent = game.food;
-        wallEl.textContent = game.wall;
-        mineEl.textContent = game.mine;
-        farmEl.textContent = game.farm;
-        defenseEl.textContent = game.wall * 5;
+    // === ОТРИСОВКА КАРТЫ ===
+    function renderMap() {
+        const container = document.getElementById('mapContainer');
+        container.innerHTML = '';
+        world.forEach((cell, idx) => {
+            const div = document.createElement('div');
+            div.className = 'cell';
+            if (cell.owner === 0) div.classList.add('own');
+            else if (cell.owner !== -1) div.classList.add('enemy');
+            div.innerHTML = `
+                <div class="name">${cell.name}</div>
+                <div class="gold">🪙 ${cell.gold}</div>
+                <div class="army">⚔️ ${cell.army}</div>
+                ${cell.owner === -1 ? '<div style="color:#888;">🌿 нейтраль</div>' : ''}
+                ${cell.owner === 0 ? '🏠' : ''}
+            `;
+            if (cell.owner !== 0 && cell.owner !== -1) {
+                div.style.cursor = 'pointer';
+                div.onclick = () => attack(idx);
+            }
+            container.appendChild(div);
+        });
+        document.getElementById('goldDisplay').textContent = gold;
+        document.getElementById('armyDisplay').textContent = army;
+        document.getElementById('territoryDisplay').textContent = world.filter(c => c.owner === 0).length;
     }
 
-    // === Сообщение ===
-    function setMsg(text) {
-        msgEl.textContent = '📜 ' + text;
-    }
-
-    // === Действия ===
-    function buildWall() {
-        if (game.wood >= 10) {
-            game.wood -= 10;
-            game.wall += 1;
-            setMsg('🧱 Стена укреплена! Защита +5');
-            render();
+    // === АТАКА ===
+    function attack(idx) {
+        const target = world[idx];
+        if (target.owner === 0) {
+            addLog('❌ Это твоя территория!');
+            return;
+        }
+        if (army <= 0) {
+            addLog('❌ У тебя нет войск!');
+            return;
+        }
+        const playerPower = army + Math.floor(Math.random() * 10);
+        const enemyPower = target.army + target.defense + Math.floor(Math.random() * 8);
+        if (playerPower > enemyPower) {
+            const lost = Math.floor(army * 0.3) + Math.floor(Math.random() * 5);
+            army -= lost;
+            const gained = Math.floor(target.army * 0.5);
+            army += gained;
+            gold += Math.floor(target.gold * 0.6);
+            target.owner = 0;
+            addLog(`⚔️ Победа! ${target.name} захвачен! Потеряно ${lost} войск, получено ${gained} + золото.`);
         } else {
-            setMsg('❌ Не хватает дерева! Нужно 10');
+            const lost = Math.floor(army * 0.5) + Math.floor(Math.random() * 5);
+            army = Math.max(0, army - lost);
+            target.army = Math.max(5, target.army - Math.floor(target.army * 0.2));
+            addLog(`💀 Поражение! Потеряно ${lost} войск. ${target.name} защитился.`);
         }
+        renderMap();
+        checkGameOver();
     }
 
-    function upgradeMine() {
-        if (game.gold >= 50) {
-            game.gold -= 50;
-            game.mine += 1;
-            setMsg('⛏️ Шахта улучшена! +' + (game.mine * 2) + ' золота за ход');
-            render();
+    // === ТРЕНИРОВКА ===
+    function trainArmy() {
+        if (gold >= 30) {
+            gold -= 30;
+            army += 10 + Math.floor(Math.random() * 8);
+            addLog(`🎯 Войска обучены! +${10 + Math.floor(Math.random() * 8)} солдат.`);
+            renderMap();
         } else {
-            setMsg('❌ Не хватает золота! Нужно 50');
+            addLog('❌ Не хватает золота (нужно 30).');
         }
     }
 
-    function upgradeFarm() {
-        if (game.gold >= 40) {
-            game.gold -= 40;
-            game.farm += 1;
-            setMsg('🌾 Ферма улучшена! +' + (game.farm * 3) + ' еды за ход');
-            render();
-        } else {
-            setMsg('❌ Не хватает золота! Нужно 40');
+    // === ПРОПУСТИТЬ ХОД ===
+    function nextTurn() {
+        // доход с территорий
+        const territories = world.filter(c => c.owner === 0);
+        const income = territories.length * 5 + Math.floor(Math.random() * 5);
+        gold += income;
+        // враги укрепляются
+        world.forEach(c => {
+            if (c.owner !== 0 && c.owner !== -1) {
+                c.army += Math.floor(Math.random() * 3);
+                c.defense += Math.floor(Math.random() * 2);
+            }
+        });
+        turn++;
+        addLog(`⏳ Ход ${turn}. Доход: +${income} золота.`);
+        renderMap();
+        timer = 10;
+        document.getElementById('timerDisplay').textContent = timer;
+    }
+
+    // === ЛОГ ===
+    function addLog(msg) {
+        const log = document.getElementById('log');
+        log.innerHTML += `<div>${msg}</div>`;
+        log.scrollTop = log.scrollHeight;
+        if (log.children.length > 20) log.removeChild(log.firstChild);
+    }
+
+    // === GAME OVER ===
+    function checkGameOver() {
+        if (army <= 0) {
+            addLog('💀 ВСЕ ВОЙСКА ПОТЕРЯНЫ. ИГРА ОКОНЧЕНА.');
+            // можно перезапустить
+        }
+        if (world.filter(c => c.owner === 0).length >= 16) {
+            addLog('🏆 ТЫ ЗАХВАТИЛ ВЕСЬ МИР! ПОБЕДА!');
         }
     }
 
-    // === Тик (прирост ресурсов) ===
-    function tick() {
-        game.gold += game.mine * 2;
-        game.food += game.farm * 3;
-        // ограничим, чтоб не улетали
-        game.gold = Math.min(game.gold, 999999);
-        game.food = Math.min(game.food, 999999);
-        setMsg('⏳ Ход прошёл! +' + (game.mine * 2) + ' золота, +' + (game.farm * 3) + ' еды');
-        render();
-    }
-
-    // === Таймер ===
-    let seconds = 5;
-    function updateTimer() {
-        seconds--;
-        if (seconds <= 0) {
-            tick();
-            seconds = 5;
+    // === ТАЙМЕР ===
+    setInterval(() => {
+        timer--;
+        document.getElementById('timerDisplay').textContent = timer;
+        if (timer <= 0) {
+            nextTurn();
         }
-        timerEl.textContent = seconds + ' сек';
-    }
+    }, 1000);
 
-    // === Старт ===
-    render();
-    setMsg('🏰 Добро пожаловать в замок! Строй и улучшай.');
-    setInterval(updateTimer, 1000);
+    // === СТАРТ ===
+    renderMap();
+    addLog('🌍 Игра начата! Атакуй соседей для расширения империи.');
 </script>
-
 </body>
-                               </html>
+</html>
