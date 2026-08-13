@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🏰 Наш Замок — демо</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #0d0d1a;
+            color: #e0d6b0;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .castle {
+            background: #1a1a2e;
+            padding: 35px 30px;
+            border-radius: 30px;
+            max-width: 600px;
+            width: 100%;
+            border: 2px solid #b8860b;
+            box-shadow: 0 0 30px rgba(184, 134, 11, 0.3);
+            text-align: center;
+        }
+        h1 {
+            color: #ffd700;
+            font-size: 28px;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+        .res {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin: 15px 0 20px;
+        }
+        .res span {
+            background: #0f3460;
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: 1px solid #b8860b;
+            font-weight: bold;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .btn {
+            background: #b8860b;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #d4af37;
+            transform: scale(1.03);
+        }
+        .btn:active {
+            transform: scale(0.95);
+        }
+        .msg {
+            background: #222233;
+            padding: 10px;
+            border-radius: 12px;
+            margin: 15px 0 10px;
+            color: #ffd700;
+            min-height: 44px;
+            border: 1px dashed #b8860b;
+        }
+        .stats {
+            margin-top: 20px;
+            text-align: left;
+            background: #111128;
+            padding: 15px 20px;
+            border-radius: 16px;
+            border: 1px solid #333366;
+        }
+        .stats p {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #222244;
+        }
+        .stats p:last-child {
+            border-bottom: none;
+        }
+        .gold { color: #ffd700; }
+        .wood { color: #d2a86e; }
+        .food { color: #7ec87e; }
+        .wall { color: #8a8acb; }
+    </style>
+</head>
+<body>
+
+<div class="castle" id="app">
+    <h1>🏰 Замок Ремейка</h1>
+
+    <div class="res">
+        <span class="gold">🪙 <span id="gold">100</span></span>
+        <span class="wood">🪵 <span id="wood">50</span></span>
+        <span class="food">🍖 <span id="food">30</span></span>
+        <span class="wall">🧱 <span id="wall">0</span></span>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn" onclick="buildWall()">🧱 Построить стену (10 дерева)</button>
+        <button class="btn" onclick="upgradeMine()">⛏️ Улучшить шахту (50 золота)</button>
+        <button class="btn" onclick="upgradeFarm()">🌾 Улучшить ферму (40 золота)</button>
+    </div>
+
+    <div class="msg" id="msg">⚔️ Начни строить свой замок!</div>
+
+    <div class="stats">
+        <p><span>⛏️ Шахта (ур.)</span> <span id="mineLevel">1</span></p>
+        <p><span>🌾 Ферма (ур.)</span> <span id="farmLevel">1</span></p>
+        <p><span>🛡️ Защита стен</span> <span id="defense">0</span></p>
+        <p><span>⏳ До следующего хода</span> <span id="timer">5 сек</span></p>
+    </div>
+</div>
+
+<script>
+    // === Игровое состояние ===
+    let game = {
+        gold: 100,
+        wood: 50,
+        food: 30,
+        wall: 0,
+        mine: 1,
+        farm: 1,
+        tickTimer: 5 // секунд до тика
+    };
+
+    // === DOM-ссылки ===
+    const $ = id => document.getElementById(id);
+    const goldEl = $('gold');
+    const woodEl = $('wood');
+    const foodEl = $('food');
+    const wallEl = $('wall');
+    const mineEl = $('mineLevel');
+    const farmEl = $('farmLevel');
+    const defenseEl = $('defense');
+    const timerEl = $('timer');
+    const msgEl = $('msg');
+
+    // === Отрисовка ===
+    function render() {
+        goldEl.textContent = game.gold;
+        woodEl.textContent = game.wood;
+        foodEl.textContent = game.food;
+        wallEl.textContent = game.wall;
+        mineEl.textContent = game.mine;
+        farmEl.textContent = game.farm;
+        defenseEl.textContent = game.wall * 5;
+    }
+
+    // === Сообщение ===
+    function setMsg(text) {
+        msgEl.textContent = '📜 ' + text;
+    }
+
+    // === Действия ===
+    function buildWall() {
+        if (game.wood >= 10) {
+            game.wood -= 10;
+            game.wall += 1;
+            setMsg('🧱 Стена укреплена! Защита +5');
+            render();
+        } else {
+            setMsg('❌ Не хватает дерева! Нужно 10');
+        }
+    }
+
+    function upgradeMine() {
+        if (game.gold >= 50) {
+            game.gold -= 50;
+            game.mine += 1;
+            setMsg('⛏️ Шахта улучшена! +' + (game.mine * 2) + ' золота за ход');
+            render();
+        } else {
+            setMsg('❌ Не хватает золота! Нужно 50');
+        }
+    }
+
+    function upgradeFarm() {
+        if (game.gold >= 40) {
+            game.gold -= 40;
+            game.farm += 1;
+            setMsg('🌾 Ферма улучшена! +' + (game.farm * 3) + ' еды за ход');
+            render();
+        } else {
+            setMsg('❌ Не хватает золота! Нужно 40');
+        }
+    }
+
+    // === Тик (прирост ресурсов) ===
+    function tick() {
+        game.gold += game.mine * 2;
+        game.food += game.farm * 3;
+        // ограничим, чтоб не улетали
+        game.gold = Math.min(game.gold, 999999);
+        game.food = Math.min(game.food, 999999);
+        setMsg('⏳ Ход прошёл! +' + (game.mine * 2) + ' золота, +' + (game.farm * 3) + ' еды');
+        render();
+    }
+
+    // === Таймер ===
+    let seconds = 5;
+    function updateTimer() {
+        seconds--;
+        if (seconds <= 0) {
+            tick();
+            seconds = 5;
+        }
+        timerEl.textContent = seconds + ' сек';
+    }
+
+    // === Старт ===
+    render();
+    setMsg('🏰 Добро пожаловать в замок! Строй и улучшай.');
+    setInterval(updateTimer, 1000);
+</script>
+
+</body>
+                               </html>
