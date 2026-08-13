@@ -1,384 +1,296 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌿 Террариум — My Empire</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>День 1.5: Terraria на телефоне</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        body { 
+            margin: 0; background: #000; overflow: hidden; touch-action: none; 
+            display: flex; justify-content: center; align-items: center; height: 100vh; 
+            width: 100vw;
         }
-        body {
-            background: #1a0e05;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .terrarium {
-            max-width: 1000px;
+        canvas { 
+            background: #87CEEB; 
+            image-rendering: pixelated; 
+            display: block;
             width: 100%;
-            background: #2d1a0b;
-            border: 4px solid #5d3a1a;
-            border-radius: 28px;
-            padding: 24px;
-            box-shadow: 0 0 50px rgba(93, 58, 26, 0.6), inset 0 0 30px rgba(0,0,0,0.5);
-            color: #efd5b5;
+            height: 100%;
         }
-        .header {
+        /* Стили для экранных кнопок */
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-bottom: 20px;
-            padding-bottom: 12px;
-            border-bottom: 2px solid #5d3a1a;
+            padding: 0 20px;
+            pointer-events: none; /* Чтобы клики проходили сквозь пустое место */
         }
-        .resources {
-            display: flex;
-            gap: 18px;
-            flex-wrap: wrap;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .resources span {
-            background: #1a0e05;
-            padding: 6px 16px;
-            border-radius: 40px;
-            border: 1px solid #5d3a1a;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .controls {
+        .btn-group {
             display: flex;
             gap: 10px;
-            flex-wrap: wrap;
+            pointer-events: auto; /* Сами кнопки кликабельны */
         }
-        .controls button {
-            background: #3d2616;
-            border: 2px solid #7a4f2b;
-            color: #efd5b5;
-            padding: 8px 18px;
-            border-radius: 40px;
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            color: white;
+            font-size: 24px;
             font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
-        }
-        .controls button:hover {
-            background: #5d3a1a;
-            transform: scale(1.03);
-            box-shadow: 0 0 15px rgba(93, 58, 26, 0.5);
-        }
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 4px;
-            aspect-ratio: 8/8;
-            background: #0f0804;
-            padding: 8px;
-            border-radius: 16px;
-            border: 2px solid #3d2616;
-            margin-bottom: 16px;
-        }
-        .cell {
-            background: #2d1a0b;
-            border-radius: 6px;
-            aspect-ratio: 1/1;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 28px;
-            cursor: pointer;
-            transition: all 0.15s;
-            border: 1px solid transparent;
+            align-items: center;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-        .cell:hover {
-            border-color: #b8860b;
-            transform: scale(1.02);
-            box-shadow: inset 0 0 20px rgba(184, 134, 11, 0.2);
+        .btn:active { background: rgba(255, 255, 255, 0.7); }
+        /* Кнопка копания отдельно */
+        .btn-mine {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 0, 0, 0.3);
+            border: 2px solid rgba(255, 0, 0, 0.8);
+            pointer-events: auto;
         }
-        .cell.owned { background: #1d2b1a; border-color: #3a6b2a; }
-        .cell.enemy { background: #2b1a1a; border-color: #6b2a2a; }
-        .cell.resource { background: #1a2a1a; border-color: #4a8a3a; }
-        .cell .emoji { font-size: 32px; line-height: 1; filter: drop-shadow(0 0 4px rgba(0,0,0,0.5)); }
-        .info-panel {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 12px;
-        }
-        .info-box {
-            background: #1a0e05;
-            border: 1px solid #3d2616;
-            border-radius: 12px;
-            padding: 12px 16px;
-            font-size: 14px;
-            line-height: 1.6;
-        }
-        .info-box h4 {
-            color: #b8860b;
-            margin-bottom: 4px;
-            font-size: 15px;
-        }
-        .log {
-            max-height: 80px;
-            overflow-y: auto;
-            font-size: 13px;
-            opacity: 0.8;
-            padding-right: 6px;
-        }
-        .log::-webkit-scrollbar { width: 4px; }
-        .log::-webkit-scrollbar-track { background: #1a0e05; }
-        .log::-webkit-scrollbar-thumb { background: #5d3a1a; border-radius: 10px; }
-        .log p { margin: 2px 0; border-bottom: 1px solid #2d1a0b; padding: 2px 0; }
-        
-        @media (max-width: 600px) {
-            .terrarium { padding: 12px; }
-            .resources { font-size: 14px; gap: 8px; }
-            .controls button { font-size: 12px; padding: 6px 12px; }
-            .cell .emoji { font-size: 22px; }
-            .info-panel { grid-template-columns: 1fr; }
-        }
+        .btn-mine:active { background: rgba(255, 0, 0, 0.6); }
     </style>
 </head>
 <body>
-<div class="terrarium" id="app">
-    <div class="header">
-        <div class="resources">
-            <span>🌲 <span id="wood">20</span></span>
-            <span>🪨 <span id="stone">15</span></span>
-            <span>🍖 <span id="food">10</span></span>
-            <span>💰 <span id="gold">5</span></span>
-        </div>
-        <div class="controls">
-            <button @click="gatherResources">🌱 Собрать</button>
-            <button @click="buildWall">🧱 Стена</button>
-            <button @click="attackNeighbor">⚔️ Атака</button>
-            <button @click="resetGame">🔄 Сброс</button>
-        </div>
-    </div>
 
-    <div class="grid">
-        <div class="cell" v-for="(cell, index) in grid" 
-             :class="cell.type" 
-             @click="clickCell(index)"
-             :title="cell.tooltip">
-            <span class="emoji">{{ cell.emoji }}</span>
-        </div>
-    </div>
+<canvas id="game"></canvas>
 
-    <div class="info-panel">
-        <div class="info-box">
-            <h4>📜 События</h4>
-            <div class="log" id="logContainer">
-                <p v-for="msg in log.slice(-6)" :key="msg.id">➜ {{ msg.text }}</p>
-            </div>
-        </div>
-        <div class="info-box">
-            <h4>🏆 Статистика</h4>
-            <div>Построено: <strong>{{ stats.buildings }}</strong></div>
-            <div>Захвачено: <strong>{{ stats.captured }}</strong></div>
-            <div>Сражений: <strong>{{ stats.battles }}</strong></div>
-            <div style="margin-top:6px;font-size:12px;opacity:0.6;">Сохранено локально</div>
-        </div>
+<div class="controls">
+    <div class="btn-group">
+        <div class="btn" id="btn-left">◀</div>
+        <div class="btn" id="btn-right">▶</div>
+    </div>
+    <div class="btn-group">
+        <div class="btn" id="btn-jump">▲</div>
     </div>
 </div>
+<div class="btn btn-mine" id="btn-mine">⛏️</div>
 
-<script src="https://cdn.jsdelivr.net/npm/vue@2.7.16/dist/vue.min.js"></script>
 <script>
-    new Vue({
-        el: '#app',
-        data: {
-            grid: [],
-            wood: 20,
-            stone: 15,
-            food: 10,
-            gold: 5,
-            log: [],
-            stats: { buildings: 0, captured: 0, battles: 0 },
-            emojis: ['🌿','🌲','🪨','🍖','🏠','⚔️','🏰','🔥','💧','🌳','🪹','🍄','🐺','🦌']
-        },
-        mounted() {
-            this.loadGame();
-            if (this.grid.length === 0) this.initGrid();
-        },
-        methods: {
-            initGrid() {
-                this.grid = [];
-                for (let i = 0; i < 64; i++) {
-                    const r = Math.random();
-                    let type = 'empty';
-                    let emoji = '🌿';
-                    if (r < 0.2) { type = 'resource'; emoji = '🌲'; }
-                    else if (r < 0.35) { type = 'resource'; emoji = '🪨'; }
-                    else if (r < 0.45) { type = 'enemy'; emoji = '⚔️'; }
-                    else if (r < 0.5) { type = 'owned'; emoji = '🏠'; }
-                    this.grid.push({ type, emoji, tooltip: this.getTooltip(type) });
-                }
-                this.saveGame();
-                this.addLog('🌍 Новая террария создана!');
-            },
-            getTooltip(type) {
-                const map = {
-                    empty: 'Пустошь',
-                    resource: 'Ресурс',
-                    enemy: 'Враг',
-                    owned: 'Ваша земля'
-                };
-                return map[type] || 'Терра';
-            },
-            clickCell(index) {
-                const cell = this.grid[index];
-                if (cell.type === 'resource') {
-                    this.gatherFromCell(index);
-                } else if (cell.type === 'enemy') {
-                    this.attackCell(index);
-                } else if (cell.type === 'empty') {
-                    this.claimCell(index);
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    
+    // Адаптация размера под экран
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const TILE_SIZE = 30; // Чуть увеличили блоки для пальцев
+    // Рассчитываем мир под размер экрана
+    let worldWidth = Math.ceil(canvas.width / TILE_SIZE) + 2;
+    let worldHeight = Math.ceil(canvas.height / TILE_SIZE) + 2;
+    let world = [];
+
+    // --- 1. МИР ИЗ БЛОКОВ ---
+    function generateWorld() {
+        world = [];
+        for (let x = 0; x < worldWidth; x++) {
+            world[x] = [];
+            for (let y = 0; y < worldHeight; y++) {
+                let dirtLevel = Math.floor(worldHeight * 0.7);
+                if (y >= dirtLevel && y < worldHeight - 1) {
+                    world[x][y] = 'dirt';
+                } else if (y === worldHeight - 1) {
+                    world[x][y] = 'stone';
                 } else {
-                    this.addLog('⛔ Эта земля уже ваша');
+                    world[x][y] = 'air';
                 }
-            },
-            gatherFromCell(index) {
-                const cell = this.grid[index];
-                const rewards = { '🌲': { wood: 3 }, '🪨': { stone: 2 }, '🍖': { food: 2 } };
-                const reward = rewards[cell.emoji];
-                if (reward) {
-                    if (reward.wood) this.wood += reward.wood;
-                    if (reward.stone) this.stone += reward.stone;
-                    if (reward.food) this.food += reward.food;
-                    cell.type = 'empty';
-                    cell.emoji = '🌿';
-                    this.addLog(`✅ Собрано ${reward.wood ? '🌲+' + reward.wood : ''}${reward.stone ? ' 🪨+' + reward.stone : ''}${reward.food ? ' 🍖+' + reward.food : ''}`);
-                    this.saveGame();
-                }
-            },
-            attackCell(index) {
-                const cell = this.grid[index];
-                if (this.wood < 5 || this.food < 3) {
-                    this.addLog('❌ Не хватает ресурсов для атаки (5🌲 + 3🍖)');
-                    return;
-                }
-                this.wood -= 5;
-                this.food -= 3;
-                this.stats.battles++;
-                if (Math.random() > 0.3) {
-                    cell.type = 'owned';
-                    cell.emoji = '🏠';
-                    this.stats.captured++;
-                    this.gold += 2;
-                    this.addLog('⚔️ Победа! Земля захвачена +2💰');
-                } else {
-                    this.addLog('💔 Поражение... потери 2🍖');
-                    this.food = Math.max(0, this.food - 2);
-                }
-                this.saveGame();
-            },
-            claimCell(index) {
-                if (this.wood < 3) {
-                    this.addLog('❌ Нужно 3🌲 для освоения');
-                    return;
-                }
-                this.wood -= 3;
-                this.grid[index].type = 'owned';
-                this.grid[index].emoji = '🏠';
-                this.stats.buildings++;
-                this.addLog('🏗️ Земля освоена!');
-                this.saveGame();
-            },
-            gatherResources() {
-                this.wood += 2;
-                this.stone += 1;
-                this.food += 2;
-                this.addLog('🌱 Собрано: +2🌲 +1🪨 +2🍖');
-                this.saveGame();
-            },
-            buildWall() {
-                if (this.stone < 4) {
-                    this.addLog('❌ Нужно 4🪨 для стены');
-                    return;
-                }
-                this.stone -= 4;
-                this.stats.buildings += 2;
-                this.gold += 1;
-                this.addLog('🧱 Построена стена +1💰');
-                this.saveGame();
-            },
-            attackNeighbor() {
-                const enemies = this.grid.filter(c => c.type === 'enemy');
-                if (enemies.length === 0) {
-                    this.addLog('🌿 Врагов поблизости нет');
-                    return;
-                }
-                const idx = this.grid.findIndex(c => c.type === 'enemy');
-                if (idx !== -1) this.attackCell(idx);
-            },
-            resetGame() {
-                if (confirm('♻️ Сбросить всю террарию?')) {
-                    localStorage.removeItem('terraData');
-                    this.wood = 20;
-                    this.stone = 15;
-                    this.food = 10;
-                    this.gold = 5;
-                    this.stats = { buildings: 0, captured: 0, battles: 0 };
-                    this.log = [];
-                    this.initGrid();
-                    this.addLog('🔄 Игра сброшена');
-                }
-            },
-            addLog(text) {
-                this.log.push({ id: Date.now() + Math.random(), text });
-                if (this.log.length > 20) this.log.shift();
-                this.$nextTick(() => {
-                    const container = document.getElementById('logContainer');
-                    if (container) container.scrollTop = container.scrollHeight;
-                });
-            },
-            saveGame() {
-                const data = {
-                    grid: this.grid,
-                    wood: this.wood,
-                    stone: this.stone,
-                    food: this.food,
-                    gold: this.gold,
-                    stats: this.stats,
-                    log: this.log.slice(-10)
-                };
-                try { localStorage.setItem('terraData', JSON.stringify(data)); } catch(e) {}
-            },
-            loadGame() {
-                try {
-                    const raw = localStorage.getItem('terraData');
-                    if (!raw) return;
-                    const data = JSON.parse(raw);
-                    this.grid = data.grid || [];
-                    this.wood = data.wood ?? 20;
-                    this.stone = data.stone ?? 15;
-                    this.food = data.food ?? 10;
-                    this.gold = data.gold ?? 5;
-                    this.stats = data.stats || { buildings: 0, captured: 0, battles: 0 };
-                    this.log = data.log || [];
-                    if (this.grid.length === 0) this.initGrid();
-                    this.addLog('💾 Загрузка сохранения...');
-                } catch(e) { this.initGrid(); }
             }
-        },
-        watch: {
-            grid: { handler() { this.saveGame(); }, deep: true },
-            wood() { this.saveGame(); },
-            stone() { this.saveGame(); },
-            food() { this.saveGame(); },
-            gold() { this.saveGame(); }
         }
+    }
+    generateWorld();
+
+    // --- 2. ПЕРСОНАЖ ---
+    let player = {
+        x: 100, y: 300, 
+        w: 20, h: 35,
+        vx: 0, vy: 0,
+        onGround: false,
+        speed: 5,
+        jumpPower: -12,
+        gravity: 0.6
+    };
+
+    // --- 3. УПРАВЛЕНИЕ (Клавиатура + Сенсор) ---
+    const keys = {};
+    
+    // Клавиатура
+    document.addEventListener('keydown', (e) => keys[e.key] = true);
+    document.addEventListener('keyup', (e) => keys[e.key] = false);
+
+    // Сенсорные кнопки (обработка нажатий)
+    function setupTouchButton(elementId, keyCode, isPress = true) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+        
+        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyCode] = true; });
+        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyCode] = false; });
+        el.addEventListener('touchcancel', (e) => { keys[keyCode] = false; });
+        
+        // Для мыши (тестирование на ПК)
+        el.addEventListener('mousedown', () => { keys[keyCode] = true; });
+        el.addEventListener('mouseup', () => { keys[keyCode] = false; });
+        el.addEventListener('mouseleave', () => { keys[keyCode] = false; });
+    }
+
+    setupTouchButton('btn-left', 'a');
+    setupTouchButton('btn-right', 'd');
+    setupTouchButton('btn-jump', 'w');
+
+    // --- 4. КОПАНИЕ (Тап по экрану) ---
+    canvas.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handleMine(touch.clientX, touch.clientY);
     });
+    canvas.addEventListener('click', (e) => {
+        handleMine(e.clientX, e.clientY);
+    });
+
+    function handleMine(clientX, clientY) {
+        // Переводим экранные координаты в тайлы мира
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;   // Если canvas растянут CSS-ом
+        const scaleY = canvas.height / rect.height;
+
+        const canvasX = (clientX - rect.left) * scaleX;
+        const canvasY = (clientY - rect.top) * scaleY;
+
+        const tileX = Math.floor(canvasX / TILE_SIZE);
+        const tileY = Math.floor(canvasY / TILE_SIZE);
+
+        if (tileX >= 0 && tileX < worldWidth && tileY >= 0 && tileY < worldHeight) {
+            // Проверка, что тап рядом с игроком
+            const pTileX = Math.floor((player.x + player.w/2) / TILE_SIZE);
+            const pTileY = Math.floor((player.y + player.h/2) / TILE_SIZE);
+            if (Math.abs(tileX - pTileX) <= 3 && Math.abs(tileY - pTileY) <= 3) {
+                world[tileX][tileY] = 'air';
+            }
+        }
+    }
+
+    // --- 5. ФИЗИКА И ОБНОВЛЕНИЕ ---
+    function update() {
+        // Горизонтальное движение
+        if (keys['a']) player.vx = -player.speed;
+        else if (keys['d']) player.vx = player.speed;
+        else player.vx *= 0.8;
+
+        // Прыжок
+        if (keys['w'] && player.onGround) {
+            player.vy = player.jumpPower;
+            player.onGround = false;
+        }
+
+        player.vy += player.gravity;
+        if (player.vy > 12) player.vy = 12;
+
+        // Коллизия (такая же как в прошлый раз, но теперь мир динамический по высоте экрана)
+        let newX = player.x + player.vx;
+        let newY = player.y + player.vy;
+
+        // По X
+        let testX = Math.floor((newX + player.w/2) / TILE_SIZE);
+        let testY1 = Math.floor((newY) / TILE_SIZE);
+        let testY2 = Math.floor((newY + player.h - 1) / TILE_SIZE);
+        if (testX >= 0 && testX < worldWidth && world[testX] && (world[testX][testY1] !== 'air' || world[testX][testY2] !== 'air')) {
+            // Блокировка X
+            if (player.vx > 0) player.x = testX * TILE_SIZE - player.w/2 - 1;
+            else if (player.vx < 0) player.x = (testX + 1) * TILE_SIZE + player.w/2 + 1;
+            player.vx = 0;
+        } else {
+            player.x = newX;
+        }
+
+        // По Y
+        let testY = Math.floor((newY + player.h) / TILE_SIZE);
+        let testX1 = Math.floor((newX) / TILE_SIZE);
+        let testX2 = Math.floor((newX + player.w - 1) / TILE_SIZE);
+        if (testY >= 0 && testY < worldHeight && world[testX1] && (world[testX1][testY] !== 'air' || world[testX2][testY] !== 'air')) {
+            // Приземление
+            player.y = testY * TILE_SIZE - player.h;
+            player.vy = 0;
+            player.onGround = true;
+        } else {
+            player.y = newY;
+            player.onGround = false;
+        }
+
+        // Границы экрана (не даём улететь влево/вправо)
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
+    }
+
+    // --- 6. ОТРИСОВКА ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Отрисовка мира
+        for (let x = 0; x < worldWidth; x++) {
+            for (let y = 0; y < worldHeight; y++) {
+                if (world[x][y] === 'dirt') {
+                    ctx.fillStyle = '#8B4513';
+                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                    ctx.strokeStyle = '#5C2E00';
+                    ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                } else if (world[x][y] === 'stone') {
+                    ctx.fillStyle = '#555';
+                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+                }
+            }
+        }
+
+        // Отрисовка игрока (крупнее для телефона)
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.roundRect(player.x - player.w/2, player.y, player.w, player.h, 5);
+        ctx.fill();
+        
+        ctx.fillStyle = '#000';
+        ctx.fillRect(player.x - 6, player.y + 10, 5, 5);
+        ctx.fillRect(player.x + 1, player.y + 10, 5, 5);
+    }
+
+    // Вспомогательная функция для скругленных прямоугольников
+    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+        if (w < 2 * r) r = w / 2;
+        if (h < 2 * r) r = h / 2;
+        this.moveTo(x + r, y);
+        this.lineTo(x + w - r, y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r);
+        this.lineTo(x + w, y + h - r);
+        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        this.lineTo(x + r, y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r);
+        this.lineTo(x, y + r);
+        this.quadraticCurveTo(x, y, x + r, y);
+        this.closePath();
+        return this;
+    };
+
+    // --- ЦИКЛ ИГРЫ ---
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
 </script>
 </body>
-  </html>
+</html>
