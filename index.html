@@ -142,8 +142,8 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ПОЛНАЯ САГА
-        //  ВСЯ ИСТОРИЯ ОТ НАЧАЛА ДО КОНЦА
+        //  MAZETALE — ПОЛНАЯ САГА (ИСПРАВЛЕННАЯ)
+        //  ВСЕ ПЕРЕХОДЫ РАБОТАЮТ, ВОДА ЕСТЬ, ЗАМОК ОТКРЫВАЕТСЯ
         // ═══════════════════════════════════════════════════
 
         // ─── ЗАГРУЗЧИК ───
@@ -257,6 +257,8 @@
             phase: 0 };
 
         // ─── КАРТЫ ───
+
+        // ДОМ
         const houseMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🪑', '🪑', '🍽️', '🍽️', '🍽️', '🪑', '🪑', '⬜', '🧱'],
@@ -270,6 +272,7 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
+        // АЙСКРИСТАЛЛ (С ВОДОЙ!)
         const aiskristallMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '🏠', '🏠', '🏠', '🏪', '🏫', '🌲'],
@@ -283,6 +286,7 @@
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
+        // ДИСКО-СИТИ
         const discoMap = [
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱'],
             ['🧱', '🏠', '🔲', '🔲', '🔲', '⚠️', '🔲', '🏪', '🔲', '🧱'],
@@ -296,6 +300,7 @@
             ['🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱', '🧱']
         ];
 
+        // САН-БАНДЕРО
         const sanBanderosMap = [
             ['🇸', '🇦', '🇳', '🇧', '🇦', '🇳', '🇩', '🇪', '🇷', '🇴'],
             ['🦈', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🐙'],
@@ -309,6 +314,7 @@
             ['🌊', '🚢', '🌊', '🌊', '🐡', '🌊', '🐬', '🐳', '🌊', '🌊']
         ];
 
+        // ЛАС-СИЛЕНД
         const lasSilendMap = [
             ['🇱', '🇦', '🇸', '🇸', '🇮', '🇱', '🇪', '🇳', '🇩', '🏳'],
             ['☠️', '🛶', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊', '🌊'],
@@ -320,6 +326,20 @@
             ['🌊', '🚢', '🌊', '🌊', '🏝️', '💍', '🏝️', '🌊', '🌊', '🌊'],
             ['🌊', '🌊', '🌴', '🌺', '🐠', '🌴', '🌺', '🌴', '🐠', '🌊'],
             ['🌊', '🌊', '🛳', '🌊', '🌊', '🌊', '🏩', '🏣', '🌊', '🌊']
+        ];
+
+        // ЗАМОК
+        const castleMap = [
+            ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
+            ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '🏰', '🏰', '🌲'],
+            ['🌲', '🏰', '👑', '🏰', '⬜', '⬜', '⬜', '🏰', '🏰', '🌲'],
+            ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '🏰', '🏰', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
         // ЛАС-ТОМПЭРО
@@ -336,18 +356,18 @@
             ['☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '🦅']
         ];
 
-        // ОФИС
-        const officeMap = [
-            ['⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜'],
-            ['⬜', '🚪', '🖥️', '🖥️', '👨‍💼', '🎙', '🧝‍♂️', '🎥', '🚪', '⬜'],
-            ['⬜', '🪑', '🖥️', '🖥️', '🪑', '🪑', '🖥️', '🖥️', '🪑', '⬜'],
-            ['⬜', '🪑', '🟥', '🟥', '🟥', '🟥', '🟥', '🟥', '🪑', '⬜'],
-            ['⬜', '🪑', '🟥', '🛋️', '🛋️', '🛋️', '🛋️', '🟥', '🪑', '⬜'],
-            ['⬜', '🪑', '🟥', '🛋️', '🛋️', '🛋️', '🛋️', '🟥', '🪑', '⬜'],
-            ['⬜', '🪑', '🟥', '🟥', '🟥', '🟥', '🟥', '🟥', '🪑', '⬜'],
-            ['⬜', '🪑', '🟥', '🟥', '☎', '📋', '🟥', '🟥', '🪑', '⬜'],
-            ['⬜', '🚪', '🟥', '🟥', '🧑‍💼', '🧑‍💼', '🟥', '🟥', '🪜', '⬜'],
-            ['⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜']
+        // КАЛЬДЕРА
+        const calderaMap = [
+            ['🔥', '🏛️', '🏛️', '🏛️', '👹', '🏛️', '🏛️', '🏛️', '😈', '🔥'],
+            ['🏛️', '🗿', '⛲', '🗿', '🏛️', '🗿', '⛲', '🗿', '🏛️', '🎃'],
+            ['🏛️', '⛲', '🏛️', '🏛️', '🏛️', '🏛️', '🏛️', '⛲', '👹', '🔥'],
+            ['🏛️', '🗿', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🏛️', '🗿', '🏛️'],
+            ['🔥', '🏛️', '🏛️', '🏟️', '🐎', '🐎', '🏟️', '👹', '🏛️', '😈'],
+            ['🏛️', '🗿', '🏛️', '🏟️', '🐎', '🐎', '🏟️', '🏛️', '🗿', '🦹‍♀️'],
+            ['🏛️', '⛲', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🏛️', '⛲', '🦹‍'],
+            ['🏛️', '🗿', '⛲', '🗿', '🎃', '🗿', '⛲', '🗿', '🏛️', '🔥'],
+            ['🔥', '🏛️', '🏛️', '🏛️', '🌊', '🌊', '😈', '🏛️', '🏛️', '🎃'],
+            ['🔥', '🔥', '🔥', '🔥', '🌊', '🌊', '🔥', '🔥', '🔥', '🔥']
         ];
 
         // ШАТЁР МАГИИ
@@ -364,18 +384,18 @@
             ['💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟']
         ];
 
-        // КАЛЬДЕРА
-        const calderaMap = [
-            ['🔥', '🏛️', '🏛️', '🏛️', '👹', '🏛️', '🏛️', '🏛️', '😈', '🔥'],
-            ['🏛️', '🗿', '⛲', '🗿', '🏛️', '🗿', '⛲', '🗿', '🏛️', '🎃'],
-            ['🏛️', '⛲', '🏛️', '🏛️', '🏛️', '🏛️', '🏛️', '⛲', '👹', '🔥'],
-            ['🏛️', '🗿', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🏛️', '🗿', '🏛️'],
-            ['🔥', '🏛️', '🏛️', '🏟️', '🐎', '🐎', '🏟️', '👹', '🏛️', '😈'],
-            ['🏛️', '🗿', '🏛️', '🏟️', '🐎', '🐎', '🏟️', '🏛️', '🗿', '🦹‍♀️'],
-            ['🏛️', '⛲', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🏛️', '⛲', '🦹‍'],
-            ['🏛️', '🗿', '⛲', '🗿', '🎃', '🗿', '⛲', '🗿', '🏛️', '🔥'],
-            ['🔥', '🏛️', '🏛️', '🏛️', '🌊', '🌊', '😈', '🏛️', '🏛️', '🎃'],
-            ['🔥', '🔥', '🔥', '🔥', '🌊', '🌊', '🔥', '🔥', '🔥', '🔥']
+        // ОФИС
+        const officeMap = [
+            ['⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜'],
+            ['⬜', '🚪', '🖥️', '🖥️', '👨‍💼', '🎙', '🧝‍♂️', '🎥', '🚪', '⬜'],
+            ['⬜', '🪑', '🖥️', '🖥️', '🪑', '🪑', '🖥️', '🖥️', '🪑', '⬜'],
+            ['⬜', '🪑', '🟥', '🟥', '🟥', '🟥', '🟥', '🟥', '🪑', '⬜'],
+            ['⬜', '🪑', '🟥', '🛋️', '🛋️', '🛋️', '🛋️', '🟥', '🪑', '⬜'],
+            ['⬜', '🪑', '🟥', '🛋️', '🛋️', '🛋️', '🛋️', '🟥', '🪑', '⬜'],
+            ['⬜', '🪑', '🟥', '🟥', '🟥', '🟥', '🟥', '🟥', '🪑', '⬜'],
+            ['⬜', '🪑', '🟥', '🟥', '☎', '📋', '🟥', '🟥', '🪑', '⬜'],
+            ['⬜', '🚪', '🟥', '🟥', '🧑‍💼', '🧑‍💼', '🟥', '🟥', '🪜', '⬜'],
+            ['⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜']
         ];
 
         let currentMap = houseMap;
@@ -640,13 +660,30 @@
             if (tile === '🦹‍') { startBattle('Злодей', 55, 14); return; }
             if (tile === '🧟‍♂️' || tile === '🧟‍♀️' || tile === '🧟‍') { startBattle('Зомби', 25, 4); return; }
             if (tile === '🧌') { startBattle('Тролль', 80, 10); return; }
+            if (tile === '🐦‍🔥' && !flags.leopoldDefeated) { startFinalBattle(); return; }
 
-            if (tile === '🐦‍🔥' && !flags.leopoldDefeated) {
-                startFinalBattle();
-                return;
+            // ДИСКО-СИТИ
+            if (currentCity === 2) {
+                if (tile === '🤠') { startBattle('Солдат Валахии', 30, 6); return; }
+                if (tile === '🙎') { startBattle('Сержант Валахии', 50, 10); return; }
+                if (tile === '🤴') { startBattle('Капитан Валахии', 100, 14, true); return; }
             }
 
-            if (currentCity === 3) { if (tile === '👑' && !flags.talkedToKing) { talkToKing(); return; } }
+            // ЗАМОК
+            if (tile === '👑' && currentCity === 3) {
+                if (!flags.talkedToKing) { talkToKing(); return; }
+            }
+
+            // САН-БАНДЕРО
+            if (currentCity === 4) {
+                if (tile === '🧜‍♂️' && !sanBanderosRevolution) { talkToLelush(); return; }
+                if (tile === '👸' && sanBanderosRevolution && !flags.queenDefeated) { startQueenBattle(); return; }
+                if (tile === '🧜‍♀️' && currentCity === 4) { talkToMari(); return; }
+                if (tile === '🧔🏻') { talkToJoe(); return; }
+                if (tile === '👩‍🍼') { talkToGrace(); return; }
+                if (tile === '🐈‍⬛') { dialog.innerHTML = '🐈‍⬛ Негро смотрит на тебя и мурлычет. Похоже, он одобряет твой путь.';
+                    return; }
+            }
 
             dialog.innerHTML = '📍 ' + currentLocation + ' — пустое место.';
             drawMap();
@@ -723,7 +760,17 @@
                 return;
             }
 
-            // Офис — выход
+            // ЗАМОК
+            if (tile === '🚪' && currentCity === 3) {
+                goToCity(1);
+                dialog.innerHTML = '🚪 Ты вышел из замка.';
+                choicesDiv.innerHTML = '';
+                drawMap();
+                updateUI();
+                return;
+            }
+
+            // Выход из офиса
             if (tile === '🪜' && currentCity === 5) {
                 dialog.innerHTML = '🪜 Ты поднимаешься на крышу офиса...';
                 setTimeout(() => {
@@ -798,7 +845,6 @@
                     flags.lelushHuman = true;
                     achievements.push('Мастер революции');
                     showAchievementSMS('МАСТЕР РЕВОЛЮЦИИ', 'Ты устроил революцию и одержал победу!', '⚔️');
-                    // Переход в Лас-Томпэро
                     goToLasTompero();
                 }
             );
@@ -820,22 +866,96 @@
             drawMap();
             updateUI();
             saveProgress();
-
-            // Включаем Лелуша
             if (lelushJoined) {
                 dialog.innerHTML += '\n🧝‍ Лелуш: «Здесь жарко... Но мы справимся!»';
             }
         }
 
-        // ─── БИТВА С ДРУЗЬЯМИ В ЛАС-ТОМПЭРО ───
-        function startFriendBattle() {
-            if (flags.lasTamperoSaved) return;
-            showCutscene('🧞‍♂️🧞‍♀️ БИТВА С ДРУЗЬЯМИ',
-                '🧝‍♂️: Эм... Друзья?...\n🧒🏻: Прости, приятель, иного выбора ты мне не оставил.\n🧝‍♂️: Мы же не будем драться? Верно?..\n👧🏼: Мне кажется ты не до оценил нас.\n🧝‍♂️: Нет... Как же так\n(Роберт и Джу выпили 🥤 и вдруг они стали 🧞‍♂️🧞‍♀️)\n🧞‍♂️: О, новые силы!\n🧞‍♀️: У меня такая большая грудь.\n🧝‍♂️: ...\n🧞‍♂️: ...\n🧞‍♀️: Соглашусь, про грудь было лишнее.\n🧝‍♂️: То-то же.\n🧞‍♂️: Ту ошибку я тебе не прощу.\n🧝‍♂️: Знаешь, я устал тебя жалеть, хочешь умереть, так поехали!',
+        // ─── ФИНАЛ БИТВЫ С ДРУЗЬЯМИ ───
+        function showFriendBattleResult(log) {
+            showCutscene('🧞‍♂️🧞‍♀️ ПОСЛЕ БИТВЫ',
+                '🧞‍♂️🧞‍♀️ - вдруг становятся 🧒🏻👧🏼\n🧒🏻: Неет!\n👧🏼: Мы почти выиграли!\n\nВыбор: Пощадить или убить',
                 function() {
-                    startBattle('Роберт и Джулия', 200, 25, true);
+                    dialog.innerHTML = '🧒🏻 Роберт: «Неет!»\n👧🏼 Джулия: «Мы почти выиграли!»';
+                    choicesDiv.innerHTML =
+                        `<button class="btn btn-success" onclick="spareFriends()">🕊️ ПОЩАДИТЬ</button><button class="btn btn-danger" onclick="killFriends()">🗡️ УБИТЬ</button>`;
                 }
             );
+        }
+
+        function spareFriends() {
+            achievements.push('Миротворец');
+            showAchievementSMS('МИРОТВОРЕЦ', 'Ты пощадил друзей и вразумил их!', '🕊️');
+            dialog.innerHTML =
+                '🧝‍♂️: Пойдёмте домой.\n(Эйнар протянул руку)\n🧒🏻: ...\n👧🏼: Ладно, думаю пора вернуться.\n🧒🏻: Да, думаю, ты права.';
+            choicesDiv.innerHTML =
+                `<button class="btn btn-success" onclick="afterFriendBattle()">🏙️ ПРОДОЛЖИТЬ</button>`;
+            updateUI();
+            saveProgress();
+        }
+
+        function killFriends() {
+            dialog.innerHTML =
+                '🧝‍♂️: Я своё слово держу.\n👧🏼: Нет, одумайся!\n🧒🏻: Пф, ты не осмелишься.\n🧝‍♂️: Это прошлый Эйнар не убивает друзей, а я вполне могу.\n(Эйнар втыкает меч в Роберта, Роберт умирает)\n👧🏼: Постой! Пожалуйста, пощади!\n🧝‍♂️: Маленькая стерва, тебе пора вдогонку за Робертом.\n👧🏼: Нееет!\n(Эйнар убивает Джу)\n🧝‍♂️: Пора домой.';
+            choicesDiv.innerHTML =
+                `<button class="btn btn-success" onclick="afterFriendBattle()">🏙️ ПРОДОЛЖИТЬ</button>`;
+            updateUI();
+            saveProgress();
+        }
+
+        function afterFriendBattle() {
+            showCutscene('🏙️ ОСВОБОЖДЕНИЕ ЛАС-ТОМПЭРО',
+                'Город освобождён, люди вышли поздравлять Эйнара и благодарить его.\n👨‍🌾: О Великий Эйнар, ты спас наш город!\n🧓: Я читала о нём... В Библии... Он Иисус...\n🧕: Эйнар! Да пусть твоя воля будет крепка.\n🧝‍♂️: Спасибо, спасибо, конечно бы я не справился бы без поддержки, увы, её не было, но я победил, как? Потому что я Эйнар Айсхарт из Айскристалл.\n👴: Эйнар, возьми это.\n(Старик дал 100 монет)\n👴: Тут вся моя пенсия, шучу... Я её пропил.\n🧝‍♂️: Ха-ха, старик, а ты прикольный.',
+                function() {
+                    coins += 100;
+                    dialog.innerHTML = '💰 Ты получил 100 монет от старика!';
+                    choicesDiv.innerHTML =
+                        `<button class="btn btn-success" onclick="goToOffice()">🏢 ПЕРЕЙТИ В ОФИС</button>`;
+                    updateUI();
+                    saveProgress();
+                }
+            );
+        }
+
+        // ─── ОФИС ───
+        function goToOffice() {
+            currentCity = 8;
+            currentLocation = 'ОФИС';
+            currentMap = officeMap;
+            player.x = 4;
+            player.y = 4;
+            dialog.innerHTML = '🏢 Ты входишь в офис небоскрёба.';
+            choicesDiv.innerHTML = '';
+            drawMap();
+            updateUI();
+            saveProgress();
+
+            setTimeout(() => {
+                showCutscene('🎙️ ИНТЕРВЬЮ',
+                    '👨‍💼: Мистер Эйнар, за пол месяца, что вы здесь, вы успели стать мировой легендой!\n🧝‍♂️: О да, я стал более мужественнее, смелее... Сильнее...\n👨‍💼: ... Хорошо, а какие у вас были чувства, когда поженились с Анфисой?\n🧝‍♂️: Хорошие и... Положительно-радостные. Хочется завести семью.\n👨‍💼: Это потрясающе! Как хотите назвать ребёнка?\n🧝‍♂️: Если девочка, то дам эту возможность Анфисе, а если мальчик, то подумаю.\n👨‍💼: Хорошо, на этом наш эфир окончен!\n🧝‍♂️: Всем пока!',
+                    function() {
+                        dialog.innerHTML = '🎙️ Интервью окончено. Ты можешь выйти из офиса.';
+                        choicesDiv.innerHTML =
+                            `<button class="btn btn-success" onclick="goToAiskristallFromOffice()">🚪 ВЫЙТИ НА УЛИЦУ</button>`;
+                        updateUI();
+                        saveProgress();
+                    }
+                );
+            }, 500);
+        }
+
+        function goToAiskristallFromOffice() {
+            goToCity(1);
+            dialog.innerHTML = '🌆 Ты вернулся в Айскристалл.';
+            choicesDiv.innerHTML = '';
+            drawMap();
+            updateUI();
+            saveProgress();
+            setTimeout(() => {
+                dialog.innerHTML += '\n🪧 Ты видишь шатёр магии с табличкой.';
+                choicesDiv.innerHTML =
+                    `<button class="btn btn-success" onclick="enterTent()">⛺ ЗАЙТИ В ШАТЁР</button><button class="btn btn-danger" onclick="dialog.innerHTML='🪧 Ты отошёл от шатра.'; choicesDiv.innerHTML='';">❌ УЙТИ</button>`;
+            }, 500);
         }
 
         // ─── ВЫХОД ИЗ ДОМА ───
@@ -987,6 +1107,7 @@
             const cities = [
                 { id: 1, name: 'Айскристалл', unlocked: true },
                 { id: 2, name: 'Диско-Сити', unlocked: flags.kingDefeated },
+                { id: 3, name: 'Замок', unlocked: flags.discoCleared },
                 { id: 4, name: 'Сан-Бандеро', unlocked: flags.discoCleared },
                 { id: 5, name: 'Лас-Томпэро', unlocked: flags.lasTamperoSaved || lelushJoined },
                 { id: 6, name: 'Кальдера', unlocked: flags.lasTamperoSaved && lelushJoined }
@@ -1006,6 +1127,7 @@
             const cityMap = {
                 1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' },
                 2: { map: discoMap, name: 'Диско-Сити', loc: 'ДИСКО-СИТИ' },
+                3: { map: castleMap, name: 'Замок', loc: 'ЗАМОК' },
                 4: { map: sanBanderosRevolution ? lasSilendMap : sanBanderosMap, name: sanBanderosRevolution ? 'Лас-Силенд' :
                         'Сан-Бандеро', loc: sanBanderosRevolution ? 'ЛАС-СИЛЕНД' : 'САН-БАНДЕРО' },
                 5: { map: lasTomperoMap, name: 'Лас-Томпэро', loc: 'ЛАС-ТОМПЭРО' },
@@ -1060,11 +1182,13 @@
             const cityMap = {
                 1: { map: aiskristallMap, name: 'Айскристалл', loc: 'АЙСКРИСТАЛЛ' },
                 2: { map: discoMap, name: 'Диско-Сити', loc: 'ДИСКО-СИТИ' },
+                3: { map: castleMap, name: 'Замок', loc: 'ЗАМОК' },
                 4: { map: sanBanderosRevolution ? lasSilendMap : sanBanderosMap, name: sanBanderosRevolution ? 'Лас-Силенд' :
                         'Сан-Бандеро', loc: sanBanderosRevolution ? 'ЛАС-СИЛЕНД' : 'САН-БАНДЕРО' },
                 5: { map: lasTomperoMap, name: 'Лас-Томпэро', loc: 'ЛАС-ТОМПЭРО' },
                 6: { map: calderaMap, name: 'Кальдера', loc: 'КАЛЬДЕРА' },
-                7: { map: tentMap, name: 'Шатёр магии', loc: 'ШАТЁР' }
+                7: { map: tentMap, name: 'Шатёр магии', loc: 'ШАТЁР' },
+                8: { map: officeMap, name: 'Офис', loc: 'ОФИС' }
             };
             const city = cityMap[cityId];
             if (!city) return;
@@ -1103,6 +1227,23 @@
             insideHouse = false;
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '🏠 Ты вернулся домой.';
+            drawMap();
+            updateUI();
+            saveProgress();
+        }
+
+        // ─── ПЕРЕХОД В ЗАМОК ───
+        function goToCastle() {
+            currentCity = 3;
+            currentLocation = 'ЗАМОК';
+            currentMap = castleMap;
+            player.x = 4;
+            player.y = 4;
+            dialog.innerHTML = '🏰 Ты вошёл в замок. Король ждёт тебя.';
+            choicesDiv.innerHTML = `
+                <button class="btn" onclick="talkToKing()">👑 ПОГОВОРИТЬ С КОРОЛЁМ</button>
+                <button class="btn" onclick="goToCity(1)">🚪 ВЕРНУТЬСЯ В ГОРОД</button>
+            `;
             drawMap();
             updateUI();
             saveProgress();
@@ -1607,9 +1748,10 @@
                     }
                 }
                 if (!banditsLeft) {
+                    // Показываем кнопку перехода в замок
                     dialog.innerHTML = log + '<br>🏆 Ты зачистил город от разбойников! Теперь путь в замок открыт.';
                     choicesDiv.innerHTML =
-                    `<button class="btn btn-success" onclick="goToCity(3)">🏰 ИДТИ В ЗАМОК</button>`;
+                    `<button class="btn btn-success" onclick="goToCastle()">🏰 ИДТИ В ЗАМОК</button>`;
                     updateUI();
                     drawMap();
                     saveProgress();
@@ -1688,7 +1830,6 @@
             updateUI();
             saveProgress();
 
-            // Запускаем кат-сцену интервью
             setTimeout(() => {
                 showCutscene('🎙️ ИНТЕРВЬЮ',
                     '👨‍💼: Мистер Эйнар, за пол месяца, что вы здесь, вы успели стать мировой легендой!\n🧝‍♂️: О да, я стал более мужественнее, смелее... Сильнее...\n👨‍💼: ... Хорошо, а какие у вас были чувства, когда поженились с Анфисой?\n🧝‍♂️: Хорошие и... Положительно-радостные. Хочется завести семью.\n👨‍💼: Это потрясающе! Как хотите назвать ребёнка?\n🧝‍♂️: Если девочка, то дам эту возможность Анфисе, а если мальчик, то подумаю.\n👨‍💼: Хорошо, на этом наш эфир окончен!\n🧝‍♂️: Всем пока!',
@@ -1710,7 +1851,6 @@
             drawMap();
             updateUI();
             saveProgress();
-            // Показываем табличку шатра
             setTimeout(() => {
                 dialog.innerHTML += '\n🪧 Ты видишь шатёр магии с табличкой.';
                 choicesDiv.innerHTML =
@@ -1788,7 +1928,7 @@
                 if (!banditsLeft) {
                     dialog.innerHTML = log + '<br>🏆 Ты зачистил город от разбойников! Теперь путь в замок открыт.';
                     choicesDiv.innerHTML =
-                    `<button class="btn btn-success" onclick="goToCity(3)">🏰 ИДТИ В ЗАМОК</button>`;
+                    `<button class="btn btn-success" onclick="goToCastle()">🏰 ИДТИ В ЗАМОК</button>`;
                     updateUI();
                     drawMap();
                     saveProgress();
@@ -2014,7 +2154,7 @@
             const data = { hp, coins, inventory, flags, playerX: player.x, playerY: player.y, currentCity, currentLocation,
                 reputation, gameTime, achievements, enemiesKilled, bossPhase, comboCount, hasAnfisa, hunger, fatigue, energy,
                 wantedLevel, insideHouse, currentHouseName, sanBanderosRevolution, anfisaMarried, elixirUsed, isAdult,
-                lelushJoined, lelushAlive, flags };
+                lelushJoined, lelushAlive };
             try { localStorage.setItem('mazetale_save', JSON.stringify(data)); } catch (e) {}
         }
 
@@ -2056,8 +2196,8 @@
         }
 
         function updateMapByCity() {
-            const maps = { 0: houseMap, 1: aiskristallMap, 2: discoMap, 4: sanBanderosRevolution ? lasSilendMap :
-                    sanBanderosMap, 5: lasTomperoMap, 6: calderaMap, 7: tentMap, 8: officeMap };
+            const maps = { 0: houseMap, 1: aiskristallMap, 2: discoMap, 3: castleMap, 4: sanBanderosRevolution ?
+                    lasSilendMap : sanBanderosMap, 5: lasTomperoMap, 6: calderaMap, 7: tentMap, 8: officeMap };
             if (insideHouse) {
                 const houseMaps = {
                     'Европрайм': [
@@ -2201,4 +2341,4 @@
         }, 5000);
     </script>
 </body>
-                                                                                                                                                                     </html>
+    </html>                                                                                                                                                                     </html>
