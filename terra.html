@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>🌍 Террария 2D — Финал</title>
+<title>🌍 Террария 2D — Перезапуск</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
 body { 
@@ -38,23 +38,23 @@ canvas {
     transform:translateX(-50%);
     background:rgba(10,10,10,0.92);
     backdrop-filter:blur(8px);
-    padding:12px 20px;
+    padding:10px 16px;
     border-radius:60px;
     color:#efd5b5;
     display:flex;
-    gap:8px;
+    gap:6px;
     flex-wrap:wrap;
     justify-content:center;
     border:1px solid #5d3a1a;
     box-shadow:0 0 40px rgba(0,0,0,0.8);
     z-index:50;
-    font-size:13px;
+    font-size:12px;
     pointer-events:auto;
     max-width:95%;
 }
 .ui span { 
     background:#1a0e05; 
-    padding:4px 12px; 
+    padding:3px 10px; 
     border-radius:30px; 
     border:1px solid #3d2616;
     display:flex;
@@ -66,12 +66,12 @@ canvas {
     background:#3d2616;
     border:2px solid #7a4f2b;
     color:#efd5b5;
-    padding:6px 14px;
+    padding:5px 12px;
     border-radius:40px;
     font-weight:bold;
     cursor:pointer;
     transition:all 0.2s;
-    font-size:12px;
+    font-size:11px;
     white-space:nowrap;
     pointer-events:auto;
 }
@@ -97,10 +97,10 @@ canvas {
     background:#2d1a0b;
     border:1px solid #5d3a1a;
     color:#efd5b5;
-    width:32px;
-    height:32px;
+    width:30px;
+    height:30px;
     border-radius:8px;
-    font-size:16px;
+    font-size:14px;
     cursor:pointer;
     transition:all 0.15s;
     display:flex;
@@ -111,6 +111,14 @@ canvas {
 .controls button:active {
     transform:scale(0.85);
     background:#5d3a1a;
+}
+.attack-btn {
+    background:#8b0000 !important;
+    border-color:#ff0000 !important;
+    font-size:16px !important;
+}
+.attack-btn:active {
+    background:#ff0000 !important;
 }
 .time-controls {
     position:fixed;
@@ -209,10 +217,10 @@ canvas {
     box-shadow:0 0 30px rgba(0,0,0,0.5);
 }
 @media (max-width:700px) {
-    .ui { font-size:11px; padding:6px 10px; gap:5px; bottom:8px; border-radius:30px; }
-    .ui span { padding:2px 8px; font-size:10px; }
-    .ui button { padding:4px 10px; font-size:10px; }
-    .controls button { width:28px; height:28px; font-size:14px; }
+    .ui { font-size:10px; padding:5px 8px; gap:4px; bottom:8px; border-radius:30px; }
+    .ui span { padding:2px 6px; font-size:9px; }
+    .ui button { padding:3px 8px; font-size:9px; }
+    .controls button { width:24px; height:24px; font-size:12px; }
     .time-controls { top:8px; right:8px; padding:3px 6px; gap:3px; }
     .time-controls button { padding:2px 6px; font-size:11px; }
     #deathModal { padding:20px 16px; }
@@ -253,6 +261,7 @@ canvas {
     
     <button id="btnMine">⛏️ Копать</button>
     <button id="btnPlace">🧱 Поставить</button>
+    <button class="attack-btn" id="btnAttack">⚔️ Атака</button>
     <button id="btnCraft">🔨 Крафт</button>
     <button id="btnWorkbench">🪵 Верстак</button>
     <button id="btnRegen">🔄 Реген</button>
@@ -291,6 +300,9 @@ let particles = [];
 let gamePaused = false;
 let mouseX = 0, mouseY = 0;
 let time = 600;
+let isJumping = false;
+let jumpHeight = 0;
+let playerVY = 0;
 
 // ============================================
 // 2. ИГРОК
@@ -305,9 +317,11 @@ let player = {
     wood: 5,
     stone: 0,
     iron: 0,
-    gold: 0
+    gold: 0,
+    dir: 1 // 1 - право, -1 - лево
 };
 let stats = { buildings: 0, battles: 0, captured: 0 };
+let attackAnimation = 0;
 
 // ============================================
 // 3. ЗВУКИ
@@ -349,6 +363,22 @@ function playCollectSound() {
         osc.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+}
+function playAttackSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
     } catch(e) {}
 }
 
@@ -396,21 +426,43 @@ function stopAmbientMusic() {
 }
 
 // ============================================
-// 5. ГЕНЕРАЦИЯ МИРА
+// 5. ГЕНЕРАЦИЯ МИРА (С БИОМАМИ)
 // ============================================
 function generateWorld() {
     world = [];
+    // Простой шум для биомов
+    const biomeMap = [];
+    for (let c = 0; c < COLS; c++) {
+        biomeMap[c] = [];
+        for (let r = 0; r < ROWS; r++) {
+            // Шум для биомов (поверхность)
+            const val = Math.sin(c * 0.15 + r * 0.1) * 0.5 + Math.cos(c * 0.2 - r * 0.15) * 0.5;
+            biomeMap[c][r] = val;
+        }
+    }
+    
     for (let c = 0; c < COLS; c++) {
         world[c] = [];
         for (let r = 0; r < ROWS; r++) {
-            const height = Math.floor(Math.sin(c * 0.25) * 1.8 + Math.cos(r * 0.15) * 1.2 + 4.5);
+            const height = Math.floor(Math.sin(c * 0.3) * 1.5 + Math.cos(c * 0.2) * 1.5 + 4.5);
+            const biomeVal = biomeMap[c]?.[r] || 0;
+            
             if (r < height) { world[c][r] = 'sky'; }
-            else if (r === height) { world[c][r] = (Math.random() > 0.8) ? 'grass_flower' : 'grass'; }
-            else if (r < height + 3) { world[c][r] = 'dirt'; }
+            else if (r === height) {
+                // Биомы на поверхности
+                if (biomeVal > 0.3) world[c][r] = 'grass_flower';
+                else if (biomeVal < -0.3) world[c][r] = 'sand';
+                else world[c][r] = 'grass';
+            }
+            else if (r < height + 3) { world[c][r] = (biomeVal < -0.3) ? 'sand' : 'dirt'; }
             else if (r < height + 6) { world[c][r] = 'stone'; }
             else { world[c][r] = 'bedrock'; }
             
-            if (r === height && Math.random() > 0.88) world[c][r] = 'tree';
+            // Деревья только на траве
+            if (r === height && world[c][r] === 'grass' && Math.random() > 0.85) {
+                world[c][r] = 'tree';
+            }
+            // Руды
             if (r > height + 2 && Math.random() > 0.96) world[c][r] = 'iron_ore';
             if (r > height + 5 && Math.random() > 0.985) world[c][r] = 'gold_ore';
         }
@@ -419,7 +471,6 @@ function generateWorld() {
     generateVillages();
     mobs = [];
     npcs = [];
-    // Даём стартовые ресурсы
     player.wood = 5;
     player.blocks = 0;
     updateUI();
@@ -429,7 +480,7 @@ function generateCaves() {
     for (let iter = 0; iter < 6; iter++) {
         for (let c = 2; c < COLS-2; c++) {
             for (let r = 4; r < ROWS-2; r++) {
-                if (world[c][r] === 'stone' || world[c][r] === 'dirt') {
+                if (world[c][r] === 'stone' || world[c][r] === 'dirt' || world[c][r] === 'sand') {
                     let walls = 0;
                     for (let dx = -1; dx <= 1; dx++) {
                         for (let dy = -1; dy <= 1; dy++) {
@@ -451,28 +502,27 @@ function generateCaves() {
 // ============================================
 // 6. ДЕРЕВНИ
 // ============================================
-const buildingTemplates = {
-    house: { w:5, h:4, data: [
-        ['stone','stone','stone','stone','stone'],
-        ['stone','wood','wood','wood','stone'],
-        ['stone','wood','table','wood','stone'],
-        ['stone','stone','stone','stone','stone']
-    ]},
-    farm: { w:6, h:3, data: [
-        ['dirt','dirt','dirt','dirt','dirt','dirt'],
-        ['dirt','wheat','wheat','wheat','wheat','dirt'],
-        ['dirt','dirt','dirt','dirt','dirt','dirt']
-    ]},
-    blacksmith: { w:5, h:4, data: [
-        ['stone','stone','stone','stone','stone'],
-        ['stone','furnace','anvil','furnace','stone'],
-        ['stone','furnace','chest','furnace','stone'],
-        ['stone','stone','stone','stone','stone']
-    ]}
-};
-
 function placeBuilding(cx, cy, type) {
-    const tmpl = buildingTemplates[type];
+    const templates = {
+        house: { w:5, h:4, data: [
+            ['stone','stone','stone','stone','stone'],
+            ['stone','wood','wood','wood','stone'],
+            ['stone','wood','table','wood','stone'],
+            ['stone','stone','stone','stone','stone']
+        ]},
+        farm: { w:6, h:3, data: [
+            ['dirt','dirt','dirt','dirt','dirt','dirt'],
+            ['dirt','wheat','wheat','wheat','wheat','dirt'],
+            ['dirt','dirt','dirt','dirt','dirt','dirt']
+        ]},
+        blacksmith: { w:5, h:4, data: [
+            ['stone','stone','stone','stone','stone'],
+            ['stone','furnace','anvil','furnace','stone'],
+            ['stone','furnace','chest','furnace','stone'],
+            ['stone','stone','stone','stone','stone']
+        ]}
+    };
+    const tmpl = templates[type];
     if (!tmpl) return;
     for (let dx = 0; dx < tmpl.w; dx++) {
         for (let dy = 0; dy < tmpl.h; dy++) {
@@ -590,7 +640,7 @@ class Mob {
                 const bx = Math.floor(cx), by = Math.floor(cy);
                 if (bx >= 0 && bx < COLS && by >= 0 && by < ROWS) {
                     const block = world[bx][by];
-                    if (block && block !== 'sky' && block !== 'grass' && block !== 'dirt' && block !== 'grass_flower') {
+                    if (block && block !== 'sky' && block !== 'grass' && block !== 'dirt' && block !== 'grass_flower' && block !== 'sand') {
                         hasLineOfSight = false;
                         break;
                     }
@@ -668,7 +718,7 @@ function spawnMobs() {
             y = 4 + Math.floor(Math.random() * (ROWS - 6));
             if (Math.abs(x - player.x) < 5 || Math.abs(y - player.y) < 5) continue;
             const block = world[x] && world[x][y];
-            if (block && (block === 'stone' || block === 'dirt' || block === 'bedrock')) {
+            if (block && (block === 'stone' || block === 'dirt' || block === 'bedrock' || block === 'sand')) {
                 let free = true;
                 for (let dx = -1; dx <= 1; dx++) {
                     for (let dy = -1; dy <= 1; dy++) {
@@ -700,7 +750,7 @@ class Particle {
         this.vx = (Math.random() - 0.5) * 0.08;
         this.vy = -0.03 - Math.random() * 0.05;
         this.size = size || (3 + Math.random() * 4);
-        this.colors = { dust: '#8D6E63', sparkle: '#FFD700', leaf: '#4CAF50', blood: '#8B0000' };
+        this.colors = { dust: '#8D6E63', sparkle: '#FFD700', leaf: '#4CAF50', blood: '#8B0000', fire: '#FF4500' };
         this.gravity = 0.001;
     }
     update() {
@@ -825,17 +875,37 @@ function updateUI() {
 }
 
 // ============================================
-// 13. ДВИЖЕНИЕ
+// 13. ФИЗИКА
 // ============================================
-function movePlayer(dx, dy) {
-    if (gamePaused) return;
-    const nx = Math.floor(player.x + dx);
-    const ny = Math.floor(player.y + dy);
-    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
-        if (world[nx] && world[nx][ny] && world[nx][ny] !== 'sky') {
-            player.x = nx;
-            player.y = ny;
+function canMoveTo(x, y) {
+    const bx = Math.floor(x), by = Math.floor(y);
+    if (bx < 0 || bx >= COLS || by < 0 || by >= ROWS) return false;
+    return world[bx] && world[bx][by] && world[bx][by] !== 'sky';
+}
+
+function applyPhysics() {
+    // Гравитация
+    if (canMoveTo(player.x, player.y + 0.2)) {
+        playerVY = 0;
+    } else {
+        playerVY += 0.15;
+        if (playerVY > 2) playerVY = 2;
+    }
+    
+    // Вертикальное движение
+    if (playerVY !== 0) {
+        const newY = player.y + playerVY;
+        if (canMoveTo(player.x, newY)) {
+            player.y = newY;
+        } else {
+            playerVY = 0;
         }
+    }
+    
+    // Прыжок
+    if (isJumping && canMoveTo(player.x, player.y - 0.5)) {
+        playerVY = -0.8;
+        isJumping = false;
     }
 }
 
@@ -851,6 +921,7 @@ function draw() {
     ctx.fillStyle = skyColors[state] || '#87CEEB';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
+    // Рисуем блоки
     for (let c = 0; c < COLS; c++) {
         for (let r = 0; r < ROWS; r++) {
             const block = world[c]?.[r];
@@ -860,6 +931,7 @@ function draw() {
             switch(block) {
                 case 'grass': color = '#4CAF50'; break;
                 case 'grass_flower': color = '#66BB6A'; break;
+                case 'sand': color = '#F4D03F'; break;
                 case 'dirt': color = '#8D6E63'; break;
                 case 'stone': color = '#9E9E9E'; break;
                 case 'bedrock': color = '#424242'; break;
@@ -877,6 +949,7 @@ function draw() {
             ctx.fillStyle = color;
             ctx.fillRect(x, y, TILE-1, TILE-1);
             
+            // Детали
             if (block === 'tree') {
                 ctx.fillStyle = '#5D4037';
                 ctx.fillRect(x+14, y+20, 12, 20);
@@ -903,6 +976,7 @@ function draw() {
         }
     }
     
+    // NPC
     npcs.forEach(n => {
         const x = n.x * TILE, y = n.y * TILE;
         ctx.font = '28px serif';
@@ -915,6 +989,7 @@ function draw() {
         ctx.fillText(n.type, x + TILE/2, y - 4);
     });
     
+    // Мобы
     mobs.forEach(m => {
         if (m.hp <= 0) return;
         const x = m.x * TILE, y = m.y * TILE;
@@ -945,20 +1020,45 @@ function draw() {
         ctx.fillText(m.type, x + TILE/2, y + TILE + 12);
     });
     
+    // Игрок (с анимацией прыжка)
+    const playerX = player.x * TILE;
+    const playerY = player.y * TILE - (jumpHeight * 8);
     ctx.shadowColor = player.invincible > 0 ? '#FFD700' : '#FF5722';
     ctx.shadowBlur = player.invincible > 0 ? 25 : 15;
     ctx.fillStyle = player.invincible > 0 ? '#FFD700' : '#FF5722';
-    ctx.fillRect(player.x*TILE+4, player.y*TILE+4, TILE-8, TILE-8);
+    ctx.fillRect(playerX+4, playerY+4, TILE-8, TILE-8);
     ctx.shadowBlur = 0;
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(player.x*TILE+12, player.y*TILE+12, 6, 6);
-    ctx.fillRect(player.x*TILE+22, player.y*TILE+12, 6, 6);
-    ctx.fillStyle = '#222';
-    ctx.fillRect(player.x*TILE+14, player.y*TILE+14, 3, 3);
-    ctx.fillRect(player.x*TILE+24, player.y*TILE+14, 3, 3);
     
+    // Глаза (смотрят по направлению)
+    ctx.fillStyle = '#fff';
+    const eyeOff = player.dir === 1 ? 0 : 4;
+    ctx.fillRect(playerX+10+eyeOff, playerY+12, 6, 6);
+    ctx.fillRect(playerX+22+eyeOff, playerY+12, 6, 6);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(playerX+13+eyeOff, playerY+14, 3, 3);
+    ctx.fillRect(playerX+25+eyeOff, playerY+14, 3, 3);
+    
+    // Анимация атаки
+    if (attackAnimation > 0) {
+        ctx.strokeStyle = 'rgba(255,200,0,0.8)';
+        ctx.lineWidth = 4;
+        const ax = playerX + (player.dir === 1 ? 30 : -10);
+        const ay = playerY + 20;
+        ctx.beginPath();
+        ctx.arc(ax, ay, 30, 0.2, 1.8);
+        ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,100,0,0.6)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(ax, ay, 20, 0.3, 1.7);
+        ctx.stroke();
+        attackAnimation -= 0.05;
+    }
+    
+    // Частицы
     particles.forEach(p => p.draw(ctx));
     
+    // Прицел
     const mx = Math.floor(mouseX/TILE), my = Math.floor(mouseY/TILE);
     if (mx >= 0 && mx < COLS && my >= 0 && my < ROWS) {
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
@@ -976,20 +1076,16 @@ function draw() {
 function update() {
     if (gamePaused) return;
     time = (time + 0.15) % 2400;
+    
+    applyPhysics();
+    
     mobs.forEach(m => m.update());
     npcs.forEach(n => n.update());
     spawnMobs();
     mobs = mobs.filter(m => m.hp > 0 && m.x > 0 && m.x < COLS && m.y > 0 && m.y < ROWS);
     particles = particles.filter(p => p.update());
     
-    // Гравитация
-    if (player.y < ROWS - 1) {
-        const below = world[Math.floor(player.x)]?.[Math.floor(player.y) + 1];
-        if (below === 'sky') {
-            player.y += 0.3;
-        }
-    }
-    
+    // Регенерация HP
     if (player.hp < player.maxHp && player.hp > 0 && getTimeState() === 'day') {
         if (Math.random() > 0.99) {
             player.hp = Math.min(player.maxHp, player.hp + 1);
@@ -1007,7 +1103,6 @@ function gameLoop() {
 // ============================================
 // 16. ВЗАИМОДЕЙСТВИЕ
 // ============================================
-// Мышь
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -1038,22 +1133,6 @@ document.getElementById('btnMine').addEventListener('click', () => {
     playCollectSound();
     spawnParticles(c, r, 'dust', 5);
     updateUI();
-    
-    // Удар по мобам
-    mobs.forEach(m => {
-        if (Math.abs(m.x - c) < 1.5 && Math.abs(m.y - r) < 1.5) {
-            m.hp -= 6;
-            spawnParticles(m.x, m.y, 'sparkle', 8);
-            playHitSound();
-            if (m.hp <= 0) {
-                player.blocks += 2;
-                spawnParticles(m.x, m.y, 'sparkle', 15);
-                showHint('💀 Моб повержен! +2 блока');
-                stats.battles++;
-                updateUI();
-            }
-        }
-    });
 });
 
 // Поставить
@@ -1078,6 +1157,34 @@ document.getElementById('btnPlace').addEventListener('click', () => {
     updateUI();
 });
 
+// АТАКА (НОВАЯ)
+document.getElementById('btnAttack').addEventListener('click', () => {
+    if (gamePaused) return;
+    if (attackAnimation > 0) return;
+    attackAnimation = 1;
+    playAttackSound();
+    spawnParticles(player.x + player.dir, player.y, 'sparkle', 5);
+    
+    // Проверка попадания по мобам
+    const range = 2;
+    mobs.forEach(m => {
+        const dx = Math.abs(m.x - player.x);
+        const dy = Math.abs(m.y - player.y);
+        if (dx <= range && dy <= 1.5) {
+            m.hp -= 8;
+            spawnParticles(m.x, m.y, 'blood', 10);
+            playHitSound();
+            if (m.hp <= 0) {
+                player.blocks += 3;
+                spawnParticles(m.x, m.y, 'sparkle', 15);
+                showHint('💀 Моб повержен! +3 блока');
+                stats.battles++;
+                updateUI();
+            }
+        }
+    });
+});
+
 // Крафт кирки
 document.getElementById('btnCraft').addEventListener('click', () => {
     if (gamePaused) return;
@@ -1095,7 +1202,6 @@ document.getElementById('btnCraft').addEventListener('click', () => {
 // Верстак
 document.getElementById('btnWorkbench').addEventListener('click', () => {
     if (gamePaused) return;
-    // Проверяем, есть ли верстак рядом
     let hasWorkbench = false;
     for (let dx = -1; dx <= 1; dx++) {
         for (let dy = -1; dy <= 1; dy++) {
@@ -1109,7 +1215,6 @@ document.getElementById('btnWorkbench').addEventListener('click', () => {
         showHint('🪵 Поставь верстак (стол) рядом! Сделай его из 5 дерева.');
         return;
     }
-    // Меню крафта
     const recipes = [
         { name: 'Деревянный меч', cost: { wood: 3 }, result: 'sword' },
         { name: 'Каменная кирка', cost: { stone: 4 }, result: 'stone_pick' },
@@ -1126,7 +1231,6 @@ document.getElementById('btnWorkbench').addEventListener('click', () => {
         const idx = parseInt(choice) - 1;
         if (idx >= 0 && idx < recipes.length) {
             const recipe = recipes[idx];
-            // Проверяем ресурсы
             let canCraft = true;
             for (const [res, amount] of Object.entries(recipe.cost)) {
                 if (player[res] < amount) {
@@ -1165,23 +1269,47 @@ document.getElementById('btnRegen').addEventListener('click', () => {
 let moveInterval = null;
 function startMoving(dx, dy) {
     if (moveInterval) clearInterval(moveInterval);
+    // Проверка направления
+    if (dx !== 0) player.dir = dx;
     movePlayer(dx, dy);
-    moveInterval = setInterval(() => movePlayer(dx, dy), 120);
+    moveInterval = setInterval(() => movePlayer(dx, dy), 100);
 }
 function stopMoving() {
     if (moveInterval) { clearInterval(moveInterval); moveInterval = null; }
 }
 
-document.getElementById('btnUp').addEventListener('mousedown', () => startMoving(0, -1));
+function movePlayer(dx, dy) {
+    if (gamePaused) return;
+    const newX = player.x + dx;
+    const newY = player.y + dy;
+    if (dx !== 0 && canMoveTo(newX, player.y)) {
+        player.x = newX;
+        if (dx !== 0) player.dir = dx;
+    }
+    if (dy !== 0 && canMoveTo(player.x, newY)) {
+        player.y = newY;
+    }
+}
+
+// Прыжок (кнопка вверх)
+document.getElementById('btnUp').addEventListener('mousedown', () => {
+    if (gamePaused) return;
+    if (canMoveTo(player.x, player.y + 0.2)) {
+        isJumping = true;
+    } else {
+        startMoving(0, -1);
+    }
+});
 document.getElementById('btnUp').addEventListener('mouseup', stopMoving);
 document.getElementById('btnUp').addEventListener('mouseleave', stopMoving);
+
 document.getElementById('btnDown').addEventListener('mousedown', () => startMoving(0, 1));
 document.getElementById('btnDown').addEventListener('mouseup', stopMoving);
 document.getElementById('btnDown').addEventListener('mouseleave', stopMoving);
-document.getElementById('btnLeft').addEventListener('mousedown', () => startMoving(-1, 0));
+document.getElementById('btnLeft').addEventListener('mousedown', () => { player.dir = -1; startMoving(-1, 0); });
 document.getElementById('btnLeft').addEventListener('mouseup', stopMoving);
 document.getElementById('btnLeft').addEventListener('mouseleave', stopMoving);
-document.getElementById('btnRight').addEventListener('mousedown', () => startMoving(1, 0));
+document.getElementById('btnRight').addEventListener('mousedown', () => { player.dir = 1; startMoving(1, 0); });
 document.getElementById('btnRight').addEventListener('mouseup', stopMoving);
 document.getElementById('btnRight').addEventListener('mouseleave', stopMoving);
 
@@ -1195,12 +1323,13 @@ canvas.addEventListener('click', (e) => {
     const ty = Math.floor((e.clientY - rect.top) * scaleY / TILE);
     if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return;
     if (world[tx]?.[ty] === 'sky') return;
-    // Простой путь
+    
     const dx = Math.sign(tx - player.x);
     const dy = Math.sign(ty - player.y);
-    if (dx !== 0 && world[Math.floor(player.x + dx)]?.[Math.floor(player.y)] !== 'sky') {
+    if (dx !== 0 && canMoveTo(player.x + dx, player.y)) {
         player.x += dx;
-    } else if (dy !== 0 && world[Math.floor(player.x)]?.[Math.floor(player.y + dy)] !== 'sky') {
+        if (dx !== 0) player.dir = dx;
+    } else if (dy !== 0 && canMoveTo(player.x, player.y + dy)) {
         player.y += dy;
     }
 });
@@ -1209,10 +1338,16 @@ canvas.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (gamePaused) return;
     let dx = 0, dy = 0;
-    if (e.key === 'w' || e.key === 'ArrowUp') dy = -1;
+    if (e.key === 'w' || e.key === 'ArrowUp') {
+        if (canMoveTo(player.x, player.y + 0.2)) {
+            isJumping = true;
+        } else {
+            dy = -1;
+        }
+    }
     if (e.key === 's' || e.key === 'ArrowDown') dy = 1;
-    if (e.key === 'a' || e.key === 'ArrowLeft') dx = -1;
-    if (e.key === 'd' || e.key === 'ArrowRight') dx = 1;
+    if (e.key === 'a' || e.key === 'ArrowLeft') { dx = -1; player.dir = -1; }
+    if (e.key === 'd' || e.key === 'ArrowRight') { dx = 1; player.dir = 1; }
     movePlayer(dx, dy);
 });
 
@@ -1226,6 +1361,7 @@ gameLoop();
 setTimeout(() => showHint('Добро пожаловать! Собирай ресурсы, строй, сражайся!'), 1000);
 setTimeout(() => showHint('Кликни на блок — чтобы подойти, кнопка "Копать" — чтобы сломать'), 4000);
 setTimeout(() => showHint('Поставь верстак (стол) и используй его для крафта'), 7000);
+setTimeout(() => showHint('⚔️ Кнопка "Атака" — бей мобов!'), 10000);
 </script>
 </body>
-    </html>
+</html>
