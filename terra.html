@@ -1,296 +1,339 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>День 1.5: Terraria на телефоне</title>
-    <style>
-        body { 
-            margin: 0; background: #000; overflow: hidden; touch-action: none; 
-            display: flex; justify-content: center; align-items: center; height: 100vh; 
-            width: 100vw;
-        }
-        canvas { 
-            background: #87CEEB; 
-            image-rendering: pixelated; 
-            display: block;
-            width: 100%;
-            height: 100%;
-        }
-        /* Стили для экранных кнопок */
-        .controls {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            pointer-events: none; /* Чтобы клики проходили сквозь пустое место */
-        }
-        .btn-group {
-            display: flex;
-            gap: 10px;
-            pointer-events: auto; /* Сами кнопки кликабельны */
-        }
-        .btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255, 255, 255, 0.4);
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 15px;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-        }
-        .btn:active { background: rgba(255, 255, 255, 0.7); }
-        /* Кнопка копания отдельно */
-        .btn-mine {
-            position: absolute;
-            bottom: 100px;
-            right: 20px;
-            width: 80px;
-            height: 80px;
-            background: rgba(255, 0, 0, 0.3);
-            border: 2px solid rgba(255, 0, 0, 0.8);
-            pointer-events: auto;
-        }
-        .btn-mine:active { background: rgba(255, 0, 0, 0.6); }
-    </style>
+<meta charset="UTF-8">
+<title>🌍 Террария 2D</title>
+<style>
+body { margin:0; background:#1a1a1a; display:flex; justify-content:center; align-items:center; height:100vh; font-family:monospace; }
+canvas { border:4px solid #5d3a1a; border-radius:16px; cursor:crosshair; }
+.ui { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:12px 24px; border-radius:40px; color:white; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
+.ui button { background:#5d3a1a; border:none; color:white; padding:6px 14px; border-radius:20px; cursor:pointer; }
+.ui button:hover { background:#7a4f2b; }
+.time-controls { position:absolute; top:20px; right:20px; display:flex; gap:8px; }
+.time-controls button { background:#2a2a2a; border:1px solid #5d3a1a; color:white; padding:4px 12px; border-radius:12px; cursor:pointer; }
+</style>
 </head>
 <body>
-
-<canvas id="game"></canvas>
-
-<div class="controls">
-    <div class="btn-group">
-        <div class="btn" id="btn-left">◀</div>
-        <div class="btn" id="btn-right">▶</div>
-    </div>
-    <div class="btn-group">
-        <div class="btn" id="btn-jump">▲</div>
-    </div>
+<canvas id="game" width="800" height="600"></canvas>
+<div class="time-controls">
+    <button onclick="setTime('day')">☀️</button>
+    <button onclick="setTime('evening')">🌅</button>
+    <button onclick="setTime('night')">🌙</button>
+    <button onclick="setTime('morning')">🌄</button>
 </div>
-<div class="btn btn-mine" id="btn-mine">⛏️</div>
-
+<div class="ui">
+    <span>❤️ <span id="hp">20</span></span>
+    <span>⛏️ <span id="pick">Деревянная</span></span>
+    <span>🧱 <span id="blocks">0</span></span>
+    <span>🌙 <span id="timeDisplay">День</span></span>
+    <button id="btnMine">⛏️ Копать</button>
+    <button id="btnPlace">🧱 Поставить</button>
+    <button id="btnCraft">🔨 Крафт</button>
+    <button id="btnRegen">🔄 Регенерация</button>
+</div>
 <script>
-    const canvas = document.getElementById('game');
-    const ctx = canvas.getContext('2d');
-    
-    // Адаптация размера под экран
-    function resize() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+// -------- НАСТРОЙКИ --------
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const TILE = 40;
+const COLS = 20, ROWS = 15;
+let world = [];
+let mobs = [];
+let player = { x:5, y:5, hp:20, maxHp:20, pick:'wooden', blocks:0, attackCooldown:0 };
+let time = 600; // 0-2400
+let mouseX = 0, mouseY = 0;
+
+// -------- ГЕНЕРАЦИЯ МИРА (с биомами) --------
+function generateWorld() {
+    world = [];
+    for (let c=0; c<COLS; c++) {
+        world[c] = [];
+        for (let r=0; r<ROWS; r++) {
+            // Простой шум для высоты
+            const height = Math.floor(Math.sin(c*0.3)*2 + Math.cos(r*0.2)*2 + 5);
+            if (r < height) world[c][r] = 'sky';
+            else if (r === height) world[c][r] = 'grass';
+            else if (r < height+3) world[c][r] = 'dirt';
+            else if (r < height+6) world[c][r] = 'stone';
+            else world[c][r] = 'bedrock';
+            
+            // Деревья
+            if (r === height && Math.random() > 0.85) world[c][r] = 'tree';
+            // Руды
+            if (r > height+2 && Math.random() > 0.95) world[c][r] = 'iron_ore';
+            if (r > height+5 && Math.random() > 0.98) world[c][r] = 'gold_ore';
+        }
     }
-    window.addEventListener('resize', resize);
-    resize();
+    mobs = [];
+}
 
-    const TILE_SIZE = 30; // Чуть увеличили блоки для пальцев
-    // Рассчитываем мир под размер экрана
-    let worldWidth = Math.ceil(canvas.width / TILE_SIZE) + 2;
-    let worldHeight = Math.ceil(canvas.height / TILE_SIZE) + 2;
-    let world = [];
-
-    // --- 1. МИР ИЗ БЛОКОВ ---
-    function generateWorld() {
-        world = [];
-        for (let x = 0; x < worldWidth; x++) {
-            world[x] = [];
-            for (let y = 0; y < worldHeight; y++) {
-                let dirtLevel = Math.floor(worldHeight * 0.7);
-                if (y >= dirtLevel && y < worldHeight - 1) {
-                    world[x][y] = 'dirt';
-                } else if (y === worldHeight - 1) {
-                    world[x][y] = 'stone';
-                } else {
-                    world[x][y] = 'air';
+// -------- МОБЫ --------
+class Mob {
+    constructor(x, y, type) {
+        this.x = x; this.y = y;
+        this.type = type;
+        this.hp = type === 'zombie' ? 20 : 15;
+        this.maxHp = this.hp;
+        this.damage = type === 'zombie' ? 4 : 3;
+        this.speed = 0.02 + Math.random()*0.01;
+        this.armor = (type === 'zombie' && Math.random() > 0.9) ? 2 : 0;
+        this.hasBow = type === 'skeleton';
+        this.attackCooldown = 0;
+        this.arrowCooldown = 0;
+        this.drop = type === 'zombie' ? 'rotten_flesh' : 'bone';
+    }
+    
+    update() {
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < 12 && this.hp > 0) {
+            if (this.attackCooldown <= 0 && dist < 1.5) {
+                let dmg = this.damage;
+                // Сопротивление броне игрока (пока нет)
+                player.hp -= dmg;
+                this.attackCooldown = 30;
+                document.getElementById('hp').textContent = player.hp;
+                if (player.hp <= 0) {
+                    alert('💀 Ты погиб! Возрождение...');
+                    player.hp = player.maxHp;
+                    player.x = 5; player.y = 5;
                 }
+            }
+            if (this.hasBow && dist > 2 && this.arrowCooldown <= 0) {
+                player.hp -= 2;
+                this.arrowCooldown = 40;
+                document.getElementById('hp').textContent = player.hp;
+            }
+            if (dist > 0.5) {
+                this.x += (dx / dist) * this.speed;
+                this.y += (dy / dist) * this.speed;
+            }
+        }
+        if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.arrowCooldown > 0) this.arrowCooldown--;
+    }
+}
+
+function spawnMobs() {
+    if (mobs.length < 8 && Math.random() > 0.97) {
+        const x = 2 + Math.floor(Math.random() * (COLS-4));
+        const y = 2 + Math.floor(Math.random() * (ROWS-4));
+        const types = ['zombie', 'zombie', 'skeleton', 'slime'];
+        const type = types[Math.floor(Math.random() * types.length)];
+        mobs.push(new Mob(x, y, type));
+    }
+}
+
+// -------- ЦИКЛ ДЕНЬ/НОЧЬ --------
+function setTime(phase) {
+    const map = { day:600, evening:1200, night:1800, morning:0 };
+    time = map[phase] || 600;
+}
+
+function getTimeState() {
+    if (time < 300) return 'morning';
+    if (time < 900) return 'day';
+    if (time < 1500) return 'evening';
+    return 'night';
+}
+
+function getBrightness() {
+    const t = time;
+    if (t < 300) return 0.5 + (t/300)*0.5; // рассвет
+    if (t < 900) return 1; // день
+    if (t < 1500) return 1 - ((t-900)/600)*0.7; // закат
+    return 0.3; // ночь
+}
+
+// -------- ОТРИСОВКА --------
+function draw() {
+    const brightness = getBrightness();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Фон неба
+    const skyColors = {
+        morning: '#FFA07A',
+        day: '#87CEEB',
+        evening: '#FF6B6B',
+        night: '#0A0A2A'
+    };
+    const state = getTimeState();
+    ctx.fillStyle = skyColors[state];
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Блоки
+    for (let c=0; c<COLS; c++) {
+        for (let r=0; r<ROWS; r++) {
+            const block = world[c][r];
+            const x = c*TILE, y = r*TILE;
+            let color = '#000';
+            switch(block) {
+                case 'sky': continue;
+                case 'grass': color = '#4CAF50'; break;
+                case 'dirt': color = '#8D6E63'; break;
+                case 'stone': color = '#9E9E9E'; break;
+                case 'bedrock': color = '#424242'; break;
+                case 'tree': color = '#2E7D32'; break;
+                case 'iron_ore': color = '#D4A373'; break;
+                case 'gold_ore': color = '#FFD700'; break;
+                default: color = '#000';
+            }
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, TILE-1, TILE-1);
+            
+            if (block === 'tree') {
+                ctx.fillStyle = '#5D4037';
+                ctx.fillRect(x+14, y+20, 12, 20);
+            }
+            if (block === 'iron_ore' || block === 'gold_ore') {
+                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.fillRect(x+2, y+2, 8, 8);
+                ctx.fillRect(x+28, y+28, 8, 8);
             }
         }
     }
+    
+    // Мобы
+    mobs.forEach(m => {
+        if (m.hp <= 0) return;
+        const x = m.x*TILE, y = m.y*TILE;
+        // Тело
+        ctx.fillStyle = m.type === 'zombie' ? '#4CAF50' : '#B0BEC5';
+        ctx.fillRect(x+4, y+4, TILE-8, TILE-8);
+        // Глаза
+        ctx.fillStyle = m.type === 'zombie' ? '#FF0000' : '#FF6B6B';
+        ctx.fillRect(x+10, y+10, 6, 6);
+        ctx.fillRect(x+22, y+10, 6, 6);
+        // Лук у скелета
+        if (m.hasBow) {
+            ctx.strokeStyle = '#5D4037';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x+20, y+20, 12, 0, Math.PI);
+            ctx.stroke();
+        }
+        // Броня у зомби (редко)
+        if (m.armor > 0) {
+            ctx.strokeStyle = '#616161';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x+2, y+2, TILE-4, TILE-4);
+        }
+        // HP бар
+        ctx.fillStyle = 'rgba(0,0,0,0.5)';
+        ctx.fillRect(x, y-6, TILE, 4);
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(x, y-6, TILE * (m.hp/m.maxHp), 4);
+    });
+    
+    // Игрок
+    ctx.fillStyle = '#FF5722';
+    ctx.shadowColor = '#FF5722';
+    ctx.shadowBlur = 15;
+    ctx.fillRect(player.x*TILE+4, player.y*TILE+4, TILE-8, TILE-8);
+    ctx.shadowBlur = 0;
+    
+    // Прицел
+    const mx = Math.floor(mouseX/TILE), my = Math.floor(mouseY/TILE);
+    if (mx>=0 && mx<COLS && my>=0 && my<ROWS) {
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(mx*TILE+2, my*TILE+2, TILE-4, TILE-4);
+    }
+    
+    // Время
+    document.getElementById('timeDisplay').textContent = state.charAt(0).toUpperCase() + state.slice(1);
+}
+
+// -------- ИГРОВОЙ ЦИКЛ --------
+function update() {
+    time = (time + 0.5) % 2400;
+    mobs.forEach(m => m.update());
+    spawnMobs();
+    mobs = mobs.filter(m => m.hp > 0);
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// -------- ВЗАИМОДЕЙСТВИЕ --------
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (canvas.width/rect.width);
+    mouseY = (e.clientY - rect.top) * (canvas.height/rect.height);
+});
+
+document.getElementById('btnMine').addEventListener('click', () => {
+    const c = Math.floor(mouseX/TILE), r = Math.floor(mouseY/TILE);
+    if (c<0||c>=COLS||r<0||r>=ROWS) return;
+    const block = world[c][r];
+    if (block === 'sky' || block === 'bedrock') return;
+    if (Math.abs(c-player.x)>1 || Math.abs(r-player.y)>1) return;
+    world[c][r] = 'sky';
+    player.blocks++;
+    document.getElementById('blocks').textContent = player.blocks;
+    
+    // Атака мобов рядом
+    mobs.forEach(m => {
+        if (Math.abs(m.x-c)<1.5 && Math.abs(m.y-r)<1.5) {
+            m.hp -= 5;
+            if (m.hp <= 0) {
+                player.blocks += 2;
+                document.getElementById('blocks').textContent = player.blocks;
+            }
+        }
+    });
+});
+
+document.getElementById('btnPlace').addEventListener('click', () => {
+    const c = Math.floor(mouseX/TILE), r = Math.floor(mouseY/TILE);
+    if (c<0||c>=COLS||r<0||r>=ROWS) return;
+    if (world[c][r] !== 'sky') return;
+    if (Math.abs(c-player.x)>1 || Math.abs(r-player.y)>1) return;
+    if (player.blocks <= 0) return;
+    world[c][r] = 'dirt';
+    player.blocks--;
+    document.getElementById('blocks').textContent = player.blocks;
+});
+
+document.getElementById('btnCraft').addEventListener('click', () => {
+    if (player.blocks >= 5) {
+        player.blocks -= 5;
+        player.pick = 'iron';
+        document.getElementById('pick').textContent = 'Железная';
+    } else alert('Нужно 5 блоков');
+});
+
+document.getElementById('btnRegen').addEventListener('click', () => {
     generateWorld();
+    player.x=5; player.y=5;
+    player.blocks=0;
+    document.getElementById('blocks').textContent = '0';
+});
 
-    // --- 2. ПЕРСОНАЖ ---
-    let player = {
-        x: 100, y: 300, 
-        w: 20, h: 35,
-        vx: 0, vy: 0,
-        onGround: false,
-        speed: 5,
-        jumpPower: -12,
-        gravity: 0.6
-    };
-
-    // --- 3. УПРАВЛЕНИЕ (Клавиатура + Сенсор) ---
-    const keys = {};
-    
-    // Клавиатура
-    document.addEventListener('keydown', (e) => keys[e.key] = true);
-    document.addEventListener('keyup', (e) => keys[e.key] = false);
-
-    // Сенсорные кнопки (обработка нажатий)
-    function setupTouchButton(elementId, keyCode, isPress = true) {
-        const el = document.getElementById(elementId);
-        if (!el) return;
-        
-        el.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyCode] = true; });
-        el.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyCode] = false; });
-        el.addEventListener('touchcancel', (e) => { keys[keyCode] = false; });
-        
-        // Для мыши (тестирование на ПК)
-        el.addEventListener('mousedown', () => { keys[keyCode] = true; });
-        el.addEventListener('mouseup', () => { keys[keyCode] = false; });
-        el.addEventListener('mouseleave', () => { keys[keyCode] = false; });
-    }
-
-    setupTouchButton('btn-left', 'a');
-    setupTouchButton('btn-right', 'd');
-    setupTouchButton('btn-jump', 'w');
-
-    // --- 4. КОПАНИЕ (Тап по экрану) ---
-    canvas.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        const touch = e.touches[0];
-        handleMine(touch.clientX, touch.clientY);
-    });
-    canvas.addEventListener('click', (e) => {
-        handleMine(e.clientX, e.clientY);
-    });
-
-    function handleMine(clientX, clientY) {
-        // Переводим экранные координаты в тайлы мира
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;   // Если canvas растянут CSS-ом
-        const scaleY = canvas.height / rect.height;
-
-        const canvasX = (clientX - rect.left) * scaleX;
-        const canvasY = (clientY - rect.top) * scaleY;
-
-        const tileX = Math.floor(canvasX / TILE_SIZE);
-        const tileY = Math.floor(canvasY / TILE_SIZE);
-
-        if (tileX >= 0 && tileX < worldWidth && tileY >= 0 && tileY < worldHeight) {
-            // Проверка, что тап рядом с игроком
-            const pTileX = Math.floor((player.x + player.w/2) / TILE_SIZE);
-            const pTileY = Math.floor((player.y + player.h/2) / TILE_SIZE);
-            if (Math.abs(tileX - pTileX) <= 3 && Math.abs(tileY - pTileY) <= 3) {
-                world[tileX][tileY] = 'air';
-            }
+// Управление WASD
+document.addEventListener('keydown', (e) => {
+    let dx=0, dy=0;
+    if (e.key === 'w' || e.key === 'ArrowUp') dy=-1;
+    if (e.key === 's' || e.key === 'ArrowDown') dy=1;
+    if (e.key === 'a' || e.key === 'ArrowLeft') dx=-1;
+    if (e.key === 'd' || e.key === 'ArrowRight') dx=1;
+    const nx=player.x+dx, ny=player.y+dy;
+    if (nx>=0 && nx<COLS && ny>=0 && ny<ROWS) {
+        if (world[nx][ny] !== 'sky') {
+            player.x = nx;
+            player.y = ny;
         }
     }
+});
 
-    // --- 5. ФИЗИКА И ОБНОВЛЕНИЕ ---
-    function update() {
-        // Горизонтальное движение
-        if (keys['a']) player.vx = -player.speed;
-        else if (keys['d']) player.vx = player.speed;
-        else player.vx *= 0.8;
-
-        // Прыжок
-        if (keys['w'] && player.onGround) {
-            player.vy = player.jumpPower;
-            player.onGround = false;
-        }
-
-        player.vy += player.gravity;
-        if (player.vy > 12) player.vy = 12;
-
-        // Коллизия (такая же как в прошлый раз, но теперь мир динамический по высоте экрана)
-        let newX = player.x + player.vx;
-        let newY = player.y + player.vy;
-
-        // По X
-        let testX = Math.floor((newX + player.w/2) / TILE_SIZE);
-        let testY1 = Math.floor((newY) / TILE_SIZE);
-        let testY2 = Math.floor((newY + player.h - 1) / TILE_SIZE);
-        if (testX >= 0 && testX < worldWidth && world[testX] && (world[testX][testY1] !== 'air' || world[testX][testY2] !== 'air')) {
-            // Блокировка X
-            if (player.vx > 0) player.x = testX * TILE_SIZE - player.w/2 - 1;
-            else if (player.vx < 0) player.x = (testX + 1) * TILE_SIZE + player.w/2 + 1;
-            player.vx = 0;
-        } else {
-            player.x = newX;
-        }
-
-        // По Y
-        let testY = Math.floor((newY + player.h) / TILE_SIZE);
-        let testX1 = Math.floor((newX) / TILE_SIZE);
-        let testX2 = Math.floor((newX + player.w - 1) / TILE_SIZE);
-        if (testY >= 0 && testY < worldHeight && world[testX1] && (world[testX1][testY] !== 'air' || world[testX2][testY] !== 'air')) {
-            // Приземление
-            player.y = testY * TILE_SIZE - player.h;
-            player.vy = 0;
-            player.onGround = true;
-        } else {
-            player.y = newY;
-            player.onGround = false;
-        }
-
-        // Границы экрана (не даём улететь влево/вправо)
-        if (player.x < 0) player.x = 0;
-        if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
-    }
-
-    // --- 6. ОТРИСОВКА ---
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Отрисовка мира
-        for (let x = 0; x < worldWidth; x++) {
-            for (let y = 0; y < worldHeight; y++) {
-                if (world[x][y] === 'dirt') {
-                    ctx.fillStyle = '#8B4513';
-                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                    ctx.strokeStyle = '#5C2E00';
-                    ctx.strokeRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                } else if (world[x][y] === 'stone') {
-                    ctx.fillStyle = '#555';
-                    ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-                }
-            }
-        }
-
-        // Отрисовка игрока (крупнее для телефона)
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.roundRect(player.x - player.w/2, player.y, player.w, player.h, 5);
-        ctx.fill();
-        
-        ctx.fillStyle = '#000';
-        ctx.fillRect(player.x - 6, player.y + 10, 5, 5);
-        ctx.fillRect(player.x + 1, player.y + 10, 5, 5);
-    }
-
-    // Вспомогательная функция для скругленных прямоугольников
-    CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
-        if (w < 2 * r) r = w / 2;
-        if (h < 2 * r) r = h / 2;
-        this.moveTo(x + r, y);
-        this.lineTo(x + w - r, y);
-        this.quadraticCurveTo(x + w, y, x + w, y + r);
-        this.lineTo(x + w, y + h - r);
-        this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-        this.lineTo(x + r, y + h);
-        this.quadraticCurveTo(x, y + h, x, y + h - r);
-        this.lineTo(x, y + r);
-        this.quadraticCurveTo(x, y, x + r, y);
-        this.closePath();
-        return this;
-    };
-
-    // --- ЦИКЛ ИГРЫ ---
-    function gameLoop() {
-        update();
-        draw();
-        requestAnimationFrame(gameLoop);
-    }
-    gameLoop();
+// -------- ЗАПУСК --------
+generateWorld();
+gameLoop();
 </script>
 </body>
 </html>
