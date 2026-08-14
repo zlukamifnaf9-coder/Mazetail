@@ -2,25 +2,238 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>🌍 Террария 2D</title>
+<title>🌍 Террария 2D — Полная версия</title>
 <style>
-body { margin:0; background:#1a1a1a; display:flex; justify-content:center; align-items:center; height:100vh; font-family:monospace; }
-canvas { border:4px solid #5d3a1a; border-radius:16px; cursor:crosshair; }
-.ui { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); padding:12px 24px; border-radius:40px; color:white; display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
-.ui button { background:#5d3a1a; border:none; color:white; padding:6px 14px; border-radius:20px; cursor:pointer; }
-.ui button:hover { background:#7a4f2b; }
-.time-controls { position:absolute; top:20px; right:20px; display:flex; gap:8px; }
-.time-controls button { background:#2a2a2a; border:1px solid #5d3a1a; color:white; padding:4px 12px; border-radius:12px; cursor:pointer; }
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+    background:#0a0a0a; 
+    display:flex; 
+    justify-content:center; 
+    align-items:center; 
+    min-height:100vh; 
+    font-family: 'Segoe UI', monospace;
+    overflow:hidden;
+}
+#gameWrapper {
+    position:relative;
+    border:4px solid #5d3a1a;
+    border-radius:20px;
+    box-shadow:0 0 60px rgba(93,58,26,0.4);
+    background:#1a0e05;
+    padding:8px;
+}
+canvas {
+    display:block;
+    border-radius:16px;
+    cursor:crosshair;
+    background:#1a1a2a;
+    width:100%;
+    height:auto;
+    max-width:900px;
+}
+.ui {
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(10,10,10,0.92);
+    backdrop-filter:blur(8px);
+    padding:12px 24px;
+    border-radius:60px;
+    color:#efd5b5;
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    justify-content:center;
+    border:1px solid #5d3a1a;
+    box-shadow:0 0 40px rgba(0,0,0,0.8);
+    z-index:50;
+    font-size:14px;
+    pointer-events:auto;
+}
+.ui span { 
+    background:#1a0e05; 
+    padding:4px 14px; 
+    border-radius:30px; 
+    border:1px solid #3d2616;
+    display:flex;
+    align-items:center;
+    gap:6px;
+    white-space:nowrap;
+}
+.ui button {
+    background:#3d2616;
+    border:2px solid #7a4f2b;
+    color:#efd5b5;
+    padding:6px 18px;
+    border-radius:40px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:all 0.2s;
+    font-size:13px;
+    white-space:nowrap;
+}
+.ui button:hover {
+    background:#5d3a1a;
+    transform:scale(1.04);
+    box-shadow:0 0 20px rgba(93,58,26,0.4);
+}
+.time-controls {
+    position:fixed;
+    top:20px;
+    right:20px;
+    display:flex;
+    gap:6px;
+    background:rgba(10,10,10,0.8);
+    padding:8px 12px;
+    border-radius:40px;
+    border:1px solid #3d2616;
+    z-index:50;
+}
+.time-controls button {
+    background:transparent;
+    border:1px solid #5d3a1a;
+    color:#efd5b5;
+    padding:4px 10px;
+    border-radius:20px;
+    cursor:pointer;
+    font-size:14px;
+    transition:all 0.2s;
+}
+.time-controls button:hover { background:#5d3a1a; transform:scale(1.05); }
+#deathScreen {
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+    pointer-events:none;
+    transition:background 1.2s ease;
+}
+#deathModal {
+    background:linear-gradient(145deg, #1a0a05, #2d0a05);
+    border:4px solid #8b0000;
+    border-radius:28px;
+    padding:40px 50px;
+    text-align:center;
+    color:#ffd700;
+    font-family:'Times New Roman',serif;
+    transform:scale(0.1);
+    opacity:0;
+    transition:all 1.2s cubic-bezier(0.34,1.56,0.64,1);
+    box-shadow:0 0 80px rgba(139,0,0,0.7), inset 0 0 60px rgba(139,0,0,0.2);
+    max-width:90%;
+    pointer-events:auto;
+    border-radius:28px;
+}
+#deathModal h1 {
+    font-size:64px;
+    text-shadow:0 0 30px #8b0000,0 0 60px #ff0000;
+    letter-spacing:6px;
+    margin:0 0 6px 0;
+}
+#deathModal .sub { font-size:22px; color:#ff6b6b; margin:4px 0 16px; font-family:'Courier New',monospace; }
+#deathModal .stats {
+    color:#aaa;
+    font-size:15px;
+    margin-bottom:24px;
+    padding:12px;
+    background:rgba(0,0,0,0.5);
+    border-radius:14px;
+    border-left:3px solid #8b0000;
+    text-align:left;
+    font-family:monospace;
+    line-height:1.8;
+}
+#deathModal .btns { display:flex; gap:16px; justify-content:center; flex-wrap:wrap; }
+#deathModal .btns button {
+    padding:12px 32px;
+    border-radius:40px;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:all 0.3s;
+    font-family:'Times New Roman',serif;
+    border:2px solid #8b0000;
+    background:linear-gradient(145deg,#2d0a05,#4a0a05);
+    color:#ffd700;
+    text-shadow:0 0 10px rgba(139,0,0,0.4);
+}
+#deathModal .btns button:hover { transform:scale(1.05); box-shadow:0 0 30px rgba(139,0,0,0.5); }
+#deathModal .btns .menuBtn {
+    background:transparent;
+    border-color:#555;
+    color:#888;
+}
+#deathModal .btns .menuBtn:hover { border-color:#ffd700; color:#ffd700; box-shadow:none; }
+#deathModal .footer { margin-top:16px; font-size:12px; color:#444; font-family:monospace; letter-spacing:1px; }
+@keyframes shake {
+    0%,100% { transform:translate(0); }
+    10% { transform:translate(-8px,-4px) rotate(-0.8deg); }
+    20% { transform:translate(8px,4px) rotate(0.8deg); }
+    30% { transform:translate(-8px,4px) rotate(-0.8deg); }
+    40% { transform:translate(8px,-4px) rotate(0.8deg); }
+    50% { transform:translate(-4px,8px) rotate(-0.5deg); }
+    60% { transform:translate(4px,-8px) rotate(0.5deg); }
+    70% { transform:translate(-8px,-4px) rotate(-0.8deg); }
+    80% { transform:translate(8px,4px) rotate(0.8deg); }
+    90% { transform:translate(-4px,8px) rotate(-0.5deg); }
+}
+@keyframes fadeInOut {
+    0% { opacity:0; transform:translateX(-50%) scale(0.9); }
+    15% { opacity:1; transform:translateX(-50%) scale(1); }
+    85% { opacity:1; transform:translateX(-50%) scale(1); }
+    100% { opacity:0; transform:translateX(-50%) scale(0.9); }
+}
+.hint {
+    position:fixed;
+    bottom:100px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(0,0,0,0.85);
+    backdrop-filter:blur(6px);
+    color:#ffd700;
+    padding:12px 28px;
+    border-radius:30px;
+    font-family:monospace;
+    font-size:15px;
+    border:1px solid #5d3a1a;
+    animation:fadeInOut 3.5s ease forwards;
+    z-index:60;
+    pointer-events:none;
+    white-space:nowrap;
+    box-shadow:0 0 30px rgba(0,0,0,0.5);
+}
+@media (max-width:700px) {
+    .ui { font-size:12px; padding:8px 14px; gap:8px; bottom:10px; width:95%; border-radius:30px; }
+    .ui span { padding:2px 10px; font-size:11px; }
+    .ui button { padding:4px 12px; font-size:11px; }
+    .time-controls { top:10px; right:10px; padding:4px 8px; gap:4px; }
+    .time-controls button { padding:2px 8px; font-size:12px; }
+    #deathModal { padding:24px 20px; }
+    #deathModal h1 { font-size:40px; }
+    #deathModal .sub { font-size:16px; }
+    #deathModal .btns button { padding:8px 20px; font-size:14px; }
+    .hint { font-size:12px; padding:8px 16px; bottom:80px; white-space:normal; max-width:90%; }
+}
 </style>
 </head>
 <body>
-<canvas id="game" width="800" height="600"></canvas>
+
+<div id="gameWrapper">
+    <canvas id="game" width="840" height="600"></canvas>
+</div>
+
 <div class="time-controls">
     <button onclick="setTime('day')">☀️</button>
     <button onclick="setTime('evening')">🌅</button>
     <button onclick="setTime('night')">🌙</button>
     <button onclick="setTime('morning')">🌄</button>
 </div>
+
 <div class="ui">
     <span>❤️ <span id="hp">20</span></span>
     <span>⛏️ <span id="pick">Деревянная</span></span>
@@ -29,106 +242,502 @@ canvas { border:4px solid #5d3a1a; border-radius:16px; cursor:crosshair; }
     <button id="btnMine">⛏️ Копать</button>
     <button id="btnPlace">🧱 Поставить</button>
     <button id="btnCraft">🔨 Крафт</button>
-    <button id="btnRegen">🔄 Регенерация</button>
+    <button id="btnRegen">🔄 Реген</button>
 </div>
+
+<div id="deathScreen">
+    <div id="deathModal">
+        <h1>💀 GAME OVER</h1>
+        <div class="sub">⚔️ Ты пал в бою ⚔️</div>
+        <div class="stats">
+            <div>🏆 Построено: <span id="deathBuildings">0</span></div>
+            <div>⚔️ Сражений: <span id="deathBattles">0</span></div>
+            <div>💎 Блоков собрано: <span id="deathBlocks">0</span></div>
+            <div style="margin-top:6px;color:#8b0000;font-style:italic;" id="deathQuote">"Тьма поглощает тебя..."</div>
+        </div>
+        <div class="btns">
+            <button onclick="respawnPlayer()">🔥 Возродиться</button>
+            <button class="menuBtn" onclick="backToMenu()">⏳ Выйти</button>
+        </div>
+        <div class="footer">☠️ Твоя империя пала, но дух жив ☠️</div>
+    </div>
+</div>
+
 <script>
-// -------- НАСТРОЙКИ --------
+// ============================================
+// 1. НАСТРОЙКИ
+// ============================================
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const TILE = 40;
-const COLS = 20, ROWS = 15;
+const COLS = 21, ROWS = 15;
 let world = [];
 let mobs = [];
-let player = { x:5, y:5, hp:20, maxHp:20, pick:'wooden', blocks:0, attackCooldown:0 };
-let time = 600; // 0-2400
+let npcs = [];
+let particles = [];
+let gamePaused = false;
 let mouseX = 0, mouseY = 0;
+let time = 600;
 
-// -------- ГЕНЕРАЦИЯ МИРА (с биомами) --------
-function generateWorld() {
-    world = [];
-    for (let c=0; c<COLS; c++) {
-        world[c] = [];
-        for (let r=0; r<ROWS; r++) {
-            // Простой шум для высоты
-            const height = Math.floor(Math.sin(c*0.3)*2 + Math.cos(r*0.2)*2 + 5);
-            if (r < height) world[c][r] = 'sky';
-            else if (r === height) world[c][r] = 'grass';
-            else if (r < height+3) world[c][r] = 'dirt';
-            else if (r < height+6) world[c][r] = 'stone';
-            else world[c][r] = 'bedrock';
-            
-            // Деревья
-            if (r === height && Math.random() > 0.85) world[c][r] = 'tree';
-            // Руды
-            if (r > height+2 && Math.random() > 0.95) world[c][r] = 'iron_ore';
-            if (r > height+5 && Math.random() > 0.98) world[c][r] = 'gold_ore';
-        }
-    }
-    mobs = [];
+// ============================================
+// 2. ИГРОК
+// ============================================
+let player = {
+    x: 5, y: 4,
+    hp: 20, maxHp: 20,
+    pick: 'wooden',
+    blocks: 0,
+    attackCooldown: 0,
+    invincible: 0
+};
+let stats = { buildings: 0, battles: 0, captured: 0 };
+
+// ============================================
+// 3. ЗВУКИ (Web Audio)
+// ============================================
+function playDeathSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(70, ctx.currentTime + 0.9);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 1);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 1);
+    } catch(e) {}
 }
 
-// -------- МОБЫ --------
+function playHitSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.frequency.setValueAtTime(700, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.1);
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.1);
+    } catch(e) {}
+}
+
+function playCollectSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1100, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.12);
+        osc.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.12);
+    } catch(e) {}
+}
+
+// ============================================
+// 4. МУЗЫКА (Ambient)
+// ============================================
+let musicInterval = null;
+let musicCtx = null;
+let isMusicPlaying = false;
+
+function startAmbientMusic() {
+    if (isMusicPlaying) return;
+    isMusicPlaying = true;
+    musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let counter = 0;
+    musicInterval = setInterval(() => {
+        if (!musicCtx) return;
+        try {
+            const pentatonic = [0, 2, 4, 7, 9];
+            const noteIdx = pentatonic[Math.floor(Math.random() * pentatonic.length)];
+            const baseNote = 60 + noteIdx + (Math.floor(Math.random() * 2) * 12);
+            const freq = 440 * Math.pow(2, (baseNote - 69) / 12);
+            const osc = musicCtx.createOscillator();
+            const gain = musicCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, musicCtx.currentTime);
+            gain.gain.setValueAtTime(0.015, musicCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, musicCtx.currentTime + 2.5);
+            osc.connect(gain);
+            gain.connect(musicCtx.destination);
+            osc.start();
+            osc.stop(musicCtx.currentTime + 2.5);
+            counter++;
+            if (counter > 30) {
+                musicCtx = new (window.AudioContext || window.webkitAudioContext)();
+                counter = 0;
+            }
+        } catch(e) {}
+    }, 900 + Math.random() * 1400);
+}
+
+function stopAmbientMusic() {
+    isMusicPlaying = false;
+    if (musicInterval) {
+        clearInterval(musicInterval);
+        musicInterval = null;
+    }
+    if (musicCtx) {
+        musicCtx.close();
+        musicCtx = null;
+    }
+}
+
+// ============================================
+// 5. ГЕНЕРАЦИЯ МИРА
+// ============================================
+function generateWorld() {
+    world = [];
+    for (let c = 0; c < COLS; c++) {
+        world[c] = [];
+        for (let r = 0; r < ROWS; r++) {
+            const height = Math.floor(Math.sin(c * 0.25) * 1.8 + Math.cos(r * 0.15) * 1.2 + 4.5);
+            if (r < height) { world[c][r] = 'sky'; }
+            else if (r === height) { world[c][r] = (Math.random() > 0.8) ? 'grass_flower' : 'grass'; }
+            else if (r < height + 3) { world[c][r] = 'dirt'; }
+            else if (r < height + 6) { world[c][r] = 'stone'; }
+            else { world[c][r] = 'bedrock'; }
+            
+            if (r === height && Math.random() > 0.88) world[c][r] = 'tree';
+            if (r > height + 2 && Math.random() > 0.96) world[c][r] = 'iron_ore';
+            if (r > height + 5 && Math.random() > 0.985) world[c][r] = 'gold_ore';
+        }
+    }
+    generateCaves();
+    generateVillages();
+    mobs = [];
+    npcs = [];
+}
+
+function generateCaves() {
+    for (let iter = 0; iter < 6; iter++) {
+        for (let c = 2; c < COLS-2; c++) {
+            for (let r = 4; r < ROWS-2; r++) {
+                if (world[c][r] === 'stone' || world[c][r] === 'dirt') {
+                    let walls = 0;
+                    for (let dx = -1; dx <= 1; dx++) {
+                        for (let dy = -1; dy <= 1; dy++) {
+                            if (dx === 0 && dy === 0) continue;
+                            const nx = c+dx, ny = r+dy;
+                            if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+                            if (world[nx][ny] !== 'sky') walls++;
+                        }
+                    }
+                    if (walls < 5 && Math.random() > 0.78) {
+                        world[c][r] = 'sky';
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// 6. ДЕРЕВНИ
+// ============================================
+const buildingTemplates = {
+    house: {
+        w: 5, h: 4,
+        data: [
+            ['stone','stone','stone','stone','stone'],
+            ['stone','wood','wood','wood','stone'],
+            ['stone','wood','table','wood','stone'],
+            ['stone','stone','stone','stone','stone']
+        ]
+    },
+    farm: {
+        w: 6, h: 3,
+        data: [
+            ['dirt','dirt','dirt','dirt','dirt','dirt'],
+            ['dirt','wheat','wheat','wheat','wheat','dirt'],
+            ['dirt','dirt','dirt','dirt','dirt','dirt']
+        ]
+    },
+    blacksmith: {
+        w: 5, h: 4,
+        data: [
+            ['stone','stone','stone','stone','stone'],
+            ['stone','furnace','anvil','furnace','stone'],
+            ['stone','furnace','chest','furnace','stone'],
+            ['stone','stone','stone','stone','stone']
+        ]
+    }
+};
+
+function placeBuilding(cx, cy, type) {
+    const tmpl = buildingTemplates[type];
+    if (!tmpl) return;
+    for (let dx = 0; dx < tmpl.w; dx++) {
+        for (let dy = 0; dy < tmpl.h; dy++) {
+            const x = cx + dx, y = cy + dy;
+            if (x < 0 || x >= COLS || y < 0 || y >= ROWS) continue;
+            const block = tmpl.data[dy][dx];
+            if (block && world[x][y] !== 'sky') {
+                world[x][y] = block;
+            }
+        }
+    }
+}
+
+function generateVillages() {
+    const attempts = 3;
+    for (let a = 0; a < attempts; a++) {
+        const cx = 3 + Math.floor(Math.random() * (COLS - 8));
+        const cy = 3 + Math.floor(Math.random() * (ROWS - 8));
+        if (world[cx] && world[cx][cy] && world[cx][cy] !== 'sky') {
+            const types = ['house', 'house', 'farm', 'blacksmith', 'house'];
+            const spacing = 6;
+            types.forEach((type, idx) => {
+                const angle = (idx / types.length) * Math.PI * 2 + Math.random() * 0.3;
+                const x = cx + Math.floor(Math.cos(angle) * spacing);
+                const y = cy + Math.floor(Math.sin(angle) * spacing);
+                placeBuilding(x, y, type);
+            });
+            // Добавляем NPC в деревню
+            for (let i = 0; i < 2; i++) {
+                const nx = cx + Math.floor((Math.random() - 0.5) * 4);
+                const ny = cy + Math.floor((Math.random() - 0.5) * 4);
+                if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && world[nx][ny] !== 'sky') {
+                    npcs.push(new NPC(nx, ny, ['farmer','blacksmith','librarian'][Math.floor(Math.random()*3)]));
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// 7. NPC
+// ============================================
+class NPC {
+    constructor(x, y, type) {
+        this.x = x; this.y = y;
+        this.type = type; // farmer, blacksmith, librarian
+        this.hp = 20;
+        this.homeX = x; this.homeY = y;
+        this.walkTimer = 0;
+        this.trades = {
+            farmer: { buy: ['wheat'], sell: ['bread'] },
+            blacksmith: { buy: ['iron_ore'], sell: ['iron_ingot'] },
+            librarian: { buy: ['paper'], sell: ['book'] }
+        };
+        this.emoji = { farmer: '👨‍🌾', blacksmith: '🔨', librarian: '📚' };
+    }
+    update() {
+        const state = getTimeState();
+        if (state === 'night') {
+            this.x += (this.homeX - this.x) * 0.02;
+            this.y += (this.homeY - this.y) * 0.02;
+        } else {
+            this.walkTimer++;
+            if (this.walkTimer > 60) {
+                this.walkTimer = 0;
+                const dx = Math.floor((Math.random() - 0.5) * 3);
+                const dy = Math.floor((Math.random() - 0.5) * 3);
+                const nx = this.x + dx, ny = this.y + dy;
+                if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS && world[nx][ny] !== 'sky') {
+                    this.x = nx; this.y = ny;
+                }
+            }
+        }
+    }
+}
+
+// ============================================
+// 8. МОБЫ
+// ============================================
 class Mob {
     constructor(x, y, type) {
         this.x = x; this.y = y;
-        this.type = type;
-        this.hp = type === 'zombie' ? 20 : 15;
+        this.type = type; // zombie, skeleton, demon
+        this.hp = type === 'demon' ? 35 : (type === 'zombie' ? 20 : 15);
         this.maxHp = this.hp;
-        this.damage = type === 'zombie' ? 4 : 3;
-        this.speed = 0.02 + Math.random()*0.01;
-        this.armor = (type === 'zombie' && Math.random() > 0.9) ? 2 : 0;
+        this.damage = type === 'demon' ? 6 : (type === 'zombie' ? 4 : 3);
+        this.speed = 0.025 + Math.random() * 0.015;
+        this.armor = (type === 'zombie' && Math.random() > 0.88) ? 2 : 0;
         this.hasBow = type === 'skeleton';
         this.attackCooldown = 0;
         this.arrowCooldown = 0;
-        this.drop = type === 'zombie' ? 'rotten_flesh' : 'bone';
+        this.drop = type === 'zombie' ? 'rotten_flesh' : (type === 'skeleton' ? 'bone' : 'demon_heart');
+        this.spawnX = x; this.spawnY = y;
+        this.roamTimer = 0;
     }
-    
     update() {
         const dx = player.x - this.x;
         const dy = player.y - this.y;
         const dist = Math.sqrt(dx*dx + dy*dy);
+        const state = getTimeState();
         
-        if (dist < 12 && this.hp > 0) {
-            if (this.attackCooldown <= 0 && dist < 1.5) {
-                let dmg = this.damage;
-                // Сопротивление броне игрока (пока нет)
-                player.hp -= dmg;
-                this.attackCooldown = 30;
-                document.getElementById('hp').textContent = player.hp;
-                if (player.hp <= 0) {
-                    alert('💀 Ты погиб! Возрождение...');
-                    player.hp = player.maxHp;
-                    player.x = 5; player.y = 5;
+        // Днём мобы малоподвижны
+        if (state === 'day') {
+            this.roamTimer++;
+            if (this.roamTimer > 120) {
+                this.roamTimer = 0;
+                this.x += (Math.random() - 0.5) * 0.3;
+                this.y += (Math.random() - 0.5) * 0.3;
+            }
+            return;
+        }
+        
+        if (dist < 14 && this.hp > 0) {
+            // Проверка прямой видимости
+            let hasLineOfSight = true;
+            const steps = Math.floor(dist * 2);
+            for (let i = 0; i < steps && i < 30; i++) {
+                const t = i / Math.max(steps, 1);
+                const cx = this.x + dx * t;
+                const cy = this.y + dy * t;
+                const bx = Math.floor(cx), by = Math.floor(cy);
+                if (bx >= 0 && bx < COLS && by >= 0 && by < ROWS) {
+                    const block = world[bx][by];
+                    if (block && block !== 'sky' && block !== 'grass' && block !== 'dirt' && block !== 'grass_flower') {
+                        hasLineOfSight = false;
+                        break;
+                    }
                 }
             }
-            if (this.hasBow && dist > 2 && this.arrowCooldown <= 0) {
-                player.hp -= 2;
-                this.arrowCooldown = 40;
-                document.getElementById('hp').textContent = player.hp;
+            if (!hasLineOfSight) {
+                this.x += (Math.random() - 0.5) * 0.02;
+                this.y += (Math.random() - 0.5) * 0.02;
+                return;
             }
-            if (dist > 0.5) {
+            
+            // Атака
+            if (this.attackCooldown <= 0 && dist < 1.8) {
+                let dmg = this.damage;
+                if (player.invincible <= 0) {
+                    player.hp -= dmg;
+                    player.invincible = 20;
+                    document.getElementById('hp').textContent = player.hp;
+                    playHitSound();
+                    if (player.hp <= 0) {
+                        player.hp = 0;
+                        showDeathScreen();
+                    }
+                }
+                this.attackCooldown = 30;
+            }
+            if (this.hasBow && dist > 2.5 && this.arrowCooldown <= 0) {
+                if (player.invincible <= 0) {
+                    player.hp -= 2;
+                    player.invincible = 15;
+                    document.getElementById('hp').textContent = player.hp;
+                    if (player.hp <= 0) {
+                        player.hp = 0;
+                        showDeathScreen();
+                    }
+                }
+                this.arrowCooldown = 45;
+                spawnParticles(this.x, this.y, 'sparkle', 3);
+            }
+            if (dist > 0.6) {
                 this.x += (dx / dist) * this.speed;
                 this.y += (dy / dist) * this.speed;
+            }
+        } else {
+            // Блуждание
+            this.roamTimer++;
+            if (this.roamTimer > 100) {
+                this.roamTimer = 0;
+                this.x += (Math.random() - 0.5) * 0.3;
+                this.y += (Math.random() - 0.5) * 0.3;
+                this.x = Math.max(1, Math.min(COLS-2, this.x));
+                this.y = Math.max(1, Math.min(ROWS-2, this.y));
             }
         }
         if (this.attackCooldown > 0) this.attackCooldown--;
         if (this.arrowCooldown > 0) this.arrowCooldown--;
+        if (player.invincible > 0) player.invincible--;
     }
 }
 
+function getMaxMobs() {
+    const state = getTimeState();
+    if (state === 'night') return 6;
+    if (state === 'evening' || state === 'morning') return 3;
+    return 1;
+}
+
 function spawnMobs() {
-    if (mobs.length < 8 && Math.random() > 0.97) {
-        const x = 2 + Math.floor(Math.random() * (COLS-4));
-        const y = 2 + Math.floor(Math.random() * (ROWS-4));
-        const types = ['zombie', 'zombie', 'skeleton', 'slime'];
-        const type = types[Math.floor(Math.random() * types.length)];
+    const maxMobs = getMaxMobs();
+    if (mobs.length >= maxMobs) return;
+    if (Math.random() > 0.985) {
+        let x, y, found = false;
+        for (let attempt = 0; attempt < 60; attempt++) {
+            x = 2 + Math.floor(Math.random() * (COLS - 4));
+            y = 4 + Math.floor(Math.random() * (ROWS - 6));
+            if (Math.abs(x - player.x) < 5 || Math.abs(y - player.y) < 5) continue;
+            const block = world[x] && world[x][y];
+            if (block && (block === 'stone' || block === 'dirt' || block === 'bedrock')) {
+                let free = true;
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const nx = x+dx, ny = y+dy;
+                        if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) continue;
+                        if (world[nx][ny] === 'sky') free = false;
+                    }
+                }
+                if (free) { found = true; break; }
+            }
+        }
+        if (!found) return;
+        let type = 'zombie';
+        if (y > 8) type = (Math.random() > 0.6) ? 'skeleton' : 'zombie';
+        if (y > 11 && Math.random() > 0.7) type = 'demon';
         mobs.push(new Mob(x, y, type));
     }
 }
 
-// -------- ЦИКЛ ДЕНЬ/НОЧЬ --------
+// ============================================
+// 9. ЧАСТИЦЫ
+// ============================================
+class Particle {
+    constructor(x, y, type, size) {
+        this.x = x * TILE + TILE/2;
+        this.y = y * TILE + TILE/2;
+        this.type = type; // dust, sparkle, leaf, blood
+        this.life = 1;
+        this.vx = (Math.random() - 0.5) * 0.08;
+        this.vy = -0.03 - Math.random() * 0.05;
+        this.size = size || (3 + Math.random() * 4);
+        this.colors = {
+            dust: '#8D6E63',
+            sparkle: '#FFD700',
+            leaf: '#4CAF50',
+            blood: '#8B0000'
+        };
+        this.gravity = 0.001;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.life -= 0.008;
+        return this.life > 0;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = this.life * 0.9;
+        ctx.fillStyle = this.colors[this.type] || '#fff';
+        const s = this.size * (0.3 + 0.7 * this.life);
+        ctx.fillRect(this.x - s/2, this.y - s/2, s, s);
+        ctx.globalAlpha = 1;
+    }
+}
+
+function spawnParticles(x, y, type, count) {
+    for (let i = 0; i < (count || 10); i++) {
+        particles.push(new Particle(x, y, type));
+    }
+}
+
+// ============================================
+// 10. ДЕНЬ/НОЧЬ
+// ============================================
 function setTime(phase) {
-    const map = { day:600, evening:1200, night:1800, morning:0 };
+    const map = { day: 600, evening: 1200, night: 1800, morning: 0 };
     time = map[phase] || 600;
 }
 
@@ -141,13 +750,90 @@ function getTimeState() {
 
 function getBrightness() {
     const t = time;
-    if (t < 300) return 0.5 + (t/300)*0.5; // рассвет
-    if (t < 900) return 1; // день
-    if (t < 1500) return 1 - ((t-900)/600)*0.7; // закат
-    return 0.3; // ночь
+    if (t < 300) return 0.4 + (t/300) * 0.6;
+    if (t < 900) return 1;
+    if (t < 1500) return 1 - ((t-900)/600) * 0.7;
+    return 0.3;
 }
 
-// -------- ОТРИСОВКА --------
+// ============================================
+// 11. ЭКРАН СМЕРТИ
+// ============================================
+const deathQuotes = [
+    "Тьма поглощает тебя... но не твой дух.",
+    "Каждая смерть — урок, каждый урок — сила.",
+    "Даже в аду есть свет, если знать, где искать.",
+    "Ты пал, но легенда осталась.",
+    "Смерть — это дверь в новое приключение.",
+    "Твоя империя пала, но семя возрождения посеяно.",
+    "Даже у тьмы есть память о твоём свете."
+];
+
+function showDeathScreen() {
+    document.getElementById('deathBuildings').textContent = stats.buildings || 0;
+    document.getElementById('deathBattles').textContent = stats.battles || 0;
+    document.getElementById('deathBlocks').textContent = player.blocks || 0;
+    document.getElementById('deathQuote').textContent = '"' + deathQuotes[Math.floor(Math.random() * deathQuotes.length)] + '"';
+    
+    const screen = document.getElementById('deathScreen');
+    const modal = document.getElementById('deathModal');
+    screen.style.display = 'flex';
+    screen.style.pointerEvents = 'none';
+    gamePaused = true;
+    playDeathSound();
+    stopAmbientMusic();
+    
+    setTimeout(() => {
+        screen.style.background = 'rgba(0,0,0,0.85)';
+        screen.style.pointerEvents = 'auto';
+        modal.style.transform = 'scale(1)';
+        modal.style.opacity = '1';
+    }, 100);
+    
+    canvas.style.animation = 'shake 0.6s ease';
+}
+
+function respawnPlayer() {
+    const screen = document.getElementById('deathScreen');
+    const modal = document.getElementById('deathModal');
+    modal.style.transform = 'scale(0.1)';
+    modal.style.opacity = '0';
+    screen.style.background = 'rgba(0,0,0,0)';
+    
+    setTimeout(() => {
+        screen.style.display = 'none';
+        screen.style.pointerEvents = 'none';
+        player.hp = player.maxHp;
+        player.x = Math.floor(COLS/2);
+        player.y = 3;
+        player.invincible = 60;
+        gamePaused = false;
+        document.getElementById('hp').textContent = player.hp;
+        canvas.style.animation = '';
+        startAmbientMusic();
+    }, 800);
+}
+
+function backToMenu() {
+    if (confirm('🔄 Вернуться в главное меню?')) {
+        location.reload();
+    }
+}
+
+// ============================================
+// 12. ПОДСКАЗКИ
+// ============================================
+function showHint(text) {
+    const el = document.createElement('div');
+    el.className = 'hint';
+    el.textContent = '💡 ' + text;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 3800);
+}
+
+// ============================================
+// 13. ОТРИСОВКА
+// ============================================
 function draw() {
     const brightness = getBrightness();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -160,53 +846,86 @@ function draw() {
         night: '#0A0A2A'
     };
     const state = getTimeState();
-    ctx.fillStyle = skyColors[state];
+    ctx.fillStyle = skyColors[state] || '#87CEEB';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // Блоки
-    for (let c=0; c<COLS; c++) {
-        for (let r=0; r<ROWS; r++) {
-            const block = world[c][r];
-            const x = c*TILE, y = r*TILE;
+    // Рисуем блоки
+    for (let c = 0; c < COLS; c++) {
+        for (let r = 0; r < ROWS; r++) {
+            const block = world[c]?.[r];
+            if (!block || block === 'sky') continue;
+            const x = c * TILE, y = r * TILE;
             let color = '#000';
             switch(block) {
-                case 'sky': continue;
                 case 'grass': color = '#4CAF50'; break;
+                case 'grass_flower': color = '#66BB6A'; break;
                 case 'dirt': color = '#8D6E63'; break;
                 case 'stone': color = '#9E9E9E'; break;
                 case 'bedrock': color = '#424242'; break;
                 case 'tree': color = '#2E7D32'; break;
                 case 'iron_ore': color = '#D4A373'; break;
                 case 'gold_ore': color = '#FFD700'; break;
-                default: color = '#000';
+                case 'wood': color = '#8D6E63'; break;
+                case 'table': color = '#A1887F'; break;
+                case 'furnace': color = '#616161'; break;
+                case 'anvil': color = '#37474F'; break;
+                case 'chest': color = '#5D4037'; break;
+                case 'wheat': color = '#F9A825'; break;
+                default: color = '#333';
             }
             ctx.fillStyle = color;
             ctx.fillRect(x, y, TILE-1, TILE-1);
             
+            // Детали блоков
             if (block === 'tree') {
                 ctx.fillStyle = '#5D4037';
                 ctx.fillRect(x+14, y+20, 12, 20);
             }
+            if (block === 'grass_flower') {
+                ctx.fillStyle = '#FF6B6B';
+                ctx.fillRect(x+10, y+8, 4, 4);
+                ctx.fillRect(x+24, y+12, 4, 4);
+            }
             if (block === 'iron_ore' || block === 'gold_ore') {
-                ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                ctx.fillStyle = 'rgba(255,255,255,0.15)';
                 ctx.fillRect(x+2, y+2, 8, 8);
                 ctx.fillRect(x+28, y+28, 8, 8);
+            }
+            if (block === 'wheat') {
+                ctx.fillStyle = '#F9A825';
+                ctx.fillRect(x+8, y+20, 4, 16);
+                ctx.fillRect(x+26, y+18, 4, 18);
+            }
+            if (block === 'furnace') {
+                ctx.fillStyle = '#FF5722';
+                ctx.fillRect(x+14, y+20, 12, 8);
             }
         }
     }
     
+    // NPC
+    npcs.forEach(n => {
+        const x = n.x * TILE, y = n.y * TILE;
+        ctx.font = '28px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = n.emoji[n.type] || '👤';
+        ctx.fillText(ctx.fillStyle, x + TILE/2, y + TILE/2);
+        // Имя
+        ctx.font = '8px monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText(n.type, x + TILE/2, y - 4);
+    });
+    
     // Мобы
     mobs.forEach(m => {
         if (m.hp <= 0) return;
-        const x = m.x*TILE, y = m.y*TILE;
-        // Тело
-        ctx.fillStyle = m.type === 'zombie' ? '#4CAF50' : '#B0BEC5';
+        const x = m.x * TILE, y = m.y * TILE;
+        ctx.fillStyle = m.type === 'zombie' ? '#4CAF50' : (m.type === 'skeleton' ? '#B0BEC5' : '#FF1744');
         ctx.fillRect(x+4, y+4, TILE-8, TILE-8);
-        // Глаза
         ctx.fillStyle = m.type === 'zombie' ? '#FF0000' : '#FF6B6B';
         ctx.fillRect(x+10, y+10, 6, 6);
         ctx.fillRect(x+22, y+10, 6, 6);
-        // Лук у скелета
         if (m.hasBow) {
             ctx.strokeStyle = '#5D4037';
             ctx.lineWidth = 2;
@@ -214,7 +933,6 @@ function draw() {
             ctx.arc(x+20, y+20, 12, 0, Math.PI);
             ctx.stroke();
         }
-        // Броня у зомби (редко)
         if (m.armor > 0) {
             ctx.strokeStyle = '#616161';
             ctx.lineWidth = 2;
@@ -225,33 +943,62 @@ function draw() {
         ctx.fillRect(x, y-6, TILE, 4);
         ctx.fillStyle = '#4CAF50';
         ctx.fillRect(x, y-6, TILE * (m.hp/m.maxHp), 4);
+        // Тип моба
+        ctx.font = '8px monospace';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.textAlign = 'center';
+        ctx.fillText(m.type, x + TILE/2, y + TILE + 12);
     });
     
     // Игрок
-    ctx.fillStyle = '#FF5722';
-    ctx.shadowColor = '#FF5722';
-    ctx.shadowBlur = 15;
+    ctx.shadowColor = player.invincible > 0 ? '#FFD700' : '#FF5722';
+    ctx.shadowBlur = player.invincible > 0 ? 25 : 15;
+    ctx.fillStyle = player.invincible > 0 ? '#FFD700' : '#FF5722';
     ctx.fillRect(player.x*TILE+4, player.y*TILE+4, TILE-8, TILE-8);
     ctx.shadowBlur = 0;
+    // Глаза игрока
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(player.x*TILE+12, player.y*TILE+12, 6, 6);
+    ctx.fillRect(player.x*TILE+22, player.y*TILE+12, 6, 6);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(player.x*TILE+14, player.y*TILE+14, 3, 3);
+    ctx.fillRect(player.x*TILE+24, player.y*TILE+14, 3, 3);
+    
+    // Частицы
+    particles.forEach(p => p.draw(ctx));
     
     // Прицел
     const mx = Math.floor(mouseX/TILE), my = Math.floor(mouseY/TILE);
-    if (mx>=0 && mx<COLS && my>=0 && my<ROWS) {
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
+    if (mx >= 0 && mx < COLS && my >= 0 && my < ROWS) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([3, 4]);
         ctx.strokeRect(mx*TILE+2, my*TILE+2, TILE-4, TILE-4);
+        ctx.setLineDash([]);
     }
     
-    // Время
     document.getElementById('timeDisplay').textContent = state.charAt(0).toUpperCase() + state.slice(1);
 }
 
-// -------- ИГРОВОЙ ЦИКЛ --------
+// ============================================
+// 14. ИГРОВОЙ ЦИКЛ
+// ============================================
 function update() {
-    time = (time + 0.5) % 2400;
+    if (gamePaused) return;
+    time = (time + 0.4) % 2400;
     mobs.forEach(m => m.update());
+    npcs.forEach(n => n.update());
     spawnMobs();
-    mobs = mobs.filter(m => m.hp > 0);
+    mobs = mobs.filter(m => m.hp > 0 && m.x > 0 && m.x < COLS && m.y > 0 && m.y < ROWS);
+    particles = particles.filter(p => p.update());
+    
+    // Регенерация HP (медленно)
+    if (player.hp < player.maxHp && player.hp > 0 && getTimeState() === 'day') {
+        if (Math.random() > 0.99) {
+            player.hp = Math.min(player.maxHp, player.hp + 1);
+            document.getElementById('hp').textContent = player.hp;
+        }
+    }
 }
 
 function gameLoop() {
@@ -260,80 +1007,152 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// -------- ВЗАИМОДЕЙСТВИЕ --------
+// ============================================
+// 15. ВЗАИМОДЕЙСТВИЕ
+// ============================================
 canvas.addEventListener('mousemove', (e) => {
     const rect = canvas.getBoundingClientRect();
-    mouseX = (e.clientX - rect.left) * (canvas.width/rect.width);
-    mouseY = (e.clientY - rect.top) * (canvas.height/rect.height);
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    mouseX = (e.clientX - rect.left) * scaleX;
+    mouseY = (e.clientY - rect.top) * scaleY;
 });
 
 document.getElementById('btnMine').addEventListener('click', () => {
+    if (gamePaused) return;
     const c = Math.floor(mouseX/TILE), r = Math.floor(mouseY/TILE);
-    if (c<0||c>=COLS||r<0||r>=ROWS) return;
-    const block = world[c][r];
-    if (block === 'sky' || block === 'bedrock') return;
-    if (Math.abs(c-player.x)>1 || Math.abs(r-player.y)>1) return;
+    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
+    const block = world[c]?.[r];
+    if (!block || block === 'sky' || block === 'bedrock') return;
+    if (Math.abs(c - player.x) > 1.5 || Math.abs(r - player.y) > 1.5) {
+        showHint('Подойди ближе к блоку!');
+        return;
+    }
     world[c][r] = 'sky';
     player.blocks++;
     document.getElementById('blocks').textContent = player.blocks;
+    playCollectSound();
+    spawnParticles(c, r, 'dust', 5);
     
-    // Атака мобов рядом
+    // Удар по мобам
     mobs.forEach(m => {
-        if (Math.abs(m.x-c)<1.5 && Math.abs(m.y-r)<1.5) {
-            m.hp -= 5;
+        if (Math.abs(m.x - c) < 1.5 && Math.abs(m.y - r) < 1.5) {
+            m.hp -= 6;
+            spawnParticles(m.x, m.y, 'sparkle', 8);
+            playHitSound();
             if (m.hp <= 0) {
                 player.blocks += 2;
                 document.getElementById('blocks').textContent = player.blocks;
+                spawnParticles(m.x, m.y, 'sparkle', 15);
+                showHint('💀 Моб повержен! +2 блока');
+                stats.battles++;
             }
         }
     });
 });
 
 document.getElementById('btnPlace').addEventListener('click', () => {
+    if (gamePaused) return;
     const c = Math.floor(mouseX/TILE), r = Math.floor(mouseY/TILE);
-    if (c<0||c>=COLS||r<0||r>=ROWS) return;
-    if (world[c][r] !== 'sky') return;
-    if (Math.abs(c-player.x)>1 || Math.abs(r-player.y)>1) return;
-    if (player.blocks <= 0) return;
+    if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return;
+    if (world[c]?.[r] !== 'sky') return;
+    if (Math.abs(c - player.x) > 1.5 || Math.abs(r - player.y) > 1.5) {
+        showHint('Подойди ближе, чтобы поставить блок!');
+        return;
+    }
+    if (player.blocks <= 0) {
+        showHint('Нет блоков! Собери ресурсы.');
+        return;
+    }
     world[c][r] = 'dirt';
     player.blocks--;
     document.getElementById('blocks').textContent = player.blocks;
+    stats.buildings++;
+    playCollectSound();
+    spawnParticles(c, r, 'dust', 3);
 });
 
 document.getElementById('btnCraft').addEventListener('click', () => {
+    if (gamePaused) return;
     if (player.blocks >= 5) {
         player.blocks -= 5;
         player.pick = 'iron';
         document.getElementById('pick').textContent = 'Железная';
-    } else alert('Нужно 5 блоков');
+        showHint('🔨 Кирка улучшена до железной!');
+        playCollectSound();
+    } else {
+        showHint('Нужно 5 блоков для крафта!');
+    }
 });
 
 document.getElementById('btnRegen').addEventListener('click', () => {
-    generateWorld();
-    player.x=5; player.y=5;
-    player.blocks=0;
-    document.getElementById('blocks').textContent = '0';
+    if (gamePaused) return;
+    if (confirm('🔄 Перегенерировать мир? Все постройки будут сброшены.')) {
+        generateWorld();
+        player.x = Math.floor(COLS/2);
+        player.y = 3;
+        player.blocks = 0;
+        player.hp = player.maxHp;
+        stats = { buildings: 0, battles: 0, captured: 0 };
+        document.getElementById('hp').textContent = player.hp;
+        document.getElementById('blocks').textContent = '0';
+        showHint('🌍 Новый мир создан!');
+        spawnParticles(Math.floor(COLS/2), 3, 'sparkle', 20);
+    }
 });
 
-// Управление WASD
+// Клик-движение (для упрощения)
+canvas.addEventListener('click', (e) => {
+    if (gamePaused) return;
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const tx = Math.floor((e.clientX - rect.left) * scaleX / TILE);
+    const ty = Math.floor((e.clientY - rect.top) * scaleY / TILE);
+    if (tx < 0 || tx >= COLS || ty < 0 || ty >= ROWS) return;
+    if (world[tx]?.[ty] === 'sky') return;
+    
+    // Простой путь к цели
+    const dx = Math.sign(tx - player.x);
+    const dy = Math.sign(ty - player.y);
+    if (dx !== 0 && world[player.x + dx]?.[player.y] !== 'sky') {
+        player.x += dx;
+    } else if (dy !== 0 && world[player.x]?.[player.y + dy] !== 'sky') {
+        player.y += dy;
+    }
+});
+
+// WASD
 document.addEventListener('keydown', (e) => {
-    let dx=0, dy=0;
-    if (e.key === 'w' || e.key === 'ArrowUp') dy=-1;
-    if (e.key === 's' || e.key === 'ArrowDown') dy=1;
-    if (e.key === 'a' || e.key === 'ArrowLeft') dx=-1;
-    if (e.key === 'd' || e.key === 'ArrowRight') dx=1;
-    const nx=player.x+dx, ny=player.y+dy;
-    if (nx>=0 && nx<COLS && ny>=0 && ny<ROWS) {
-        if (world[nx][ny] !== 'sky') {
+    if (gamePaused) return;
+    let dx = 0, dy = 0;
+    if (e.key === 'w' || e.key === 'ArrowUp') dy = -1;
+    if (e.key === 's' || e.key === 'ArrowDown') dy = 1;
+    if (e.key === 'a' || e.key === 'ArrowLeft') dx = -1;
+    if (e.key === 'd' || e.key === 'ArrowRight') dx = 1;
+    const nx = player.x + dx, ny = player.y + dy;
+    if (nx >= 0 && nx < COLS && ny >= 0 && ny < ROWS) {
+        if (world[nx]?.[ny] && world[nx][ny] !== 'sky') {
             player.x = nx;
             player.y = ny;
         }
     }
 });
 
-// -------- ЗАПУСК --------
+// ============================================
+// 16. ЗАПУСК
+// ============================================
 generateWorld();
+startAmbientMusic();
 gameLoop();
+
+// Приветствие
+setTimeout(() => {
+    showHint('Добро пожаловать в Террарию! Собирай ресурсы, строй, сражайся!');
+}, 1000);
+setTimeout(() => {
+    showHint('Кликни на блок — чтобы подойти, кнопка "Копать" — чтобы сломать');
+}, 4000);
 </script>
 </body>
 </html>
