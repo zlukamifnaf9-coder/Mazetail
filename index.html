@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MazeTale — Финальная версия</title>
+    <title>MazeTale — Глава 1</title>
     <style>
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; touch-action: manipulation; }
         * { box-sizing: border-box; }
@@ -164,8 +164,8 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ФИНАЛЬНАЯ ВЕРСИЯ
-        //  ЗАСТАВКА, ИСПРАВЛЕНИЯ, НОВЫЕ КАРТЫ
+        //  MAZETALE — ГЛАВА 1 (ПОЛНАЯ, ИСПРАВЛЕННАЯ)
+        //  ВСЕ БАГИ ИСПРАВЛЕНЫ — МОЖНО ИГРАТЬ!
         // ═══════════════════════════════════════════════════
 
         // ─── ЗАГРУЗЧИК ───
@@ -267,6 +267,8 @@
         let lelushJoined = false;
         let lelushAlive = true;
         let finalBattleStarted = false;
+        let hasBoat = false;
+        let ownsCar = false;
 
         let battleStats = { dmgDealt: 0, dmgTaken: 0, healed: 0, coinsEarned: 0 };
 
@@ -291,7 +293,9 @@
             married: false,
             lelushHuman: false,
             calderaCleared: false,
-            leopoldDefeated: false
+            leopoldDefeated: false,
+            hasBoat: false,
+            ownsCar: false
         };
 
         let battle = { enemyHP: 0, enemyMaxHP: 0, enemyAttack: 0, playerAttack: 8, defense: false, enemyName: '', isBoss: false,
@@ -317,9 +321,9 @@
             ['🌲', '🏰', '👑', '🏰', '🏙️', '🏚️', '🏣', '🏗️', '🗻', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
             ['🌲', '👩', '⬜', '⬜', '🌀', '⬜', '⬜', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '🌊', '🛶', '🌊', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '🌊', '🌊', '🌊', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🟦', '🟦', '🟦', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🟦', '🛶', '🟦', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🟦', '🟦', '🟦', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🚪', '🌲'],
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
@@ -343,7 +347,7 @@
             ['🌊', '🛤', '🛤', '🛤', '🛤', '🚂', '🚃', '🚃', '🛤', '🛤'],
             ['🌊', '🏠', '🏠', '🧜‍♀️', '⛪', '🌺', '🏠', '🏠', '🧜‍', '🌊'],
             ['🌊', '🦀', '🚚', '🍽', '🏢', '🌴', '🚛', '🧜‍♂️', '🌊', '🌊'],
-            ['🌊', '⛲', '🌴', '🏝️', '🏛️', '🏝️', '🌴', '👸', '🪦', '🌊'],
+            ['🌊', '⛲', '🌴', '🏝️', '🏛️', '🌀', '🌴', '👸', '🪦', '🌊'],
             ['🌊', '🦭', '🦐', '🏝️', '🏩', '🏝️', '🐈‍⬛', '🐕‍🦺', '🧔🏻', '🌊'],
             ['🌊', '🌴', '🛳', '🌴', '🚤', '🌴', '👩‍🍼', '🌴', '🐟', '🌊'],
             ['🌊', '🌊', '🐠', '🐚', '🌊', '🌊', '⛴️', '🌊', '🌊', '🌊'],
@@ -356,7 +360,7 @@
             ['🌊', '🏝️', '🌊', '⛽', '🌊', '⛲', '🌊', '🌊', '🌊', '🌊'],
             ['🚤', '🌊', '🇦🇸', '🤴', '🌻', '🐠', '🌴', '👮', '🌴', '🌊'],
             ['🌊', '🌊', '🏢', '🇦🇸', '⛪', '🌺', '🏠', '🏠', '🌊', '🌊'],
-            ['🌊', '🌊', '🌊', '🌴', '🔥', '🥀', '🚗', '🌊', '🌊', '⛴️'],
+            ['🌊', '🌊', '🌊', '🌴', '🔥', '🥀', '🚗', '🌀', '🌊', '⛴️'],
             ['🗼', '🌊', '🌼', '🌴', '🏝️', '🏝️', '🌴', '🌺', '🌊', '🌊'],
             ['🌊', '🚢', '🌊', '🌊', '🏝️', '💍', '🏝️', '🌊', '🌊', '🌊'],
             ['🌊', '🌊', '🌴', '🌺', '🐠', '🌴', '🌺', '🌴', '🐠', '🌊'],
@@ -365,28 +369,28 @@
 
         const castleMap = [
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
+            ['🌲', '🏰', '🏰', '🏰', '🐕', '⬜', '⬜', '🏰', '🏰', '🌲'],
+            ['🌲', '🏰', '👑', '🏰', '⬜', '🌀', '⬜', '🏰', '🏰', '🌲'],
             ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '🏰', '🏰', '🌲'],
-            ['🌲', '🏰', '👑', '🏰', '⬜', '⬜', '⬜', '🏰', '🏰', '🌲'],
-            ['🌲', '🏰', '🏰', '🏰', '⬜', '⬜', '⬜', '🏰', '🏰', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🌱', '⬜', '⬜', '🌺', '🌺', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
-            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '🐁', '🐈', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
             ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
             ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
         ];
 
         const lasTomperoMap = [
-            ['🇱', '🇦', '🇸', '🇹', '🇴', '🇲', '🇵', '🇪', '🇷', '🇴'],
+            ['☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️'],
             ['☀️', '🎰', '🔲', '🥷', '🔲', '🏚', '🔲', '💃', '🔲', '☀️'],
             ['☀️', '🔲', '🤵', '🔲', '🕺', '🔲', '🧟‍♂️', '🔲', '🏨', '☀️'],
             ['☀️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '🛣️', '☀️'],
             ['☀️', '🚗', '🚕', '🚙', '🚐', '🚚', '🚛', '🚔', '⛽', '☀️'],
-            ['☀️', '🌊', '🔲', '🏟️', '🧟‍♂️', '🎡', '🔲', '🍔', '🧟‍♀️', '☀️'],
+            ['☀️', '🌊', '🔲', '🏟️', '🧟‍♂️', '🎡', '🌀', '🍔', '🧟‍♀️', '☀️'],
             ['☀️', '🌊', '🧟‍♀️', '🎥', '🔲', '🥂', '🧟‍♂️', '🔲', '🔲', '☀️'],
             ['☀️', '🏠', '🔲', '🏜', '🔲', '🧌', '🔲', '🏨', '🔲', '☀️'],
             ['☀️', '🎭', '🧟‍', '🔲', '🧟‍♂️', '🚴', '🏆', '🏩', '🏣', '☀️'],
-            ['☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '🦅']
+            ['☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️', '☀️']
         ];
 
         const calderaMap = [
@@ -396,7 +400,7 @@
             ['🏛️', '🗿', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🏛️', '🗿', '🏛️'],
             ['🔥', '🏛️', '🏛️', '🏟️', '🐎', '🐎', '🏟️', '👹', '🏛️', '😈'],
             ['🏛️', '🗿', '🏛️', '🏟️', '🐎', '🐎', '🏟️', '🏛️', '🗿', '🦹‍♀️'],
-            ['🏛️', '⛲', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🏛️', '⛲', '🦹‍'],
+            ['🏛️', '⛲', '🏛️', '🔥', '🏟️', '🏟️', '🔥', '🌀', '⛲', '🦹‍'],
             ['🏛️', '🗿', '⛲', '🗿', '🎃', '🗿', '⛲', '🗿', '🏛️', '🔥'],
             ['🔥', '🏛️', '🏛️', '🏛️', '🌊', '🌊', '😈', '🏛️', '🏛️', '🎃'],
             ['🔥', '🔥', '🔥', '🔥', '🌊', '🌊', '🔥', '🔥', '🔥', '🔥']
@@ -421,7 +425,7 @@
             ['🌊','🌴','🗿','🌴','🐍','🌴','🗿','🌴','☠️','🌊'],
             ['🌊','🌴','🌴','🕷️','🌴','🌴','🕷️','🌴','🌴','🌊'],
             ['🌊','🌴','🐍','🌴','🏛️','🏛️','🌴','🐍','🌴','🌊'],
-            ['🌊','🌴','🌴','🌴','🏛️','🏛️','🌴','🌴','🌴','🌊'],
+            ['🌊','🌴','🌴','🌴','🏛️','🌀','🌴','🌴','🌴','🌊'],
             ['🌊','🌴','🐍','🌴','🕷️','🌴','🌴','🐍','🌴','🌊'],
             ['🌊','🌴','🌴','🌴','🗿','🗿','🌴','🌴','🌴','🌊'],
             ['🌊','🌴','☠️','🌴','🐊','🌴','☠️','🌴','🌴','🌊'],
@@ -448,7 +452,7 @@
             ['💟', '🕯️', '⚗️', '⚗️', '🟣', '🟣', '⚗️', '⚗️', '🕯️', '💟'],
             ['💟', '⬜', '⬜', '🪬', '🪔', '📺', '🟣', '⬜', '⬜', '💟'],
             ['💟', '⬜', '⬜', '🗑', '🧙‍♀️', '📻', '⏰', '⬜', '⬜', '💟'],
-            ['💟', '⬜', '⬜', '🟣', '🟣', '🟣', '🟣', '⬜', '⬜', '💟'],
+            ['💟', '🚪', '⬜', '🟣', '🟣', '🟣', '🟣', '⬜', '⬜', '💟'],
             ['💟', '🕯️', '⚗️', '⚗️', '🟣', '🟣', '⚗️', '⚗️', '🕯️', '💟'],
             ['💟', '🔮', '⚗️', '⚗️', '⬜', '⬜', '⚗️', '⚗️', '🔮', '💟'],
             ['💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟']
@@ -748,8 +752,16 @@
             const ny = player.y + dy;
             if (nx < 0 || nx >= currentMap.length || ny < 0 || ny >= currentMap[0].length) return;
             const tile = currentMap[nx][ny];
-            if (tile === '🧱' || tile === '🌲' || tile === '⬛' || tile === '🌊' || tile === '☀️' || tile === '🟥' || tile ===
-                '🟣' || tile === '💟') return;
+
+            // В Сан-Бандеро вода — только на лодке!
+            if (currentCity === 4 && tile === '🌊' && !flags.hasBoat) {
+                dialog.innerHTML = '🌊 Тебе нужна лодка, чтобы пересечь воду.';
+                return;
+            }
+
+            if (tile === '🧱' || tile === '🌲' || tile === '⬛' || tile === '☀️' || tile === '🟥' || tile === '🟣' || tile ===
+                '💟') return;
+
             energy = Math.max(0, energy - 1);
             updateUI();
             player.x = nx;
@@ -803,6 +815,13 @@
                 if (tile === '👩‍🍼') { talkToGrace(); return; }
                 if (tile === '🐈‍⬛') { dialog.innerHTML = '🐈‍⬛ Негро смотрит на тебя и мурлычет. Похоже, он одобряет твой путь.';
                     return; }
+                if (tile === '🛶' && !flags.hasBoat) {
+                    dialog.innerHTML = '🛶 Ты нашёл лодку! Теперь ты можешь плавать по воде.';
+                    flags.hasBoat = true;
+                    currentMap[player.x][player.y] = '⬜';
+                    updateUI();
+                    return;
+                }
             }
 
             dialog.innerHTML = '📍 ' + currentLocation + ' — пустое место.';
@@ -849,17 +868,65 @@
                 y = player.y;
             const tile = currentMap[x][y];
 
-            if (tile === '🏪') {
-                openShop();
+            // ─── СПЕЦИАЛЬНЫЕ ЗДАНИЯ (ПЕРВЫЙ ПРИОРИТЕТ) ───
+            if (tile === '🏪') { openShop(); return; }
+            if (tile === '🏣') { openCarDealer(); return; }
+            if (tile === '🏥') { dialog.innerHTML = '🏥 Больница. Здесь лечат раны.'; return; }
+            if (tile === '🏢') { dialog.innerHTML = '🏢 Офисное здание.'; return; }
+            if (tile === '🏫') { dialog.innerHTML = '🏫 Школа. Здесь учатся дети.'; return; }
+            if (tile === '🏦') { dialog.innerHTML = '🏦 Банк. Здесь хранят деньги.'; return; }
+
+            // ─── МАШИНЫ ───
+            const vehicleTypes = ['🚗', '🚙', '🚛', '🚐', '🚌', '🚘', '🚔', '🚖', '🚍', '🛴', '🚲', '🏍️'];
+            if (vehicleTypes.includes(tile)) {
+                if (tile === '🚗' || tile === '🚙' || tile === '🚛' || tile === '🚐' || tile === '🚌') {
+                    if (flags.ownsCar) {
+                        dialog.innerHTML = '🚗 Ты садишься в свою машину. Куда едем?';
+                        choicesDiv.innerHTML = `
+                            <button class="btn" onclick="driveToCity()">🏙️ ЕХАТЬ В ГОРОД</button>
+                            <button class="btn" onclick="driveToCastle()">🏰 ЕХАТЬ В ЗАМОК</button>
+                            <button class="btn btn-danger" onclick="dialog.innerHTML='🚗 Ты вышел из машины.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>
+                        `;
+                    } else {
+                        dialog.innerHTML = '🚗 Это чужая машина. Угнать?';
+                        choicesDiv.innerHTML = `
+                            <button class="btn btn-danger" onclick="stealCar()">🏃 УГНАТЬ (+1 звезда)</button>
+                            <button class="btn" onclick="dialog.innerHTML='🚗 Ты отошёл от машины.'; choicesDiv.innerHTML='';">❌ НЕТ</button>
+                        `;
+                    }
+                } else if (tile === '🛴' || tile === '🚲') {
+                    dialog.innerHTML =
+                    `🛴 Ты садишься на ${tile === '🛴' ? 'самокат' : 'велосипед'} и едешь быстрее.`;
+                    flags.hasVehicle = true;
+                    choicesDiv.innerHTML =
+                        `<button class="btn" onclick="dialog.innerHTML='🚲 Ты слез с транспорта.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>`;
+                } else {
+                    dialog.innerHTML = '🚗 Это транспортное средство.';
+                }
                 return;
             }
 
+            // ─── ЛОДКА В САН-БАНДЕРО ───
+            if (tile === '🛶' && currentCity === 4) {
+                if (!flags.hasBoat) {
+                    dialog.innerHTML = '🛶 Ты нашёл лодку! Теперь ты можешь плавать по воде.';
+                    flags.hasBoat = true;
+                    currentMap[player.x][player.y] = '⬜';
+                    updateUI();
+                } else {
+                    dialog.innerHTML = '🛶 Лодка уже твоя.';
+                }
+                return;
+            }
+
+            // ─── ДОМА (ВТОРОЙ ПРИОРИТЕТ) ───
             const houseNear = findHouseNearby();
             if (houseNear && !insideHouse) {
                 showHouseMenu(houseNear);
                 return;
             }
 
+            // ─── ОСТАЛЬНЫЕ ОБЪЕКТЫ ───
             if (tile === '📦') {
                 if (!flags.hasNote) {
                     flags.hasNote = true;
@@ -1357,6 +1424,55 @@
                 updateUI();
                 saveProgress();
             } else { dialog.innerHTML = `❌ У вас недостаточно денег! (нужно ${prices[item]}💰)`; }
+        }
+
+        // ─── АВТОСАЛОН ───
+        function openCarDealer() {
+            dialog.innerHTML = '🏣 <b>АВТОСАЛОН</b><br>Выбери транспорт:';
+            choicesDiv.innerHTML =
+                `<button class="btn" onclick="buyVehicle('scooter')">🛴 Самокат (150💰)</button><button class="btn" onclick="buyVehicle('bicycle')">🚲 Велосипед (400💰)</button><button class="btn" onclick="buyVehicle('car')">🚗 Легковушка (4500💰)</button><button class="btn" onclick="buyVehicle('motorcycle')">🏍️ Мотоцикл (3000💰)</button><button class="btn" onclick="buyVehicle('truck')">🚛 Грузовик (5500💰)</button><button class="btn btn-danger" onclick="dialog.innerHTML='🏣 Ты вышел из автосалона.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>`;
+        }
+
+        function buyVehicle(type) {
+            const prices = { scooter: 150, bicycle: 400, car: 4500, motorcycle: 3000, truck: 5500 };
+            const names = { scooter: '🛴 Самокат', bicycle: '🚲 Велосипед', car: '🚗 Легковушка', motorcycle: '🏍️ Мотоцикл',
+                truck: '🚛 Грузовик' };
+            if (coins >= prices[type]) {
+                coins -= prices[type];
+                inventory.push(names[type]);
+                if (type === 'car') { flags.ownsCar = true;
+                    ownsCar = true; }
+                dialog.innerHTML = `✅ Ты купил ${names[type]}!`;
+                updateUI();
+                saveProgress();
+            } else { dialog.innerHTML = `❌ У вас недостаточно денег! (нужно ${prices[type]}💰)`; }
+        }
+
+        function stealCar() {
+            wantedLevel = Math.min(5, wantedLevel + 1);
+            flags.ownsCar = true;
+            ownsCar = true;
+            dialog.innerHTML = '🚗 Ты угнал машину! ⭐ Звезда розыска +1';
+            choicesDiv.innerHTML = '';
+            updateUI();
+            saveProgress();
+        }
+
+        function driveToCity() {
+            player.x = 4;
+            player.y = 4;
+            dialog.innerHTML = '🏙️ Ты приехал в центр города.';
+            choicesDiv.innerHTML = '';
+            drawMap();
+            updateUI();
+        }
+
+        function driveToCastle() {
+            goToCity(3);
+            dialog.innerHTML = '🏰 Ты приехал к замку.';
+            choicesDiv.innerHTML = '';
+            drawMap();
+            updateUI();
         }
 
         // ─── КРАФТ ───
@@ -2206,7 +2322,7 @@
             const data = { hp, coins, inventory, flags, playerX: player.x, playerY: player.y, currentCity, currentLocation,
                 reputation, gameTime, achievements, enemiesKilled, bossPhase, comboCount, hasAnfisa, hunger, fatigue, energy,
                 wantedLevel, insideHouse, currentHouseName, sanBanderosRevolution, anfisaMarried, elixirUsed, isAdult,
-                lelushJoined, lelushAlive };
+                lelushJoined, lelushAlive, hasBoat, ownsCar };
             try { localStorage.setItem('mazetale_save', JSON.stringify(data)); } catch (e) {}
         }
 
@@ -2242,6 +2358,8 @@
                 isAdult = data.isAdult || false;
                 lelushJoined = data.lelushJoined || false;
                 lelushAlive = data.lelushAlive !== undefined ? data.lelushAlive : true;
+                hasBoat = data.hasBoat || false;
+                ownsCar = data.ownsCar || false;
                 updateMapByCity();
                 return true;
             } catch (e) { return false; }
@@ -2328,7 +2446,9 @@
                 married: false,
                 lelushHuman: false,
                 calderaCleared: false,
-                leopoldDefeated: false
+                leopoldDefeated: false,
+                hasBoat: false,
+                ownsCar: false
             };
             gameOver = false;
             inBattle = false;
@@ -2355,6 +2475,8 @@
             isAdult = false;
             lelushJoined = false;
             lelushAlive = true;
+            hasBoat = false;
+            ownsCar = false;
             choicesDiv.innerHTML = '';
             dialog.innerHTML = '📍 Ты в доме. Рядом стоит старый сундук.';
             bossBar.classList.add('hidden');
