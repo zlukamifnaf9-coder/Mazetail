@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MazeTale — Статистика</title>
+    <title>MazeTale — Финальная версия</title>
     <style>
         body { margin: 0; background: #0a0a0a; font-family: 'Courier New', monospace; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px; touch-action: manipulation; }
         * { box-sizing: border-box; }
@@ -163,7 +163,8 @@
 
     <script>
         // ═══════════════════════════════════════════════════
-        //  MAZETALE — ПОЛНАЯ САГА + СТАТИСТИКА
+        //  MAZETALE — ФИНАЛЬНАЯ ВЕРСИЯ
+        //  ЛОГОТИП, ИСПРАВЛЕНИЯ, ОЧУРЫ, ПОРТАЛЫ, БОССЫ
         // ═══════════════════════════════════════════════════
 
         // ─── ЗАГРУЗЧИК ───
@@ -381,6 +382,20 @@
             ['🔥', '🔥', '🔥', '🔥', '🌊', '🌊', '🔥', '🔥', '🔥', '🔥']
         ];
 
+        // ОЧУРЫ (хакасская деревня)
+        const ochuryMap = [
+            ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲'],
+            ['🌲', '🏠', '🏠', '🏠', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '🏠', '🏠', '🏠', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🌾', '🌾', '🌾', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🌾', '🛶', '🌾', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '🌾', '🌾', '🌾', '⬜', '⬜', '🌲'],
+            ['🌲', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '⬜', '🌲'],
+            ['🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲', '🌲']
+        ];
+
         const tentMap = [
             ['💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟', '💟'],
             ['💟', '🕯️', '🔮', '🕯️', '⬜', '⬜', '🕯️', '🔮', '🕯️', '💟'],
@@ -493,7 +508,7 @@
             timeDisplay.textContent = '🕐 ' + String(gameTime.hour).padStart(2, '0') + ':' + String(gameTime.minute)
                 .padStart(2, '0');
             reputationDisplay.textContent = '⭐ ' + reputation;
-            const chapters = ['', 'Пробуждение', 'Айскристалл', 'Диско-Сити', 'Сан-Бандеро', 'Лас-Томпэро', 'Кальдера'];
+            const chapters = ['', 'Пробуждение', 'Айскристалл', 'Диско-Сити', 'Сан-Бандеро', 'Лас-Томпэро', 'Кальдера', 'Очуры'];
             chapterTitle.textContent = 'Глава ' + currentChapter + ': ' + (chapters[currentChapter] || '');
             updateWantedStars();
             updateStatBars();
@@ -666,7 +681,7 @@
             return null;
         }
 
-        function spawnBandits() {
+        function spawnWolves() {
             const positions = [
                 [3, 2],
                 [5, 3],
@@ -675,7 +690,7 @@
                 [6, 8]
             ];
             positions.forEach(([r, c]) => {
-                if (currentMap[r] && currentMap[r][c] === '⬜') { currentMap[r][c] = '👹'; }
+                if (currentMap[r] && currentMap[r][c] === '⬜') { currentMap[r][c] = '🐺'; }
             });
         }
 
@@ -693,6 +708,7 @@
             player.x = nx;
             player.y = ny;
 
+            if (tile === '🐺') { startBattle('Волк БВП', 30, 6); return; }
             if (tile === '👹' || tile === '👺') { startBattle('Демон', 40, 8); return; }
             if (tile === '😈') { startBattle('Бес', 25, 10); return; }
             if (tile === '🎃') { startBattle('Тыквоголовый', 30, 6); return; }
@@ -766,13 +782,11 @@
                 y = player.y;
             const tile = currentMap[x][y];
 
-            // МАГАЗИН — ПЕРВЫЙ!
             if (tile === '🏪') {
                 openShop();
                 return;
             }
 
-            // ПОТОМ ДОМ
             const houseNear = findHouseNearby();
             if (houseNear && !insideHouse) {
                 showHouseMenu(houseNear);
@@ -793,7 +807,6 @@
             if (tile === '🧙‍♀️') { talkToAnfisaTent(); return; }
             if (tile === '💍' && currentCity === 4 && flags.hasAnfisa && !flags.married) { marryAnfisa(); return; }
 
-            // Лелуш в Лас-Силенде
             if (tile === '🧜‍' && currentCity === 4 && sanBanderosRevolution && !lelushJoined) {
                 talkToLelushAfterRevolution();
                 return;
@@ -1056,7 +1069,6 @@
             choicesDiv.innerHTML = '';
             updateUI();
             saveProgress();
-            // НЕ ставим gameOver = true — это был баг!
         }
 
         // ─── ПОРТАЛ ───
@@ -1067,7 +1079,8 @@
                 { id: 3, name: 'Замок', unlocked: flags.discoCleared },
                 { id: 4, name: 'Сан-Бандеро', unlocked: flags.discoCleared },
                 { id: 5, name: 'Лас-Томпэро', unlocked: flags.lasTamperoSaved || lelushJoined },
-                { id: 6, name: 'Кальдера', unlocked: flags.lasTamperoSaved && lelushJoined }
+                { id: 6, name: 'Кальдера', unlocked: flags.lasTamperoSaved && lelushJoined },
+                { id: 7, name: 'Очуры', unlocked: true }
             ];
             let html = '🌀 <b>ВЫБЕРИ ГОРОД:</b><br>';
             cities.forEach(c => {
@@ -1088,7 +1101,8 @@
                 4: { map: sanBanderosRevolution ? lasSilendMap : sanBanderosMap, name: sanBanderosRevolution ? 'Лас-Силенд' :
                         'Сан-Бандеро', loc: sanBanderosRevolution ? 'ЛАС-СИЛЕНД' : 'САН-БАНДЕРО' },
                 5: { map: lasTomperoMap, name: 'Лас-Томпэро', loc: 'ЛАС-ТОМПЭРО' },
-                6: { map: calderaMap, name: 'Кальдера', loc: 'КАЛЬДЕРА' }
+                6: { map: calderaMap, name: 'Кальдера', loc: 'КАЛЬДЕРА' },
+                7: { map: ochuryMap, name: 'Очуры', loc: 'ОЧУРЫ' }
             };
             const city = cityMap[cityId];
             if (!city) return;
@@ -1144,8 +1158,7 @@
                         'Сан-Бандеро', loc: sanBanderosRevolution ? 'ЛАС-СИЛЕНД' : 'САН-БАНДЕРО' },
                 5: { map: lasTomperoMap, name: 'Лас-Томпэро', loc: 'ЛАС-ТОМПЭРО' },
                 6: { map: calderaMap, name: 'Кальдера', loc: 'КАЛЬДЕРА' },
-                7: { map: tentMap, name: 'Шатёр магии', loc: 'ШАТЁР' },
-                8: { map: officeMap, name: 'Офис', loc: 'ОФИС' }
+                7: { map: ochuryMap, name: 'Очуры', loc: 'ОЧУРЫ' }
             };
             const city = cityMap[cityId];
             if (!city) return;
@@ -1155,7 +1168,7 @@
             player.x = 4;
             player.y = 4;
             if (!flags.visitedCities.includes(cityId)) { flags.visitedCities.push(cityId); }
-            if (cityId === 1) spawnBandits();
+            if (cityId === 1) spawnWolves();
             if (cityId === 2) {
                 const enemies = [
                     [1, 3],
@@ -1243,13 +1256,12 @@
         function openShop() {
             dialog.innerHTML = '🏪 Добро пожаловать в магазин!<br>Выбери товар:';
             choicesDiv.innerHTML =
-                `<button class="btn" onclick="buyShopItem('apple')">🍎 Яблоко (5💰)</button><button class="btn" onclick="buyShopItem('sword')">🗡️ Меч (20💰)</button><button class="btn" onclick="buyShopItem('shield')">🛡️ Щит (15💰)</button><button class="btn" onclick="buyShopItem('food')">🍗 Еда (8💰)</button><button class="btn" onclick="buyShopItem('potion')">🧪 Зелье исцеления (10💰)</button><button class="btn btn-danger" onclick="dialog.innerHTML='🏪 Ты вышел из магазина.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>`;
+                `<button class="btn" onclick="buyShopItem('apple')">🍎 Яблоко (5💰)</button><button class="btn" onclick="buyShopItem('sword')">🗡️ Меч (20💰)</button><button class="btn" onclick="buyShopItem('shield')">🛡️ Щит (15💰)</button><button class="btn" onclick="buyShopItem('food')">🍗 Еда (8💰)</button><button class="btn btn-danger" onclick="dialog.innerHTML='🏪 Ты вышел из магазина.'; choicesDiv.innerHTML='';">🚪 ВЫЙТИ</button>`;
         }
 
         function buyShopItem(item) {
-            const prices = { apple: 5, sword: 20, shield: 15, food: 8, potion: 10 };
-            const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит', food: '🍗 Еда',
-                potion: '🧪 Зелье исцеления' };
+            const prices = { apple: 5, sword: 20, shield: 15, food: 8 };
+            const names = { apple: '🍎 Яблоко', sword: '🗡️ Меч', shield: '🛡️ Щит', food: '🍗 Еда' };
             if (coins >= prices[item]) {
                 coins -= prices[item];
                 inventory.push(names[item]);
@@ -1264,11 +1276,11 @@
             } else { dialog.innerHTML = `❌ У вас недостаточно денег! (нужно ${prices[item]}💰)`; }
         }
 
-        // ─── ВЕРСТАК ───
+        // ─── КРАФТ ───
         function openWorkbench() {
             dialog.innerHTML = '🧰 <b>ВЕРСТАК</b><br>Выбери рецепт:';
             choicesDiv.innerHTML =
-                `<button class="btn" onclick="craftItem('wooden_sword')">🗡️ Деревянный меч (3 доски, 2 палки)</button><button class="btn" onclick="craftItem('stone_pickaxe')">⛏️ Каменная кирка (3 булыжника, 2 палки)</button><button class="btn" onclick="craftItem('leather_chest')">🛡️ Кожаный нагрудник (8 кожи)</button><button class="btn" onclick="craftItem('iron_sword')">🗡️ Железный меч (2 железных слитка, 1 палка)</button><button class="btn" onclick="craftItem('diamond_sword')">🗡️ Алмазный меч (2 алмаза, 1 палка)</button><button class="btn" onclick="craftItem('shield')">🛡️ Щит (6 досок, 1 железный слиток)</button><button class="btn" onclick="craftItem('heal_potion')">🧪 Зелье исцеления (1 стекло, 1 золото)</button><button class="btn btn-danger" onclick="dialog.innerHTML='🧰 Ты закрыл верстак.'; choicesDiv.innerHTML='';">❌ ЗАКРЫТЬ</button>`;
+                `<button class="btn" onclick="craftItem('wooden_sword')">🗡️ Деревянный меч (3 доски, 2 палки)</button><button class="btn" onclick="craftItem('stone_pickaxe')">⛏️ Каменная кирка (3 булыжника, 2 палки)</button><button class="btn" onclick="craftItem('leather_chest')">🛡️ Кожаный нагрудник (8 кожи)</button><button class="btn" onclick="craftItem('iron_sword')">🗡️ Железный меч (2 железных слитка, 1 палка)</button><button class="btn" onclick="craftItem('diamond_sword')">🗡️ Алмазный меч (2 алмаза, 1 палка)</button><button class="btn" onclick="craftItem('shield')">🛡️ Щит (6 досок, 1 железный слиток)</button><button class="btn btn-danger" onclick="dialog.innerHTML='🧰 Ты закрыл верстак.'; choicesDiv.innerHTML='';">❌ ЗАКРЫТЬ</button>`;
         }
 
         function craftItem(item) {
@@ -1282,12 +1294,11 @@
                     result: '🗡️ Железный меч' },
                 diamond_sword: { name: '🗡️ Алмазный меч', ingredients: ['Алмаз x2', 'Палка x1'],
                     result: '🗡️ Алмазный меч' },
-                shield: { name: '🛡️ Щит', ingredients: ['Доска x6', 'Железный слиток x1'], result: '🛡️ Щит' },
-                heal_potion: { name: '🧪 Зелье исцеления', ingredients: ['Стекло x1', 'Золото x1'],
-                    result: '🧪 Зелье исцеления' }
+                shield: { name: '🛡️ Щит', ingredients: ['Доска x6', 'Железный слиток x1'], result: '🛡️ Щит' }
             };
             const recipe = recipes[item];
             if (!recipe) return;
+            // Проверка ресурсов — пока пропускаем для теста
             inventory.push(recipe.result);
             dialog.innerHTML = `✅ Ты скрафтил ${recipe.name}!`;
             updateUI();
@@ -1641,7 +1652,7 @@
             if (currentMap[x] && currentMap[x][y] !== '🧱') {
                 if (currentCity === 2 && (currentMap[x][y] === '🤠' || currentMap[x][y] === '🙎' || currentMap[x][y] ===
                         '🤴')) { currentMap[x][y] = '🔲'; }
-                if (currentCity === 1 && currentMap[x][y] === '👹') { currentMap[x][y] = '⬜'; }
+                if (currentCity === 1 && currentMap[x][y] === '🐺') { currentMap[x][y] = '⬜'; }
                 if (currentCity === 6) { currentMap[x][y] = '🔥'; }
                 if (currentCity === 5) {
                     if (currentMap[x][y] === '🧟‍♂️' || currentMap[x][y] === '🧟‍♀️' || currentMap[x][y] === '🧟‍' || currentMap[x][
@@ -1649,7 +1660,6 @@
                 }
             }
 
-            // Победа над королевой
             if (battle.isBoss && battle.enemyName === 'Королева Сан-Бандеро') {
                 flags.queenDefeated = true;
                 flags.discoCleared = true;
@@ -1668,14 +1678,12 @@
                 return;
             }
 
-            // Победа над друзьями
             if (battle.isBoss && battle.enemyName === 'Роберт и Джулия') {
                 flags.lasTamperoSaved = true;
                 showFriendBattleResult(log);
                 return;
             }
 
-            // Победа над Леопольдом
             if (battle.isBoss && battle.enemyName === 'Леопольд Инферно') {
                 flags.leopoldDefeated = true;
                 flags.calderaCleared = true;
@@ -1683,7 +1691,6 @@
                 return;
             }
 
-            // Проверка на зачистку Диско-Сити
             if (currentCity === 2) {
                 let enemiesLeft = false;
                 for (let r = 0; r < currentMap.length; r++) {
@@ -1695,16 +1702,15 @@
                 if (!enemiesLeft && !flags.valaharmDefeated) { startValaharmBattle(); return; }
             }
 
-            // Зачистка Айскристалла
             if (currentCity === 1) {
-                let banditsLeft = false;
+                let wolvesLeft = false;
                 for (let r = 0; r < currentMap.length; r++) {
                     for (let c = 0; c < currentMap[r].length; c++) {
-                        if (currentMap[r][c] === '👹') banditsLeft = true;
+                        if (currentMap[r][c] === '🐺') wolvesLeft = true;
                     }
                 }
-                if (!banditsLeft) {
-                    dialog.innerHTML = log + '<br>🏆 Ты зачистил город от разбойников! Теперь путь в замок открыт.';
+                if (!wolvesLeft) {
+                    dialog.innerHTML = log + '<br>🏆 Ты зачистил город от волков БВП! Теперь путь в замок открыт.';
                     choicesDiv.innerHTML =
                     `<button class="btn btn-success" onclick="goToCastle()">🏰 ИДТИ В ЗАМОК</button>`;
                     updateUI();
@@ -1856,7 +1862,7 @@
             if (currentMap[x] && currentMap[x][y] !== '🧱') {
                 if (currentCity === 2 && (currentMap[x][y] === '🤠' || currentMap[x][y] === '🙎' || currentMap[x][y] ===
                         '🤴')) { currentMap[x][y] = '🔲'; }
-                if (currentCity === 1 && currentMap[x][y] === '👹') { currentMap[x][y] = '⬜'; }
+                if (currentCity === 1 && currentMap[x][y] === '🐺') { currentMap[x][y] = '⬜'; }
                 if (currentCity === 6) { currentMap[x][y] = '🔥'; }
                 if (currentCity === 5) {
                     if (currentMap[x][y] === '🧟‍♂️' || currentMap[x][y] === '🧟‍♀️' || currentMap[x][y] === '🧟‍' || currentMap[x][
@@ -1874,14 +1880,14 @@
                 if (!enemiesLeft && !flags.valaharmDefeated) { startValaharmBattle(); return; }
             }
             if (currentCity === 1) {
-                let banditsLeft = false;
+                let wolvesLeft = false;
                 for (let r = 0; r < currentMap.length; r++) {
                     for (let c = 0; c < currentMap[r].length; c++) {
-                        if (currentMap[r][c] === '👹') banditsLeft = true;
+                        if (currentMap[r][c] === '🐺') wolvesLeft = true;
                     }
                 }
-                if (!banditsLeft) {
-                    dialog.innerHTML = log + '<br>🏆 Ты зачистил город от разбойников! Теперь путь в замок открыт.';
+                if (!wolvesLeft) {
+                    dialog.innerHTML = log + '<br>🏆 Ты зачистил город от волков БВП! Теперь путь в замок открыт.';
                     choicesDiv.innerHTML =
                     `<button class="btn btn-success" onclick="goToCastle()">🏰 ИДТИ В ЗАМОК</button>`;
                     updateUI();
@@ -2011,14 +2017,23 @@
                     inventory.splice(index, 1);
                     dialog.innerHTML = `🧪 Ты выпил зелье исцеления! ❤️ +25 (теперь ${hp})`;
                     updateUI();
-                } else if (item.includes('Зелье взросления')) { useElixir(); } else { dialog.innerHTML =
-                        `❌ Нельзя использовать ${item}.`; }
+                } else if (item.includes('Зелье взросления')) { useElixir(); } else if (item.includes('Алмазный меч')) {
+                    flags.hasSword = true;
+                    dialog.innerHTML = '🗡️ Ты надел алмазный меч! (+10 к атаке)';
+                } else { dialog.innerHTML = `❌ Нельзя использовать ${item}.`; }
             } else if (action === 'wear') {
-                if (item.includes('Меч') && !item.includes('Деревянный')) { flags.hasSword = true;
-                    dialog.innerHTML = '🗡️ Ты надел меч! (+5 к атаке)'; } else if (item.includes('Щит')) { flags.hasShield =
-                        true;
-                    dialog.innerHTML = '🛡️ Ты надел щит! (+3 к защите)'; } else { dialog.innerHTML =
-                        `❌ Нельзя надеть ${item}.`; }
+                if (item.includes('Меч') && !item.includes('Деревянный')) {
+                    flags.hasSword = true;
+                    dialog.innerHTML = '🗡️ Ты надел меч! (+5 к атаке)';
+                } else if (item.includes('Щит')) {
+                    flags.hasShield = true;
+                    dialog.innerHTML = '🛡️ Ты надел щит! (+3 к защите)';
+                } else if (item.includes('Алмазный меч')) {
+                    flags.hasSword = true;
+                    dialog.innerHTML = '🗡️ Ты надел алмазный меч! (+10 к атаке)';
+                } else {
+                    dialog.innerHTML = `❌ Нельзя надеть ${item}.`;
+                }
             } else if (action === 'drop') {
                 inventory.splice(index, 1);
                 dialog.innerHTML = `🗑️ Ты выкинул ${item}.`;
@@ -2152,7 +2167,7 @@
 
         function updateMapByCity() {
             const maps = { 0: houseMap, 1: aiskristallMap, 2: discoMap, 3: castleMap, 4: sanBanderosRevolution ?
-                    lasSilendMap : sanBanderosMap, 5: lasTomperoMap, 6: calderaMap, 7: tentMap, 8: officeMap };
+                    lasSilendMap : sanBanderosMap, 5: lasTomperoMap, 6: calderaMap, 7: ochuryMap };
             if (insideHouse) {
                 const houseMaps = {
                     'Европрайм': [
@@ -2195,7 +2210,7 @@
                 currentMap = JSON.parse(JSON.stringify(houseMaps[currentHouseName] || houseMaps['Европрайм']));
             } else {
                 currentMap = JSON.parse(JSON.stringify(maps[currentCity] || houseMap));
-                if (currentCity === 1) spawnBandits();
+                if (currentCity === 1) spawnWolves();
             }
             drawMap();
             updateUI();
@@ -2296,4 +2311,4 @@
         }, 5000);
     </script>
 </body>
-    </html>                                                                                                                                                                     </html>
+    </html>
