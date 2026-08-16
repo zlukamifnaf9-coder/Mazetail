@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🗺️ Maze Russia — Пиксельная карта</title>
+    <title>🗺️ Maze Russia — Пиксельная Европа</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -13,129 +13,128 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            padding: 16px;
             min-height: 100vh;
         }
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             width: 100%;
             background: #111827;
             border: 2px solid #3a6a9a;
             border-radius: 28px;
-            padding: 24px;
+            padding: 20px 24px;
             box-shadow: 0 0 60px rgba(58, 106, 154, 0.2);
         }
         h1 {
             color: #b7c9ff;
             text-align: center;
-            font-size: 26px;
+            font-size: 24px;
             letter-spacing: 2px;
             border-bottom: 1px solid #2a4a7a;
-            padding-bottom: 12px;
-            margin-bottom: 18px;
+            padding-bottom: 10px;
+            margin-bottom: 14px;
         }
         .top-panel {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 10px;
             justify-content: space-between;
             background: #0f1729;
-            border-radius: 16px;
-            padding: 12px 16px;
+            border-radius: 14px;
+            padding: 10px 14px;
             border: 1px solid #2a4a7a;
-            margin-bottom: 16px;
-            font-size: 14px;
+            margin-bottom: 12px;
+            font-size: 13px;
         }
         .top-panel .stat { font-weight: bold; }
         .top-panel .stat span { color: #ffd866; }
-        .year-selector { display: flex; gap: 6px; align-items: center; }
+        .year-selector { display: flex; gap: 4px; align-items: center; }
         .year-btn {
             background: #1f3460; color: #aab8e6; border: 1px solid #3a5f8a;
-            padding: 2px 14px; border-radius: 20px; cursor: pointer; font-weight: bold;
-            transition: 0.2s; font-size: 13px;
+            padding: 2px 12px; border-radius: 16px; cursor: pointer;
+            font-weight: bold; transition: 0.2s; font-size: 12px;
         }
         .year-btn.active { background: #3a6a9a; color: #fff; border-color: #7a9aff; }
         .year-btn:hover { background: #2a4a7a; }
 
         .map-container {
             background: #0b1120;
-            border-radius: 16px;
+            border-radius: 14px;
             border: 1px solid #1f3460;
-            padding: 12px;
+            padding: 8px;
             overflow-x: auto;
-            margin: 12px 0;
+            margin: 8px 0;
         }
         .pixel-map {
             display: grid;
-            gap: 2px;
+            gap: 1.5px;
             margin: 0 auto;
             width: fit-content;
         }
         .pixel {
-            width: 28px;
-            height: 28px;
-            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
             cursor: pointer;
             transition: 0.15s;
             border: 1px solid transparent;
-        }
-        .pixel:hover {
-            transform: scale(1.1);
-            border-color: #fff;
-            z-index: 2;
             position: relative;
         }
-        .pixel.selected {
-            border-color: #ffd700;
-            box-shadow: 0 0 12px #ffd700aa;
+        .pixel:hover {
+            transform: scale(1.15);
+            border-color: #fff;
+            z-index: 2;
         }
-        .pixel.own {
-            border-color: #6fcf97;
-            box-shadow: 0 0 8px #6fcf97aa;
-        }
-        .pixel.enemy {
-            border-color: #ff6b6b;
-            box-shadow: 0 0 8px #ff6b6baa;
-        }
-        .pixel.ally {
-            border-color: #66b3ff;
-            box-shadow: 0 0 8px #66b3ffaa;
-        }
+        .pixel.selected { border-color: #ffd700; box-shadow: 0 0 10px #ffd700aa; }
+        .pixel.own { border-color: #6fcf97; box-shadow: 0 0 6px #6fcf97aa; }
+        .pixel.enemy { border-color: #ff6b6b; box-shadow: 0 0 6px #ff6b6baa; }
+        .pixel.ally { border-color: #66b3ff; box-shadow: 0 0 6px #66b3ffaa; }
 
         .legend {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 6px 12px;
             justify-content: center;
-            margin: 10px 0 6px;
-            font-size: 12px;
+            margin: 6px 0 8px;
+            font-size: 11px;
+            max-height: 80px;
+            overflow-y: auto;
+            padding: 4px 8px;
+            background: #0f1729;
+            border-radius: 12px;
+            border: 1px solid #1f3460;
         }
         .legend-item {
             display: flex;
             align-items: center;
             gap: 4px;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 8px;
+            transition: 0.2s;
         }
+        .legend-item:hover { background: #1f3460; }
         .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
             border: 1px solid #2a4a7a;
         }
 
         .diplomacy-panel {
             display: flex;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 4px;
             justify-content: center;
-            padding: 10px;
+            padding: 8px;
             background: #0f1729;
-            border-radius: 16px;
+            border-radius: 14px;
             border: 1px solid #1f3460;
-            margin: 10px 0;
+            margin: 6px 0;
         }
         .dip-btn {
             background: #1f3460; color: #b7c9ff; border: none;
-            padding: 5px 14px; border-radius: 20px; font-weight: bold;
+            padding: 4px 12px; border-radius: 16px; font-weight: bold;
             cursor: pointer; transition: 0.2s; font-size: 12px;
         }
         .dip-btn:hover { background: #3a5f8a; transform: scale(1.02); }
@@ -144,12 +143,12 @@
         .dip-btn.ally { border-left: 3px solid #66b3ff; }
         .dip-btn.trade { border-left: 3px solid #ffd700; }
         .dip-btn.annex { border-left: 3px solid #ff8a65; }
-        #dipTarget { color: #8899bb; font-size: 13px; margin-left: 6px; }
+        #dipTarget { color: #8899bb; font-size: 12px; margin-left: 4px; }
 
         .btn {
             background: #2a4a8a; color: #fff; border: none;
-            padding: 6px 18px; border-radius: 14px; font-weight: bold;
-            cursor: pointer; transition: 0.2s; font-size: 13px;
+            padding: 5px 14px; border-radius: 12px; font-weight: bold;
+            cursor: pointer; transition: 0.2s; font-size: 12px;
         }
         .btn:hover { background: #4a7acf; transform: scale(1.02); }
         .btn.danger { background: #8a2a2a; }
@@ -158,12 +157,12 @@
         .log {
             background: #0b1120;
             border: 1px solid #1f3460;
-            border-radius: 14px;
-            padding: 10px 14px;
-            margin-top: 14px;
-            max-height: 130px;
+            border-radius: 12px;
+            padding: 8px 12px;
+            margin-top: 10px;
+            max-height: 110px;
             overflow-y: auto;
-            font-size: 13px;
+            font-size: 12px;
             line-height: 1.5;
         }
         .log .highlight { color: #ffd866; }
@@ -172,12 +171,12 @@
         .log .dip { color: #66b3ff; }
         .log .annex { color: #ff8a65; }
 
-        .flex { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 8px; }
+        .flex { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-top: 6px; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🗺️ Maze Russia — Пиксельная карта</h1>
+    <h1>🗺️ Maze Russia — Пиксельная Европа</h1>
 
     <div class="top-panel">
         <div class="stat">🪙 <span id="goldDisplay">0</span></div>
@@ -206,26 +205,26 @@
         <button class="dip-btn ally" onclick="diplomacy('ally')">🤝 Союз</button>
         <button class="dip-btn trade" onclick="diplomacy('trade')">📦 Торговля</button>
         <button class="dip-btn annex" onclick="diplomacy('annex')">🏴 Аннексия</button>
-        <span id="dipTarget">Выбери страну на карте</span>
+        <span id="dipTarget">Выбери страну</span>
     </div>
 
     <div class="flex">
-        <button class="btn" onclick="trainArmy()">🎯 Мобилизация (40 монет + 10 провизии)</button>
+        <button class="btn" onclick="trainArmy()">🎯 Мобилизация</button>
         <button class="btn" onclick="nextTurn()">⏩ Ход</button>
         <button class="btn danger" onclick="resetGame()">🔄 Перезапуск</button>
     </div>
 
-    <div class="log" id="log">⚔️ Добро пожаловать в Maze Russia! Кликни по клетке страны, чтобы выбрать её.</div>
+    <div class="log" id="log">⚔️ Добро пожаловать в Maze Russia! Кликни по клетке страны.</div>
 </div>
 
 <script>
     // ======================================================================
-    //  1.  ПИКСЕЛЬНАЯ КАРТА (25x25)
+    //  1.  КОНФИГ СТРАН И КАРТЫ
     // ======================================================================
-    const MAP_W = 25;
-    const MAP_H = 25;
+    const MAP_W = 40;
+    const MAP_H = 30;
 
-    // Цвета стран (в HEX)
+    // ---- ЦВЕТА СТРАН ----
     const COLORS = {
         'Russia': '#4a7a4a',
         'Ukraine': '#7a9a4a',
@@ -245,53 +244,118 @@
         'Hungary': '#7a7a5a',
         'Moldova': '#6a7a4a',
         'Turkey': '#8a6a3a',
+        'Greece': '#6a8a5a',
+        'Albania': '#7a6a4a',
+        'Serbia': '#8a6a5a',
+        'Croatia': '#7a5a5a',
+        'Romania': '#6a7a4a',
+        'Bulgaria': '#7a7a3a',
+        'Netherlands': '#5a7a7a',
+        'Belgium': '#6a6a7a',
+        'Switzerland': '#5a5a7a',
+        'Denmark': '#4a7a6a',
         'Morocco': '#8a5a2a',
         'Algeria': '#7a5a2a',
+        'Tunisia': '#6a5a2a',
+        'Libya': '#5a4a2a',
+        'Egypt': '#6a6a2a',
+        'Ireland': '#4a6a5a',
+        'Iceland': '#4a6a6a',
         'Neutral': '#2a2a3a'
     };
 
-    // Список стран с их цветами
+    // ---- СПИСОК СТРАН ----
     const COUNTRY_LIST = [
         'Russia', 'Ukraine', 'Belarus', 'Poland', 'Germany', 'France',
         'Spain', 'Portugal', 'Italy', 'UK', 'Norway', 'Sweden',
         'Finland', 'Estonia', 'Czech', 'Hungary', 'Moldova', 'Turkey',
-        'Morocco', 'Algeria'
+        'Greece', 'Albania', 'Serbia', 'Croatia', 'Romania', 'Bulgaria',
+        'Netherlands', 'Belgium', 'Switzerland', 'Denmark',
+        'Morocco', 'Algeria', 'Tunisia', 'Libya', 'Egypt',
+        'Ireland', 'Iceland'
     ];
 
-    // ПИКСЕЛЬНАЯ КАРТА (каждая клетка — страна или нейтралка)
-    // 0 = нейтральная, 1..N = индекс страны в COUNTRY_LIST
-    const PIXEL_MAP = [
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0], // Norway
-        [0,0,0,0,0,10,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,10,10,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,10,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,11,11,11,0,0,0,0,0,0,0], // Sweden
-        [0,0,0,0,0,0,0,0,0,0,0,0,11,11,11,11,11,11,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,11,11,11,11,11,11,11,11,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,11,11,11,11,11,11,11,11,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,11,11,11,11,11,11,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
-    ];
+    // ===== ГЕНЕРАЦИЯ КАРТЫ ДЛЯ РАЗНЫХ ЛЕТ =====
+    function generateMapForYear(year) {
+        // Базовая карта (2026) — все страны существуют
+        const baseMap = [
+            // 0-4: Исландия, Ирландия, Великобритания, Норвегия
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,34,34,34,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,34,34,34,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,9,9,9,9,9,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // UK
+            [0,0,0,0,0,0,0,9,9,9,9,9,9,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,9,9,9,9,9,9,9,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,9,9,9,9,9,9,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], // Norway
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,10,10,10,10,10,10,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+            [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        ];
+
+        // Для 1941: Германия расширяется, некоторые страны исчезают
+        if (year === 1941) {
+            // Пример: Германия (индекс 4) расширяется на Польшу (3), Чехию (14)
+            for (let y = 0; y < MAP_H; y++) {
+                for (let x = 0; x < MAP_W; x++) {
+                    if (baseMap[y] && baseMap[y][x] === 3) { // Польша
+                        if (Math.random() < 0.4) baseMap[y][x] = 4; // Германия
+                    }
+                    if (baseMap[y] && baseMap[y][x] === 14) { // Чехия
+                        if (Math.random() < 0.3) baseMap[y][x] = 4;
+                    }
+                }
+            }
+            // Австрия (индекс 14) поглощена Германией
+            // Убираем Эстонию (индекс 13) - часть СССР
+            for (let y = 0; y < MAP_H; y++) {
+                for (let x = 0; x < MAP_W; x++) {
+                    if (baseMap[y] && baseMap[y][x] === 13) {
+                        if (Math.random() < 0.5) baseMap[y][x] = 0; // нейтраль
+                    }
+                }
+            }
+        }
+
+        // Для 1812: много стран не существует (нейтраль)
+        if (year === 1812) {
+            const neutralCountries = ['Germany', 'Italy', 'Belgium', 'Netherlands', 'Switzerland', 'Czech', 'Hungary', 'Romania', 'Bulgaria', 'Albania', 'Croatia', 'Serbia', 'Estonia', 'Moldova', 'Finland'];
+            const neutralIndices = neutralCountries.map(name => COUNTRY_LIST.indexOf(name)).filter(i => i >= 0);
+            for (let y = 0; y < MAP_H; y++) {
+                for (let x = 0; x < MAP_W; x++) {
+                    if (baseMap[y] && neutralIndices.includes(baseMap[y][x])) {
+                        if (Math.random() < 0.6) baseMap[y][x] = 0;
+                    }
+                }
+            }
+        }
+
+        return baseMap;
+    }
 
     // ---- БАЛАНСЫ ----
     function getBalance(year) {
-        if (year === 1941) return { gold: 0.7, recruits: 1.5, food: 0.8, armyMorale: 1.3 };
-        if (year === 1812) return { gold: 0.4, recruits: 0.9, food: 0.6, armyMorale: 0.8 };
+        if (year === 1941) return { gold: 0.6, recruits: 1.6, food: 0.7, armyMorale: 1.4 };
+        if (year === 1812) return { gold: 0.3, recruits: 0.8, food: 0.5, armyMorale: 0.7 };
         return { gold: 1.0, recruits: 1.0, food: 1.0, armyMorale: 1.0 };
     }
 
@@ -301,9 +365,10 @@
         turn: 0,
         playerCountry: null,
         selectedTarget: null,
-        countries: {}, // { 'Russia': { gold, recruits, food, army, morale, color, cells: [[x,y],...] } }
-        wars: [],      // [{ attacker, defender, turns: 0 }]
-        alliances: [], // [{ country1, country2 }]
+        countries: {},
+        wars: [],
+        alliances: [],
+        pixelMap: [],
         selectedCell: null
     };
 
@@ -317,17 +382,18 @@
         game.selectedTarget = null;
         game.turn = 0;
 
+        // Генерируем карту для года
+        game.pixelMap = generateMapForYear(game.year);
+
         // Собираем клетки по странам
         const countryCells = {};
-        COUNTRY_LIST.forEach((name, idx) => {
-            countryCells[name] = [];
-        });
+        COUNTRY_LIST.forEach(name => { countryCells[name] = []; });
         for (let y = 0; y < MAP_H; y++) {
             for (let x = 0; x < MAP_W; x++) {
-                const val = PIXEL_MAP[y]?.[x];
+                const val = game.pixelMap[y]?.[x];
                 if (val > 0 && val <= COUNTRY_LIST.length) {
                     const name = COUNTRY_LIST[val - 1];
-                    countryCells[name].push([x, y]);
+                    if (countryCells[name]) countryCells[name].push([x, y]);
                 }
             }
         }
@@ -370,21 +436,21 @@
             p.food = 80;
             p.army = 25;
             p.morale = 0.8;
-        } else {
+        } else if (Object.keys(game.countries).length > 0) {
             const first = Object.keys(game.countries)[0];
             game.playerCountry = first;
         }
 
         renderMap();
         renderAll();
-        addLog('🌍 Игра инициализирована. Год: ' + game.year);
-        addLog('👆 Твоя страна: ' + game.playerCountry + '. Кликни по клетке другой страны.');
+        addLog('🌍 Игра инициализирована. Год: ' + game.year + '. Стран: ' + Object.keys(game.countries).length);
+        addLog('👆 Твоя страна: ' + game.playerCountry);
     }
 
     // ---- ОТРИСОВКА КАРТЫ ----
     function renderMap() {
         const grid = document.getElementById('mapGrid');
-        grid.style.gridTemplateColumns = `repeat(${MAP_W}, 28px)`;
+        grid.style.gridTemplateColumns = `repeat(${MAP_W}, 20px)`;
         grid.innerHTML = '';
 
         for (let y = 0; y < MAP_H; y++) {
@@ -394,7 +460,7 @@
                 pixel.dataset.x = x;
                 pixel.dataset.y = y;
 
-                const val = PIXEL_MAP[y]?.[x];
+                const val = game.pixelMap[y]?.[x];
                 let countryName = null;
                 let color = '#1a1a2a';
                 if (val > 0 && val <= COUNTRY_LIST.length) {
@@ -417,7 +483,6 @@
                 pixel.style.backgroundColor = color;
                 pixel.style.borderColor = color;
 
-                // Подсветка выбранной цели
                 if (game.selectedTarget && countryName === game.selectedTarget) {
                     pixel.classList.add('selected');
                 }
@@ -431,7 +496,7 @@
 
     // ---- КЛИК ПО КЛЕТКЕ ----
     function onPixelClick(x, y, countryName) {
-        if (!countryName) return;
+        if (!countryName || !game.countries[countryName]) return;
         if (countryName === game.playerCountry) {
             game.selectedTarget = null;
             document.getElementById('dipTarget').textContent = 'Это твоя страна';
@@ -449,7 +514,7 @@
     function updateLegend() {
         const legend = document.getElementById('legend');
         legend.innerHTML = '';
-        const names = Object.keys(game.countries);
+        const names = Object.keys(game.countries).sort();
         names.forEach(name => {
             const c = game.countries[name];
             const div = document.createElement('div');
@@ -459,13 +524,21 @@
                 ${name} ${name === game.playerCountry ? '🏠' : ''}
                 ${game.selectedTarget === name ? '⭐' : ''}
             `;
+            div.onclick = () => {
+                if (name !== game.playerCountry) {
+                    game.selectedTarget = name;
+                    document.getElementById('dipTarget').textContent = 'Цель: ' + name;
+                    renderMap();
+                    renderAll();
+                }
+            };
             legend.appendChild(div);
         });
     }
 
-    // ---- ДИПЛОМАТИЯ (упрощённо, но с аннексией) ----
+    // ---- ДИПЛОМАТИЯ ----
     function diplomacy(action) {
-        if (!game.playerCountry) { addLog('❌ Ты не играешь!'); return; }
+        if (!game.playerCountry || !game.countries[game.playerCountry]) { addLog('❌ Ты не играешь!'); return; }
         const target = game.selectedTarget;
         if (!target || !game.countries[target]) { addLog('❌ Выбери страну на карте!'); return; }
         if (target === game.playerCountry) { addLog('❌ Нельзя с самим собой!'); return; }
@@ -482,7 +555,7 @@
                     if (!game.wars.some(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry))) {
                         game.wars.push({ attacker: game.playerCountry, defender: target, turns: 0 });
                     }
-                    addLog(`⚔️ ВОЙНА объявлена ${target}!`, 'combat');
+                    addLog(`⚔️ ВОЙНА с ${target}!`, 'combat');
                     resolveBattle(game.playerCountry, target);
                 } else {
                     addLog(`❌ ${target} не готова к войне.`, 'combat');
@@ -526,7 +599,7 @@
                 break;
             case 'annex':
                 const atWar = game.wars.some(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry));
-                if (!atWar) { addLog('❌ Нужно объявить войну!', 'combat'); return; }
+                if (!atWar) { addLog('❌ Нужна война!', 'combat'); return; }
                 if (player.army > enemy.army * 0.7 && player.morale > 0.4) {
                     const gLoot = Math.floor(enemy.gold * 0.3);
                     const fLoot = Math.floor(enemy.food * 0.3);
@@ -536,17 +609,24 @@
                     player.recruits += rLoot;
                     player.army += Math.floor(enemy.army * 0.2);
                     // Делаем страну нейтральной
+                    const cells = enemy.cells || [];
+                    cells.forEach(([cx, cy]) => {
+                        if (game.pixelMap[cy] && game.pixelMap[cy][cx] !== undefined) {
+                            game.pixelMap[cy][cx] = 0;
+                        }
+                    });
                     enemy.gold = 5;
                     enemy.food = 10;
                     enemy.recruits = 2;
                     enemy.army = 2;
                     enemy.morale = 0.1;
+                    enemy.cells = [];
                     const wIdx = game.wars.findIndex(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry));
                     if (wIdx !== -1) game.wars.splice(wIdx, 1);
-                    addLog(`🏴 ${target} аннексирован! +${gLoot} монет, +${fLoot} провизии.`, 'annex');
+                    addLog(`🏴 ${target} аннексирован!`, 'annex');
                     renderMap();
                 } else {
-                    addLog(`❌ Недостаточно сил для аннексии.`, 'combat');
+                    addLog(`❌ Недостаточно сил.`, 'combat');
                 }
                 break;
         }
@@ -570,7 +650,7 @@
             d.morale = Math.max(0.1, d.morale - 0.1);
             const goldLoot = Math.floor(d.gold * 0.1);
             a.gold += goldLoot;
-            addLog(`⚔️ ${attacker} ПОБЕДИЛ ${defender}! Потеряно ${lostA} войск.`, 'win');
+            addLog(`⚔️ ${attacker} ПОБЕДИЛ ${defender}!`, 'win');
         } else {
             const lostA = Math.floor(a.army * 0.3) + Math.floor(Math.random() * 5);
             const lostD = Math.floor(d.army * 0.1) + Math.floor(Math.random() * 3);
@@ -578,7 +658,7 @@
             d.army = Math.max(2, d.army - lostD);
             a.morale = Math.max(0.1, a.morale - 0.1);
             d.morale = Math.min(1, d.morale + 0.05);
-            addLog(`💀 ${attacker} проиграл ${defender}! Потеряно ${lostA} войск.`, 'combat');
+            addLog(`💀 ${attacker} проиграл ${defender}!`, 'combat');
         }
     }
 
@@ -619,7 +699,7 @@
             game.playerCountry = null;
         }
         renderAll();
-        addLog(`⏳ Ход ${game.turn}. Доход: +...`);
+        addLog(`⏳ Ход ${game.turn}`);
         checkGameOver();
     }
 
@@ -664,7 +744,7 @@
     }
 
     function renderAll() {
-        if (!game.playerCountry) {
+        if (!game.playerCountry || !game.countries[game.playerCountry]) {
             ['goldDisplay','recruitsDisplay','foodDisplay','armyDisplay','regionDisplay'].forEach(id => document.getElementById(id).textContent = '—');
             document.getElementById('turnDisplay').textContent = game.turn;
             return;
@@ -676,7 +756,7 @@
         document.getElementById('armyDisplay').textContent = p.army + ' (м.' + Math.round(p.morale * 100) + '%)';
         document.getElementById('regionDisplay').textContent = Object.keys(game.countries).length;
         document.getElementById('turnDisplay').textContent = game.turn;
-        document.getElementById('dipTarget').textContent = game.selectedTarget ? 'Цель: ' + game.selectedTarget : 'Выбери страну на карте';
+        document.getElementById('dipTarget').textContent = game.selectedTarget ? 'Цель: ' + game.selectedTarget : 'Выбери страну';
     }
 
     function addLog(msg, cls = '') {
@@ -687,7 +767,7 @@
     }
 
     // ---- АВТО-ХОД ----
-    setInterval(() => { if (game.playerCountry) nextTurn(); }, 20000);
+    setInterval(() => { if (game.playerCountry) nextTurn(); }, 22000);
 
     // ---- СТАРТ ----
     initGame();
