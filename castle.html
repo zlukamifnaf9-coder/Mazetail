@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🌍 Maze Russia Ekaterinburg — Прототип</title>
+    <title>🗺️ Maze Russia Ekaterinburg — Карта Европы</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -11,12 +11,13 @@
             color: #c8d6e5;
             font-family: 'Segoe UI', system-ui, sans-serif;
             display: flex;
-            justify-content: center;
-            padding: 16px;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
             min-height: 100vh;
         }
         .container {
-            max-width: 1100px;
+            max-width: 1200px;
             width: 100%;
             background: #111827;
             border: 2px solid #3a6a9a;
@@ -27,7 +28,7 @@
         h1 {
             color: #b7c9ff;
             text-align: center;
-            font-size: 26px;
+            font-size: 28px;
             letter-spacing: 2px;
             border-bottom: 1px solid #2a4a7a;
             padding-bottom: 12px;
@@ -36,16 +37,20 @@
         .top-panel {
             display: flex;
             flex-wrap: wrap;
-            gap: 12px;
+            gap: 16px;
             justify-content: space-between;
             background: #0f1729;
             border-radius: 16px;
-            padding: 14px 18px;
+            padding: 14px 20px;
             border: 1px solid #2a4a7a;
             margin-bottom: 16px;
+            align-items: center;
         }
         .top-panel .stat {
             font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
         .top-panel .stat span { color: #ffd866; }
         .year-selector {
@@ -57,28 +62,77 @@
             background: #1f3460;
             color: #aab8e6;
             border: 1px solid #3a5f8a;
-            padding: 4px 14px;
+            padding: 4px 16px;
             border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
             transition: 0.2s;
         }
-        .year-btn.active {
-            background: #3a6a9a;
-            color: #fff;
-            border-color: #7a9aff;
-        }
+        .year-btn.active { background: #3a6a9a; color: #fff; border-color: #7a9aff; }
         .year-btn:hover { background: #2a4a7a; }
+
+        .map-wrapper {
+            position: relative;
+            width: 100%;
+            background: #0b1120;
+            border-radius: 20px;
+            border: 1px solid #1f3460;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+        .map-wrapper svg {
+            display: block;
+            width: 100%;
+            height: auto;
+            background: #0b1120;
+        }
+        .country-polygon {
+            stroke: #2a4a7a;
+            stroke-width: 1.5;
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .country-polygon:hover {
+            stroke: #7a9aff;
+            stroke-width: 2.5;
+            filter: brightness(1.2);
+        }
+        .country-polygon.own {
+            stroke: #6fcf97;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px #6fcf97);
+        }
+        .country-polygon.enemy {
+            stroke: #ff6b6b;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 8px #ff6b6b);
+        }
+        .country-polygon.ally {
+            stroke: #66b3ff;
+            stroke-width: 2.5;
+            filter: drop-shadow(0 0 6px #66b3ff);
+        }
+        .country-label {
+            fill: #b7c9ff;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            text-anchor: middle;
+            font-family: 'Segoe UI', sans-serif;
+            text-shadow: 0 0 6px #000000aa;
+        }
+
         .diplomacy-panel {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             justify-content: center;
             margin: 10px 0 16px;
-            padding: 10px;
+            padding: 12px;
             background: #0f1729;
             border-radius: 16px;
             border: 1px solid #1f3460;
+            align-items: center;
         }
         .dip-btn {
             background: #1f3460;
@@ -93,51 +147,27 @@
         }
         .dip-btn:hover { background: #3a5f8a; transform: scale(1.02); }
         .dip-btn.war { border-left: 3px solid #ff6b6b; }
-        .dip-btn.ally { border-left: 3px solid #6fcf97; }
+        .dip-btn.peace { border-left: 3px solid #80d8a0; }
+        .dip-btn.ally { border-left: 3px solid #66b3ff; }
         .dip-btn.trade { border-left: 3px solid #ffd700; }
-        .dip-btn.pact { border-left: 3px solid #66b3ff; }
-        .dip-btn.coal { border-left: 3px solid #ff8a80; }
-        .map {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-            margin: 12px 0;
-        }
-        .region {
-            background: #141f3a;
-            border: 1px solid #2a4a7a;
+        .dip-btn.pact { border-left: 3px solid #b388ff; }
+        .dip-btn.annex { border-left: 3px solid #ff8a65; }
+        #dipTarget { color: #8899bb; font-size: 13px; margin-left: 8px; }
+
+        .btn {
+            background: #2a4a8a;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
             border-radius: 14px;
-            padding: 10px 6px;
-            text-align: center;
-        }
-        .region .region-name {
             font-weight: bold;
-            color: #7a9aff;
-            font-size: 14px;
-            border-bottom: 1px solid #1f3460;
-            padding-bottom: 4px;
-            margin-bottom: 6px;
-        }
-        .country {
-            background: #1a2440;
-            border: 1px solid #2f4370;
-            border-radius: 8px;
-            padding: 6px 4px;
-            margin: 4px 0;
-            font-size: 12px;
             cursor: pointer;
             transition: 0.2s;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
-        .country:hover { border-color: #7a9aff; transform: scale(1.01); }
-        .country.own { border-color: #6fcf97; background: #1a3a2a; }
-        .country.enemy { border-color: #ff6b6b; background: #3a1a1a; }
-        .country .cname { font-weight: bold; }
-        .country .carmy { color: #ffaa66; }
-        .country .cgold { color: #ffd700; }
-        .country .crel { font-size: 10px; color: #8899bb; }
+        .btn:hover { background: #4a7acf; transform: scale(1.02); }
+        .btn.danger { background: #8a2a2a; }
+        .btn.danger:hover { background: #cf4a4a; }
+
         .log {
             background: #0b1120;
             border: 1px solid #1f3460;
@@ -153,34 +183,19 @@
         .log .combat { color: #ff8a80; }
         .log .win { color: #80d8a0; }
         .log .dip { color: #66b3ff; }
-        .flex { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 10px; }
-        .btn {
-            background: #2a4a8a;
-            color: #fff;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .btn:hover { background: #4a7acf; transform: scale(1.02); }
-        .btn:active { transform: scale(0.95); }
-        .btn.danger { background: #8a2a2a; }
-        .btn.danger:hover { background: #cf4a4a; }
-        @media (max-width: 700px) {
-            .map { grid-template-columns: repeat(2, 1fr); }
-        }
+        .log .annex { color: #ff8a65; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🌍 Maze Russia Ekaterinburg</h1>
+    <h1>🗺️ Maze Russia Ekaterinburg</h1>
 
     <div class="top-panel">
-        <div class="stat">🪙 Золото: <span id="goldDisplay">0</span></div>
+        <div class="stat">🪙 Монеты: <span id="goldDisplay">0</span></div>
+        <div class="stat">⛑️ Рекруты: <span id="recruitsDisplay">0</span></div>
+        <div class="stat">🍖 Провизия: <span id="foodDisplay">0</span></div>
         <div class="stat">⚔️ Армия: <span id="armyDisplay">0</span></div>
-        <div class="stat">🏰 Регионов: <span id="regionDisplay">0</span></div>
+        <div class="stat">🏰 Регионы: <span id="regionDisplay">0</span></div>
         <div class="stat">⏳ Ход: <span id="turnDisplay">0</span></div>
         <div class="year-selector">
             <span style="color:#8899bb;">Год:</span>
@@ -190,170 +205,188 @@
         </div>
     </div>
 
-    <div class="diplomacy-panel" id="dipPanel">
-        <button class="dip-btn war" onclick="diplomacy('war')">⚔️ Война</button>
-        <button class="dip-btn ally" onclick="diplomacy('ally')">🤝 Союз</button>
-        <button class="dip-btn trade" onclick="diplomacy('trade')">📦 Торговля</button>
-        <button class="dip-btn pact" onclick="diplomacy('pact')">🕊️ Пакт</button>
-        <button class="dip-btn coal" onclick="diplomacy('coalition')">⚡ Коалиция</button>
-        <span style="color:#8899bb; font-size:13px; margin-left:8px;" id="dipTarget">Выбери страну на карте</span>
+    <div class="map-wrapper">
+        <svg viewBox="0 0 800 700" id="mapSvg">
+            <!-- Полигоны будут вставлены JS -->
+        </svg>
     </div>
 
-    <div class="map" id="mapContainer"></div>
+    <div class="diplomacy-panel">
+        <button class="dip-btn war" onclick="diplomacy('war')">⚔️ Война</button>
+        <button class="dip-btn peace" onclick="diplomacy('peace')">🕊️ Мир</button>
+        <button class="dip-btn ally" onclick="diplomacy('ally')">🤝 Союз</button>
+        <button class="dip-btn trade" onclick="diplomacy('trade')">📦 Торговля</button>
+        <button class="dip-btn pact" onclick="diplomacy('pact')">📜 Пакт</button>
+        <button class="dip-btn annex" onclick="diplomacy('annex')">🏴 Захватить регион</button>
+        <span id="dipTarget">Выбери страну на карте</span>
+    </div>
 
-    <div class="flex">
-        <button class="btn" onclick="trainArmy()">🎯 Тренировать войска (40 золота)</button>
+    <div style="display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:10px;">
+        <button class="btn" onclick="trainArmy()">🎯 Мобилизация (40 монет + 10 провизии)</button>
         <button class="btn" onclick="nextTurn()">⏩ Следующий ход</button>
         <button class="btn danger" onclick="resetGame()">🔄 Перезапуск</button>
     </div>
 
-    <div class="log" id="log">⚔️ Добро пожаловать в Maze Russia Ekaterinburg. Выбери страну кликом.</div>
+    <div class="log" id="log">⚔️ Добро пожаловать в Maze Russia Ekaterinburg. Кликни по стране на карте, чтобы выбрать её.</div>
 </div>
 
 <script>
     // ======================================================================
-    //  MAZE RUSSIA EKATERINBURG — ЯДРО ИГРЫ
+    //  1.  КОНФИГ СТРАН (геометрия + названия)
     // ======================================================================
-
-    // ---- КОНФИГ: РЕГИОНЫ И СТРАНЫ ----
-    const REGIONS = [
-        { name: 'Европа', countries: ['Германия', 'Франция', 'Италия', 'Польша'] },
-        { name: 'Азия', countries: ['Россия', 'Китай', 'Индия', 'Япония'] },
-        { name: 'Америка', countries: ['США', 'Канада', 'Бразилия', 'Мексика'] },
-        { name: 'Африка', countries: ['Египет', 'ЮАР', 'Нигерия', 'Алжир'] }
+    const COUNTRIES_DATA = [
+        { id: 'iceland',   name: 'Iceland',   cx: 70, cy: 80,  r: 28 },
+        { id: 'norway',    name: 'Norway',    cx: 120, cy: 110, r: 30 },
+        { id: 'sweden',    name: 'Sweden',    cx: 160, cy: 150, r: 30 },
+        { id: 'finland',   name: 'Finland',   cx: 200, cy: 120, r: 28 },
+        { id: 'estonia',   name: 'Estonia',   cx: 220, cy: 170, r: 18 },
+        { id: 'belarus',   name: 'Belarus',   cx: 280, cy: 210, r: 28 },
+        { id: 'russia',    name: 'Russia',    cx: 400, cy: 200, r: 60 },
+        { id: 'poland',    name: 'Poland',    cx: 260, cy: 260, r: 30 },
+        { id: 'germany',   name: 'Germany',   cx: 200, cy: 280, r: 32 },
+        { id: 'czech',     name: 'Czech Rep.',cx: 220, cy: 320, r: 20 },
+        { id: 'ukraine',   name: 'Ukraine',   cx: 320, cy: 300, r: 35 },
+        { id: 'hungary',   name: 'Hungary',   cx: 260, cy: 350, r: 22 },
+        { id: 'moldova',   name: 'Moldova',   cx: 310, cy: 360, r: 16 },
+        { id: 'france',    name: 'France',    cx: 140, cy: 370, r: 35 },
+        { id: 'portugal',  name: 'Portugal',  cx: 50, cy: 420, r: 18 },
+        { id: 'spain',     name: 'Spain',     cx: 100, cy: 440, r: 32 },
+        { id: 'italy',     name: 'Italy',     cx: 170, cy: 450, r: 28 },
+        { id: 'turkey',    name: 'Turkey',    cx: 380, cy: 420, r: 32 },
+        { id: 'morocco',   name: 'Morocco',   cx: 60, cy: 520, r: 22 },
+        { id: 'algeria',   name: 'Algeria',   cx: 120, cy: 550, r: 30 },
+        { id: 'monaco',    name: 'Monaco',    cx: 150, cy: 420, r: 8 },
+        { id: 'andorra',   name: 'Andorra',   cx: 120, cy: 400, r: 8 },
     ];
-
-    // ---- СОСТОЯНИЕ ИГРЫ ----
-    let game = {
-        year: 2026,
-        turn: 0,
-        playerCountry: null,       // строка (название страны игрока)
-        countries: {},             // { 'Россия': { gold, army, defense, region, relations: { 'Германия': 0, ... } } }
-        selectedDiplomacyTarget: null, // строка — страна, с которой взаимодействуем
-        log: []
-    };
 
     // ---- БАЛАНСЫ ПО ГОДАМ ----
     function getBalance(year) {
-        if (year === 1941) return { goldMultiplier: 0.7, armyMultiplier: 1.4, defenseMultiplier: 1.2 };
-        if (year === 1812) return { goldMultiplier: 0.4, armyMultiplier: 0.8, defenseMultiplier: 0.6 };
-        return { goldMultiplier: 1.0, armyMultiplier: 1.0, defenseMultiplier: 1.0 }; // 2026
+        if (year === 1941) return { gold: 0.7, recruits: 1.5, food: 0.8, armyMorale: 1.3 };
+        if (year === 1812) return { gold: 0.4, recruits: 0.9, food: 0.6, armyMorale: 0.8 };
+        return { gold: 1.0, recruits: 1.0, food: 1.0, armyMorale: 1.0 };
     }
+
+    // ---- ИГРОВОЕ СОСТОЯНИЕ ----
+    let game = {
+        year: 2026,
+        turn: 0,
+        playerCountry: null,
+        selectedTarget: null,
+        countries: {}, // { 'Germany': { gold, recruits, food, army, morale, region, relations: {} } }
+        wars: [],      // [{ attacker, defender, turns: 0 }]
+        alliances: [], // [{ country1, country2 }]
+        pacts: [],     // [{ country1, country2 }]
+        log: []
+    };
 
     // ---- ИНИЦИАЛИЗАЦИЯ ----
     function initGame() {
         const balance = getBalance(game.year);
         game.countries = {};
+        game.wars = [];
+        game.alliances = [];
+        game.pacts = [];
         game.playerCountry = null;
-        game.selectedDiplomacyTarget = null;
+        game.selectedTarget = null;
         game.turn = 0;
 
-        REGIONS.forEach(region => {
-            region.countries.forEach(name => {
-                const gold = Math.floor((20 + Math.random() * 40) * balance.goldMultiplier);
-                const army = Math.floor((8 + Math.random() * 20) * balance.armyMultiplier);
-                const defense = Math.floor((2 + Math.random() * 8) * balance.defenseMultiplier);
-                game.countries[name] = {
-                    gold: gold,
-                    army: army,
-                    defense: defense,
-                    region: region.name,
-                    relations: {}
-                };
-            });
+        COUNTRIES_DATA.forEach(c => {
+            const gold = Math.floor((15 + Math.random() * 40) * balance.gold);
+            const recruits = Math.floor((5 + Math.random() * 15) * balance.recruits);
+            const food = Math.floor((20 + Math.random() * 30) * balance.food);
+            const army = Math.floor((3 + Math.random() * 12) * balance.recruits);
+            const morale = 0.5 + Math.random() * 0.5 * balance.armyMorale;
+            game.countries[c.name] = {
+                gold, recruits, food, army,
+                morale: Math.min(1, Math.max(0.1, morale)),
+                region: c.name,
+                relations: {},
+                owner: c.name,
+                capital: c.name
+            };
         });
 
-        // Инициализация отношений (случайные)
+        // Отношения
         const names = Object.keys(game.countries);
         names.forEach(c1 => {
             names.forEach(c2 => {
                 if (c1 !== c2) {
-                    game.countries[c1].relations[c2] = Math.floor(Math.random() * 40) - 20; // -20..+20
+                    game.countries[c1].relations[c2] = Math.floor(Math.random() * 40) - 20;
                 }
             });
         });
 
         // Игрок по умолчанию — Россия (если есть)
-        if (game.countries['Россия']) {
-            game.playerCountry = 'Россия';
-            game.countries['Россия'].gold = 100;
-            game.countries['Россия'].army = 30;
+        if (game.countries['Russia']) {
+            game.playerCountry = 'Russia';
+            game.countries['Russia'].gold = 100;
+            game.countries['Russia'].recruits = 30;
+            game.countries['Russia'].food = 80;
+            game.countries['Russia'].army = 25;
+            game.countries['Russia'].morale = 0.8;
         } else {
             const first = Object.keys(game.countries)[0];
             game.playerCountry = first;
         }
 
+        renderMap();
         renderAll();
         addLog('🌍 Игра инициализирована. Год: ' + game.year);
         addLog('👆 Твоя страна: ' + game.playerCountry + '. Кликни по другой стране для дипломатии.');
     }
 
-    // ---- ОТРИСОВКА КАРТЫ ----
+    // ---- ОТРИСОВКА КАРТЫ (SVG) ----
     function renderMap() {
-        const container = document.getElementById('mapContainer');
-        container.innerHTML = '';
-        REGIONS.forEach(region => {
-            const div = document.createElement('div');
-            div.className = 'region';
-            div.innerHTML = `<div class="region-name">${region.name}</div>`;
-            region.countries.forEach(name => {
-                const c = game.countries[name];
-                if (!c) return;
-                const isOwn = name === game.playerCountry;
-                const isEnemy = !isOwn && game.playerCountry && game.countries[game.playerCountry]?.relations?.[name] < -20;
-                const countryDiv = document.createElement('div');
-                countryDiv.className = 'country' + (isOwn ? ' own' : '') + (isEnemy ? ' enemy' : '');
-                countryDiv.innerHTML = `
-                    <span class="cname">${name}</span>
-                    <span class="cgold">🪙${c.gold}</span>
-                    <span class="carmy">⚔️${c.army}</span>
-                    <span class="crel">${isOwn ? '🏠' : getRelationEmoji(name)}</span>
-                `;
-                if (!isOwn) {
-                    countryDiv.style.cursor = 'pointer';
-                    countryDiv.onclick = () => selectDiplomacyTarget(name);
-                }
-                div.appendChild(countryDiv);
-            });
-            container.appendChild(div);
+        const svg = document.getElementById('mapSvg');
+        svg.innerHTML = '';
+        // Рисуем круги (для простоты — вместо полигонов)
+        COUNTRIES_DATA.forEach(c => {
+            const country = game.countries[c.name];
+            if (!country) return;
+            const isOwn = c.name === game.playerCountry;
+            const isEnemy = !isOwn && game.playerCountry && (game.countries[game.playerCountry]?.relations?.[c.name] || 0) < -30;
+            const isAlly = !isOwn && game.playerCountry && game.alliances.some(a =>
+                (a.country1 === game.playerCountry && a.country2 === c.name) ||
+                (a.country1 === c.name && a.country2 === game.playerCountry)
+            );
+            let cls = 'country-polygon';
+            if (isOwn) cls += ' own';
+            if (isEnemy) cls += ' enemy';
+            if (isAlly) cls += ' ally';
+
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+            circle.setAttribute('cx', c.cx);
+            circle.setAttribute('cy', c.cy);
+            circle.setAttribute('rx', c.r);
+            circle.setAttribute('ry', c.r * 0.85);
+            circle.setAttribute('class', cls);
+            circle.setAttribute('data-country', c.name);
+            circle.style.fill = isOwn ? '#1a3a2a' : isEnemy ? '#3a1a1a' : isAlly ? '#1a2a4a' : '#1a2440';
+            circle.style.fillOpacity = '0.7';
+            circle.style.stroke = isOwn ? '#6fcf97' : isEnemy ? '#ff6b6b' : isAlly ? '#66b3ff' : '#3a5f8a';
+            circle.style.strokeWidth = isOwn ? '3' : isEnemy ? '3' : isAlly ? '2.5' : '1.5';
+            circle.addEventListener('click', () => selectCountry(c.name));
+            svg.appendChild(circle);
+
+            // Подпись
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', c.cx);
+            text.setAttribute('y', c.cy + 4);
+            text.setAttribute('class', 'country-label');
+            text.setAttribute('font-size', c.r > 25 ? '12' : '9');
+            text.textContent = c.name;
+            svg.appendChild(text);
         });
-        updateStats();
     }
 
-    function getRelationEmoji(name) {
-        if (!game.playerCountry) return '❓';
-        const rel = game.countries[game.playerCountry]?.relations?.[name] || 0;
-        if (rel > 30) return '🤝';
-        if (rel > 10) return '😊';
-        if (rel > -10) return '😐';
-        if (rel > -30) return '😠';
-        return '⚔️';
-    }
-
-    function updateStats() {
-        if (!game.playerCountry) return;
-        const p = game.countries[game.playerCountry];
-        document.getElementById('goldDisplay').textContent = p.gold;
-        document.getElementById('armyDisplay').textContent = p.army;
-        const regions = new Set();
-        Object.keys(game.countries).forEach(name => {
-            if (game.countries[name].region) regions.add(game.countries[name].region);
-        });
-        document.getElementById('regionDisplay').textContent = regions.size;
-        document.getElementById('turnDisplay').textContent = game.turn;
-    }
-
-    function renderAll() {
-        renderMap();
-        document.getElementById('dipTarget').textContent =
-            game.selectedDiplomacyTarget ? 'Цель: ' + game.selectedDiplomacyTarget : 'Выбери страну на карте';
-        updateStats();
-    }
-
-    // ---- ВЫБОР ЦЕЛИ ДЛЯ ДИПЛОМАТИИ ----
-    function selectDiplomacyTarget(name) {
-        if (name === game.playerCountry) return;
-        game.selectedDiplomacyTarget = name;
+    // ---- ВЫБОР СТРАНЫ ----
+    function selectCountry(name) {
+        if (name === game.playerCountry) {
+            game.selectedTarget = null;
+            document.getElementById('dipTarget').textContent = 'Это твоя страна';
+            return;
+        }
+        game.selectedTarget = name;
         document.getElementById('dipTarget').textContent = 'Цель: ' + name;
         addLog(`🎯 Выбрана цель: ${name}`, 'dip');
         renderAll();
@@ -362,88 +395,108 @@
     // ---- ДИПЛОМАТИЯ ----
     function diplomacy(action) {
         if (!game.playerCountry) { addLog('❌ Ты не играешь ни за одну страну!'); return; }
-        const target = game.selectedDiplomacyTarget;
+        const target = game.selectedTarget;
         if (!target || !game.countries[target]) { addLog('❌ Сначала выбери страну на карте!'); return; }
         if (target === game.playerCountry) { addLog('❌ Нельзя с самим собой!'); return; }
 
         const player = game.countries[game.playerCountry];
         const enemy = game.countries[target];
-        const rel = player.relations[target] || 0;
-
-        let result = '';
-        let success = false;
+        let rel = player.relations[target] || 0;
 
         switch (action) {
             case 'war':
-                if (rel < 0) {
-                    success = true;
-                    player.relations[target] = Math.min(-100, rel - 20);
-                    enemy.relations[game.playerCountry] = Math.min(-100, (enemy.relations[game.playerCountry] || 0) - 20);
-                    result = `⚔️ ВОЙНА объявлена ${target}! Отношения ухудшены.`;
-                    // Мгновенная атака
+                if (rel < -10 || Math.random() < 0.3) {
+                    player.relations[target] = Math.min(-100, rel - 30);
+                    enemy.relations[game.playerCountry] = Math.min(-100, (enemy.relations[game.playerCountry] || 0) - 30);
+                    // Добавляем в список войн
+                    if (!game.wars.some(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry))) {
+                        game.wars.push({ attacker: game.playerCountry, defender: target, turns: 0 });
+                    }
+                    addLog(`⚔️ ВОЙНА объявлена ${target}!`, 'combat');
                     resolveBattle(game.playerCountry, target);
                 } else {
-                    result = `❌ ${target} не настроена враждебно. Сначала ухудши отношения (провокации).`;
+                    addLog(`❌ ${target} не готова к войне. Отношения: ${rel}`, 'combat');
+                }
+                break;
+            case 'peace':
+                const warIdx = game.wars.findIndex(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry));
+                if (warIdx !== -1) {
+                    game.wars.splice(warIdx, 1);
+                    player.relations[target] = Math.max(0, rel + 20);
+                    enemy.relations[game.playerCountry] = Math.max(0, (enemy.relations[game.playerCountry] || 0) + 20);
+                    addLog(`🕊️ Мир заключён с ${target}!`, 'win');
+                } else {
+                    addLog(`❌ Вы не воюете с ${target}`, 'dip');
                 }
                 break;
             case 'ally':
-                if (rel > 20 || Math.random() < 0.4) {
-                    success = true;
+                if (rel > 10 || Math.random() < 0.4) {
+                    if (!game.alliances.some(a => (a.country1 === game.playerCountry && a.country2 === target) || (a.country1 === target && a.country2 === game.playerCountry))) {
+                        game.alliances.push({ country1: game.playerCountry, country2: target });
+                    }
                     player.relations[target] = Math.min(100, rel + 40);
                     enemy.relations[game.playerCountry] = Math.min(100, (enemy.relations[game.playerCountry] || 0) + 40);
-                    result = `🤝 Союз с ${target} заключён! Отношения +40.`;
+                    addLog(`🤝 Союз с ${target} заключён!`, 'win');
                 } else {
-                    result = `❌ ${target} отказалась от союза. Попробуй улучшить отношения.`;
+                    addLog(`❌ ${target} отказалась от союза.`, 'combat');
                 }
                 break;
             case 'trade':
-                if (rel > -10 || Math.random() < 0.5) {
-                    success = true;
-                    const tradeGold = Math.floor(10 + Math.random() * 20);
+                if (rel > -5 || Math.random() < 0.5) {
+                    const tradeGold = Math.floor(10 + Math.random() * 25);
+                    const tradeFood = Math.floor(5 + Math.random() * 15);
                     player.gold += tradeGold;
                     enemy.gold += tradeGold;
+                    player.food += tradeFood;
+                    enemy.food += tradeFood;
                     player.relations[target] = Math.min(100, rel + 10);
-                    result = `📦 Торговля с ${target}! +${tradeGold} золота каждой стороне. Отношения +10.`;
+                    addLog(`📦 Торговля с ${target}! +${tradeGold} монет, +${tradeFood} провизии.`, 'dip');
                 } else {
-                    result = `❌ ${target} не заинтересована в торговле.`;
+                    addLog(`❌ ${target} не заинтересована в торговле.`, 'combat');
                 }
                 break;
             case 'pact':
-                if (rel > -30 || Math.random() < 0.5) {
-                    success = true;
-                    player.relations[target] = Math.min(100, rel + 15);
-                    enemy.relations[game.playerCountry] = Math.min(100, (enemy.relations[game.playerCountry] || 0) + 15);
-                    result = `🕊️ Пакт о ненападении с ${target}! Отношения +15.`;
-                } else {
-                    result = `❌ ${target} отвергла пакт. Отношения слишком плохие.`;
-                }
-                break;
-            case 'coalition':
-                // Коалиция: все страны с отношением к цели < -30 присоединяются
-                const allies = [];
-                Object.keys(game.countries).forEach(name => {
-                    if (name !== game.playerCountry && name !== target) {
-                        const relToTarget = game.countries[name].relations[target] || 0;
-                        if (relToTarget < -30) allies.push(name);
+                if (rel > -20 || Math.random() < 0.4) {
+                    if (!game.pacts.some(p => (p.country1 === game.playerCountry && p.country2 === target) || (p.country1 === target && p.country2 === game.playerCountry))) {
+                        game.pacts.push({ country1: game.playerCountry, country2: target });
                     }
-                });
-                if (allies.length > 0) {
-                    success = true;
-                    const bonus = allies.length * 10;
-                    player.army += bonus;
-                    allies.forEach(a => {
-                        game.countries[a].relations[target] = Math.min(-100, (game.countries[a].relations[target] || 0) - 20);
-                        game.countries[a].relations[game.playerCountry] = Math.min(100, (game.countries[a].relations[game.playerCountry] || 0) + 10);
-                    });
-                    result = `⚡ Коалиция против ${target}! К ней присоединились: ${allies.join(', ')}. Армия +${bonus}.`;
+                    player.relations[target] = Math.min(100, rel + 20);
+                    enemy.relations[game.playerCountry] = Math.min(100, (enemy.relations[game.playerCountry] || 0) + 20);
+                    addLog(`📜 Пакт о ненападении с ${target}!`, 'dip');
                 } else {
-                    result = `❌ Недостаточно стран для коалиции против ${target}.`;
+                    addLog(`❌ ${target} отвергла пакт.`, 'combat');
                 }
                 break;
-            default: return;
+            case 'annex':
+                // Захват региона возможен только если есть война и мы сильнее
+                const atWar = game.wars.some(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry));
+                if (!atWar) { addLog(`❌ Вы не воюете с ${target}. Нужно объявить войну!`, 'combat'); return; }
+                if (player.army > enemy.army * 0.7 && player.morale > 0.4) {
+                    // Аннексия
+                    const regionName = target;
+                    const goldLoot = Math.floor(enemy.gold * 0.3);
+                    const foodLoot = Math.floor(enemy.food * 0.3);
+                    const recruitLoot = Math.floor(enemy.recruits * 0.2);
+                    player.gold += goldLoot;
+                    player.food += foodLoot;
+                    player.recruits += recruitLoot;
+                    player.army += Math.floor(enemy.army * 0.2);
+                    // Уничтожаем страну (делаем нейтральной)
+                    enemy.gold = 5;
+                    enemy.food = 10;
+                    enemy.recruits = 2;
+                    enemy.army = 2;
+                    enemy.morale = 0.1;
+                    // Удаляем из войн
+                    const wIdx = game.wars.findIndex(w => (w.attacker === game.playerCountry && w.defender === target) || (w.attacker === target && w.defender === game.playerCountry));
+                    if (wIdx !== -1) game.wars.splice(wIdx, 1);
+                    addLog(`🏴 Регион ${regionName} аннексирован! +${goldLoot} монет, +${foodLoot} провизии, +${recruitLoot} рекрутов.`, 'annex');
+                    renderMap();
+                } else {
+                    addLog(`❌ Недостаточно сил для аннексии ${target}. Нужно больше армии и морали.`, 'combat');
+                }
+                break;
         }
-
-        addLog(result, success ? 'win' : 'combat');
         renderAll();
         checkGameOver();
     }
@@ -454,39 +507,44 @@
         const d = game.countries[defender];
         if (!a || !d) return;
 
-        const aPower = a.army + Math.random() * 10;
-        const dPower = d.army + d.defense + Math.random() * 8;
+        const aPower = (a.army * a.morale) + Math.random() * 10;
+        const dPower = (d.army * d.morale) + Math.random() * 8;
 
         if (aPower > dPower) {
-            const lost = Math.floor(a.army * 0.25) + Math.floor(Math.random() * 5);
-            a.army -= lost;
-            const gained = Math.floor(d.army * 0.3);
-            a.army += gained;
-            const goldLoot = Math.floor(d.gold * 0.3);
+            const lostA = Math.floor(a.army * 0.2) + Math.floor(Math.random() * 4);
+            const lostD = Math.floor(d.army * 0.3) + Math.floor(Math.random() * 4);
+            a.army -= lostA;
+            d.army = Math.max(2, d.army - lostD);
+            a.morale = Math.min(1, a.morale + 0.05);
+            d.morale = Math.max(0.1, d.morale - 0.1);
+            const goldLoot = Math.floor(d.gold * 0.1);
             a.gold += goldLoot;
-            d.army = Math.max(3, d.army - Math.floor(d.army * 0.4));
-            d.gold = Math.max(10, d.gold - Math.floor(d.gold * 0.3));
-            addLog(`⚔️ ${attacker} ПОБЕДИЛ ${defender}! Потеряно ${lost} войск, +${gained} захвачено, +${goldLoot} золота.`, 'win');
+            addLog(`⚔️ ${attacker} ПОБЕДИЛ ${defender}! Потеряно ${lostA} войск, +${goldLoot} монет.`, 'win');
         } else {
-            const lost = Math.floor(a.army * 0.4) + Math.floor(Math.random() * 5);
-            a.army = Math.max(0, a.army - lost);
-            d.army = Math.max(3, d.army - Math.floor(d.army * 0.15));
-            addLog(`💀 ${attacker} проиграл битву ${defender}! Потеряно ${lost} войск.`, 'combat');
+            const lostA = Math.floor(a.army * 0.3) + Math.floor(Math.random() * 5);
+            const lostD = Math.floor(d.army * 0.1) + Math.floor(Math.random() * 3);
+            a.army = Math.max(0, a.army - lostA);
+            d.army = Math.max(2, d.army - lostD);
+            a.morale = Math.max(0.1, a.morale - 0.1);
+            d.morale = Math.min(1, d.morale + 0.05);
+            addLog(`💀 ${attacker} проиграл битву ${defender}! Потеряно ${lostA} войск.`, 'combat');
         }
     }
 
-    // ---- ТРЕНИРОВКА ----
+    // ---- МОБИЛИЗАЦИЯ ----
     function trainArmy() {
         if (!game.playerCountry) return;
         const p = game.countries[game.playerCountry];
-        if (p.gold >= 40) {
+        if (p.gold >= 40 && p.food >= 10) {
             p.gold -= 40;
-            const inc = 6 + Math.floor(Math.random() * 8);
+            p.food -= 10;
+            const inc = 5 + Math.floor(Math.random() * 8);
             p.army += inc;
-            addLog(`🎯 Войска обучены! +${inc} солдат.`);
+            p.morale = Math.min(1, p.morale + 0.03);
+            addLog(`🎯 Мобилизация! +${inc} солдат. Мораль +3%.`);
             renderAll();
         } else {
-            addLog('❌ Не хватает золота (нужно 40).');
+            addLog('❌ Не хватает ресурсов (40 монет + 10 провизии).');
         }
     }
 
@@ -497,14 +555,22 @@
         const p = game.countries[game.playerCountry];
 
         // Доход
-        const regions = new Set();
-        Object.keys(game.countries).forEach(name => {
-            if (game.countries[name].region) regions.add(game.countries[name].region);
-        });
-        const income = regions.size * 3 + Math.floor(Math.random() * 5);
-        p.gold += income;
+        const incomeGold = 5 + Math.floor(Math.random() * 8);
+        const incomeFood = 3 + Math.floor(Math.random() * 6);
+        const incomeRecruits = 1 + Math.floor(Math.random() * 3);
+        p.gold += incomeGold;
+        p.food += incomeFood;
+        p.recruits += incomeRecruits;
 
-        // ИИ ходит
+        // Естественное пополнение армии
+        if (p.recruits > 0 && p.food > 5) {
+            const newRecruits = Math.min(p.recruits, 3);
+            p.army += newRecruits;
+            p.recruits -= newRecruits;
+            p.food -= 2;
+        }
+
+        // ИИ-ход
         aiTurn();
 
         // Проверка на поражение
@@ -514,7 +580,7 @@
         }
 
         renderAll();
-        addLog(`⏳ Ход ${game.turn}. Доход: +${income} золота.`);
+        addLog(`⏳ Ход ${game.turn}. Доход: +${incomeGold} монет, +${incomeFood} провизии, +${incomeRecruits} рекрутов.`);
         checkGameOver();
     }
 
@@ -524,26 +590,20 @@
         names.forEach(name => {
             if (name === game.playerCountry) return;
             const c = game.countries[name];
-            // Случайные действия ИИ
             const roll = Math.random();
-            if (roll < 0.1) {
+            if (roll < 0.08 && c.army > 10) {
                 // Атака соседа
                 const targets = names.filter(n => n !== name && (c.relations[n] || 0) < -10);
                 if (targets.length > 0) {
                     const target = targets[Math.floor(Math.random() * targets.length)];
                     resolveBattle(name, target);
                 }
-            } else if (roll < 0.2) {
-                // Улучшение отношений с игроком (если плохие)
-                if (game.playerCountry && (c.relations[game.playerCountry] || 0) < 0) {
-                    c.relations[game.playerCountry] = Math.min(50, (c.relations[game.playerCountry] || 0) + 5);
-                }
-            } else if (roll < 0.3) {
-                // Тренировка
-                if (c.gold > 30) {
-                    c.gold -= 20;
-                    c.army += 4 + Math.floor(Math.random() * 4);
-                }
+            } else if (roll < 0.18 && c.gold > 30 && c.food > 10) {
+                c.gold -= 20;
+                c.food -= 5;
+                c.army += 3 + Math.floor(Math.random() * 4);
+            } else if (roll < 0.25 && game.playerCountry && (c.relations[game.playerCountry] || 0) < 0) {
+                c.relations[game.playerCountry] = Math.min(30, (c.relations[game.playerCountry] || 0) + 5);
             }
         });
     }
@@ -572,18 +632,39 @@
         }
     }
 
+    // ---- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ----
+    function renderAll() {
+        if (!game.playerCountry) {
+            document.getElementById('goldDisplay').textContent = '—';
+            document.getElementById('recruitsDisplay').textContent = '—';
+            document.getElementById('foodDisplay').textContent = '—';
+            document.getElementById('armyDisplay').textContent = '—';
+            document.getElementById('regionDisplay').textContent = '—';
+            document.getElementById('turnDisplay').textContent = game.turn;
+            return;
+        }
+        const p = game.countries[game.playerCountry];
+        document.getElementById('goldDisplay').textContent = p.gold;
+        document.getElementById('recruitsDisplay').textContent = p.recruits;
+        document.getElementById('foodDisplay').textContent = p.food;
+        document.getElementById('armyDisplay').textContent = p.army + ' (мораль ' + Math.round(p.morale * 100) + '%)';
+        document.getElementById('regionDisplay').textContent = Object.keys(game.countries).length; // упрощённо
+        document.getElementById('turnDisplay').textContent = game.turn;
+        document.getElementById('dipTarget').textContent = game.selectedTarget ? 'Цель: ' + game.selectedTarget : 'Выбери страну на карте';
+    }
+
     // ---- ЛОГ ----
     function addLog(msg, cls = '') {
         const log = document.getElementById('log');
         log.innerHTML += `<div class="${cls}">${msg}</div>`;
         log.scrollTop = log.scrollHeight;
-        if (log.children.length > 30) log.removeChild(log.firstChild);
+        if (log.children.length > 40) log.removeChild(log.firstChild);
     }
 
-    // ---- АВТО-ХОД (каждые 15 секунд) ----
+    // ---- АВТО-ХОД ----
     setInterval(() => {
         if (game.playerCountry) nextTurn();
-    }, 15000);
+    }, 18000);
 
     // ---- СТАРТ ----
     initGame();
