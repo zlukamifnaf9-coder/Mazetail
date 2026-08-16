@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🏎️ Гонки на форуме</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a16;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        .game-wrapper {
+            background: linear-gradient(145deg, #14142a, #1a1a32);
+            border-radius: 20px;
+            padding: 15px;
+            border: 2px solid #ffd70033;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9);
+            max-width: 100%;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 800 / 600;
+            background: #1a2a1a;
+            border-radius: 12px;
+            border: 2px solid #333366;
+            cursor: none;
+            touch-action: none;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px 4px 12px;
+            color: #aaaadd;
+            font-size: 14px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .hud .speed {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        .hud .laps {
+            color: #66ddff;
+            font-weight: bold;
+        }
+
+        .hud .controls-hint {
+            color: #555588;
+            font-size: 11px;
+            text-align: right;
+        }
+
+        .hud .controls-hint span {
+            background: #222244;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin: 0 2px;
+            border: 1px solid #333366;
+        }
+
+        @media (max-width: 500px) {
+            .game-wrapper {
+                padding: 8px;
+                border-radius: 12px;
+            }
+            .hud {
+                font-size: 11px;
+                padding: 6px 8px 2px 8px;
+            }
+            .hud .speed {
+                font-size: 16px;
+            }
+            .hud .controls-hint {
+                font-size: 9px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-wrapper">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+        <div class="hud">
+            <div>
+                🏁 Круг: <span class="laps" id="lapsDisplay">0</span>
+            </div>
+            <div>
+                ⚡ <span class="speed" id="speedDisplay">0</span> км/ч
+            </div>
+            <div class="controls-hint">
+                <span>↑</span> газ <span>↓</span> тормоз <span>←</span><span>→</span> руль
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // 🏎️ ГОНОЧНАЯ ИГРА
+        // ============================================
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const lapsDisplay = document.getElementById('lapsDisplay');
+        const speedDisplay = document.getElementById('speedDisplay');
+
+        // ------ РАЗМЕРЫ ------
+        const W = 800,
+            H = 600;
+
+        // ------ ТРАССА (кольцо) ------
+        const track = {
+            // Внешняя граница (по часовой стрелке)
+            outer: [
+                { x: 100, y: 80 },
+                { x: 700, y: 80 },
+                { x: 720, y: 300 },
+                { x: 700, y: 520 },
+                { x: 100, y: 520 },
+                { x: 80, y: 300 },
+            ],
+            // Внутренняя граница
+            inner: [
+                { x: 220, y: 180 },
+                { x: 580, y: 180 },
+                { x: 600, y: 300 },
+                { x: 580, y: 420 },
+                { x: 220, y: 420 },
+                { x: 200, y: 300 },
+            ],
+            // Контрольные точки для подсчёта кругов
+            checkpoints: [
+                { x: 150, y: 80 },
+                { x: 650, y: 80 },
+                { x: 710, y: 300 },
+                { x: 650, y: 520 },
+                { x: 150, y: 520 },
+                { x: 90, y: 300 },
+            ]
+        };
+
+        // ------ МАШИНА ------
+        const car = {
+            x: 400,
+            y: 400,
+            angle: 0, // радианы
+            speed: 0,
+            maxSpeed: 5,
+            acceleration: 0.12,
+            braking: 0.08,
+            friction: 0.02,
+            turnSpeed: 0.04,
+            width: 24,
+            height: 14,
+            lap: 0,
+            checkpointIndex: 0, // какой чекпоинт последний пересекли
+            totalDistance: 0,
+        };
+
+        // ------ УПРАВЛЕНИЕ ------
+        const keys = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+        };
+
+        // ------ ФИЗИКА ------
+        function isInsideTrack(x, y) {
+            // Проверяем, находится ли точка внутри трассы (между outer и inner)
+            // Используем ray casting для простоты
+            return isInsidePolygon(x, y, track.outer) && !isInsidePolygon(x, y, track.inner);
+        }
+
+        function isInsidePolygon(px, py, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x,
+                    yi = polygon[i].y;
+                const xj = polygon[j].x,
+                    yj = polygon[j].y;
+                const intersect = ((yi > py) !== (yj > py)) &&
+                    (px < (xj - xi) * (py - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        function clamp(v, min, max) {
+            return Math.max(min, Math.min(max, v));
+        }
+
+        // ------ ОБНОВЛЕНИЕ ------
+        function update() {
+            // Ускорение/торможение
+            if (keys.up) {
+                car.speed = Math.min(car.speed + car.acceleration, car.maxSpeed);
+            } else if (keys.down) {
+                car.speed = Math.max(car.speed - car.braking, -car.maxSpeed * 0.3);
+            } else {
+                // Трение
+                if (Math.abs(car.speed) < car.friction) car.speed = 0;
+                else car.speed -= Math.sign(car.speed) * car.friction;
+            }
+
+            // Поворот (только если скорость > 0.1)
+            if (Math.abs(car.speed) > 0.1) {
+                const turnFactor = clamp(car.speed / car.maxSpeed, 0.2, 1);
+                if (keys.left) car.angle -= car.turnSpeed * turnFactor;
+                if (keys.right) car.angle += car.turnSpeed * turnFactor;
+            }
+
+            // Движение
+            const dx = Math.cos(car.angle) * car.speed;
+            const dy = Math.sin(car.angle) * car.speed;
+            const newX = car.x + dx;
+            const newY = car.y + dy;
+
+            // Проверка столкновения с границами трассы
+            // Проверяем 4 угла машины
+            const halfW = car.width / 2;
+            const halfH = car.height / 2;
+            const corners = [
+                { x: newX + halfW, y: newY + halfH },
+                { x: newX - halfW, y: newY + halfH },
+                { x: newX + halfW, y: newY - halfH },
+                { x: newX - halfW, y: newY - halfH },
+            ];
+
+            let onTrack = true;
+            for (const c of corners) {
+                if (!isInsideTrack(c.x, c.y)) {
+                    onTrack = false;
+                    break;
+                }
+            }
+
+            if (onTrack) {
+                car.x = newX;
+                car.y = newY;
+            } else {
+                // Отскок от стен
+                car.speed *= -0.3;
+                // Немного смещаем обратно
+                car.x -= dx * 0.5;
+                car.y -= dy * 0.5;
+            }
+
+            // Проверка чекпоинтов (для подсчёта кругов)
+            checkCheckpoints();
+
+            // Обновление HUD
+            speedDisplay.textContent = Math.round(Math.abs(car.speed) * 40);
+            lapsDisplay.textContent = car.lap;
+        }
+
+        // ------ ЧЕКПОИНТЫ (круги) ------
+        function checkCheckpoints() {
+            const cp = track.checkpoints;
+            const nextIdx = (car.checkpointIndex + 1) % cp.length;
+            const p = cp[nextIdx];
+            const dist = Math.hypot(car.x - p.x, car.y - p.y);
+
+            if (dist < 30) {
+                if (nextIdx === 0 && car.checkpointIndex === cp.length - 1) {
+                    // Полный круг!
+                    car.lap++;
+                    car.totalDistance += 1;
+                }
+                car.checkpointIndex = nextIdx;
+            }
+        }
+
+        // ------ ОТРИСОВКА ------
+        function draw() {
+            ctx.clearRect(0, 0, W, H);
+
+            // ---- ФОН ----
+            const grad = ctx.createRadialGradient(400, 300, 100, 400, 300, 500);
+            grad.addColorStop(0, '#1a3a1a');
+            grad.addColorStop(1, '#0a1a0a');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, W, H);
+
+            // ---- ТРАССА (заливка) ----
+            ctx.beginPath();
+            ctx.moveTo(track.outer[0].x, track.outer[0].y);
+            for (let i = 1; i < track.outer.length; i++) {
+                ctx.lineTo(track.outer[i].x, track.outer[i].y);
+            }
+            ctx.closePath();
+            // Вырезаем внутреннюю часть
+            ctx.moveTo(track.inner[0].x, track.inner[0].y);
+            for (let i = 1; i < track.inner.length; i++) {
+                ctx.lineTo(track.inner[i].x, track.inner[i].y);
+            }
+            ctx.closePath();
+
+            ctx.fillStyle = '#2a4a2a';
+            ctx.fill();
+            ctx.strokeStyle = '#4a7a4a';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // ---- РАЗМЕТКА (бордюры) ----
+            ctx.setLineDash([15, 15]);
+            ctx.strokeStyle = '#ffd70044';
+            ctx.lineWidth = 2;
+            // Внешняя
+            ctx.beginPath();
+            ctx.moveTo(track.outer[0].x, track.outer[0].y);
+            for (let i = 1; i < track.outer.length; i++) {
+                ctx.lineTo(track.outer[i].x, track.outer[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            // Внутренняя
+            ctx.beginPath();
+            ctx.moveTo(track.inner[0].x, track.inner[0].y);
+            for (let i = 1; i < track.inner.length; i++) {
+                ctx.lineTo(track.inner[i].x, track.inner[i].y);
+            }
+            ctx.closePath();
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // ---- СТАРТ/ФИНИШ ----
+            ctx.fillStyle = '#ff444466';
+            ctx.fillRect(380, 75, 40, 20);
+            ctx.fillStyle = '#ffffff88';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('СТАРТ', 400, 92);
+
+            // ---- ЧЕКПОИНТЫ (флажки) ----
+            for (let i = 0; i < track.checkpoints.length; i++) {
+                const p = track.checkpoints[i];
+                const isActive = i === (car.checkpointIndex + 1) % track.checkpoints.length;
+                ctx.fillStyle = isActive ? '#ffd70088' : '#ffffff33';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                if (isActive) {
+                    ctx.fillStyle = '#ffd700';
+                    ctx.font = '14px Arial';
+                    ctx.fillText('🚩', p.x - 10, p.y - 12);
+                }
+            }
+
+            // ---- МАШИНА ----
+            ctx.save();
+            ctx.translate(car.x, car.y);
+            ctx.rotate(car.angle);
+
+            // Тень
+            ctx.shadowColor = 'rgba(255,215,0,0.3)';
+            ctx.shadowBlur = 20;
+
+            // Кузов
+            const w = car.width,
+                h = car.height;
+            const grd = ctx.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
+            grd.addColorStop(0, '#ff3333');
+            grd.addColorStop(0.5, '#ff6b35');
+            grd.addColorStop(1, '#cc2222');
+            ctx.fillStyle = grd;
+            ctx.shadowColor = 'rgba(255,100,0,0.5)';
+            ctx.shadowBlur = 25;
+
+            // Корпус (скруглённый)
+            ctx.beginPath();
+            ctx.roundRect(-w / 2, -h / 2, w, h, 4);
+            ctx.fill();
+
+            // Лобовое стекло
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(100,200,255,0.3)';
+            ctx.beginPath();
+            ctx.roundRect(-w / 2 + 3, -h / 2 + 2, w * 0.3, h - 4, 2);
+            ctx.fill();
+
+            // Фары
+            ctx.fillStyle = '#ffff88';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#ffff44';
+            ctx.beginPath();
+            ctx.arc(w / 2 - 2, -h / 2 + 3, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(w / 2 - 2, h / 2 - 3, 3, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Задние фонари
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = '#ff2222';
+            ctx.beginPath();
+            ctx.arc(-w / 2 + 2, -h / 2 + 3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-w / 2 + 2, h / 2 - 3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Колеса
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = '#00000066';
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(-w / 2 - 2, -h / 2 - 1, 3, 5);
+            ctx.fillRect(w / 2 - 1, -h / 2 - 1, 3, 5);
+            ctx.fillRect(-w / 2 - 2, h / 2 - 4, 3, 5);
+            ctx.fillRect(w / 2 - 1, h / 2 - 4, 3, 5);
+
+            ctx.restore();
+
+            // ---- СКОРОСТЬ (эффект) ----
+            if (Math.abs(car.speed) > 2) {
+                const alpha = Math.min((Math.abs(car.speed) - 2) / 3, 0.6);
+                ctx.fillStyle = `rgba(255,200,50,${alpha * 0.1})`;
+                ctx.beginPath();
+                ctx.arc(car.x, car.y, 50 + Math.abs(car.speed) * 5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // ---- ИНФО НА КАНВАСЕ ----
+            ctx.fillStyle = '#ffffff44';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`x: ${Math.round(car.x)} y: ${Math.round(car.y)}`, 10, 20);
+            ctx.fillText(`угол: ${(car.angle * 180 / Math.PI).toFixed(1)}°`, 10, 38);
+            ctx.fillText(`чекпоинт: ${car.checkpointIndex + 1}/${track.checkpoints.length}`, 10, 56);
+        }
+
+        // Полифил для roundRect
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (r > w / 2) r = w / 2;
+                if (r > h / 2) r = h / 2;
+                this.moveTo(x + r, y);
+                this.lineTo(x + w - r, y);
+                this.quadraticCurveTo(x + w, y, x + w, y + r);
+                this.lineTo(x + w, y + h - r);
+                this.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                this.lineTo(x + r, y + h);
+                this.quadraticCurveTo(x, y + h, x, y + h - r);
+                this.lineTo(x, y + r);
+                this.quadraticCurveTo(x, y, x + r, y);
+                return this;
+            };
+        }
+
+        // ------ ЦИКЛ ------
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ------ УПРАВЛЕНИЕ С КЛАВИАТУРЫ ------
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            if (key === 'ArrowUp') { keys.up = true;
+                e.preventDefault(); }
+            if (key === 'ArrowDown') { keys.down = true;
+                e.preventDefault(); }
+            if (key === 'ArrowLeft') { keys.left = true;
+                e.preventDefault(); }
+            if (key === 'ArrowRight') { keys.right = true;
+                e.preventDefault(); }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            const key = e.key;
+            if (key === 'ArrowUp') { keys.up = false;
+                e.preventDefault(); }
+            if (key === 'ArrowDown') { keys.down = false;
+                e.preventDefault(); }
+            if (key === 'ArrowLeft') { keys.left = false;
+                e.preventDefault(); }
+            if (key === 'ArrowRight') { keys.right = false;
+                e.preventDefault(); }
+        });
+
+        // ------ ТАЧ-УПРАВЛЕНИЕ (для телефона) ------
+        let touchControls = {
+            up: false,
+            down: false,
+            left: false,
+            right: false,
+        };
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) / rect.width * W;
+            const y = (touch.clientY - rect.top) / rect.height * H;
+
+            // Зоны: лево/право/верх/низ
+            if (x < W / 2) {
+                touchControls.left = true;
+                keys.left = true;
+            } else {
+                touchControls.right = true;
+                keys.right = true;
+            }
+            if (y < H / 2) {
+                touchControls.up = true;
+                keys.up = true;
+            } else {
+                touchControls.down = true;
+                keys.down = true;
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const x = (touch.clientX - rect.left) / rect.width * W;
+            const y = (touch.clientY - rect.top) / rect.height * H;
+
+            // Сбрасываем
+            keys.up = false;
+            keys.down = false;
+            keys.left = false;
+            keys.right = false;
+
+            if (x < W / 2) keys.left = true;
+            else keys.right = true;
+            if (y < H / 2) keys.up = true;
+            else keys.down = true;
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            keys.up = false;
+            keys.down = false;
+            keys.left = false;
+            keys.right = false;
+            touchControls = { up: false, down: false, left: false, right: false };
+        });
+
+        // ------ ЗАПУСК ------
+        // Ставим машину на старт
+        car.x = 400;
+        car.y = 100;
+        car.angle = Math.PI / 2; // смотрит вниз
+
+        gameLoop();
+
+        console.log('🏎️ Гонка запущена! Управляй стрелками или тапом по экрану.');
+        console.log('📱 На телефоне: тап сверху = газ, снизу = тормоз, слева/справа = руль');
+    </script>
+
+</body>
+  </html>
