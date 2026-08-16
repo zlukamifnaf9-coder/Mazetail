@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toyota Probox - Симулятор вождения</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body { background: #0a0a0a; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Segoe UI', sans-serif; }
+        #game {
+            width: 900px; height: 700px;
+            background: #1a2a3a;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 0 50px rgba(0,150,255,0.3);
+            position: relative;
+        }
+        /* ЛОБОВОЕ СТЕКЛО + ДОРОГА */
+        #windshield {
+            width: 100%; height: 70%;
+            background: #87CEEB;
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+            position: relative;
+            perspective: 600px;
+        }
+        #road {
+            width: 200%; height: 200%;
+            background: repeating-linear-gradient(
+                to bottom,
+                #2d2d2d 0px, #2d2d2d 40px,
+                #f0f0f0 40px, #f0f0f0 45px,
+                #2d2d2d 45px, #2d2d2d 85px
+            );
+            position: absolute;
+            top: 0; left: -25%;
+            transform: scaleY(1.5) rotateX(10deg);
+            animation: roadMove 1.5s linear infinite;
+        }
+        @keyframes roadMove {
+            0% { transform: scaleY(1.5) rotateX(10deg) translateY(0); }
+            100% { transform: scaleY(1.5) rotateX(10deg) translateY(85px); }
+        }
+        #car-body { /* отражение капота */
+            position: absolute;
+            bottom: 20px; left: 50%;
+            transform: translateX(-50%);
+            width: 60%; height: 25%;
+            background: radial-gradient(ellipse at bottom, rgba(0,0,0,0.6) 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0.5;
+        }
+        /* ПРИБОРНАЯ ПАНЕЛЬ */
+        #dashboard {
+            width: 100%; height: 30%;
+            background: #1a1a1a;
+            border-radius: 0 0 15px 15px;
+            padding: 15px 30px;
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            border-top: 3px solid #00aaff;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.8);
+        }
+        .gauge {
+            flex: 1;
+            color: #0ff;
+            text-shadow: 0 0 10px #0ff;
+            font-weight: bold;
+        }
+        .gauge label { font-size: 12px; opacity: 0.7; display: block; }
+        .gauge .value {
+            font-size: 42px;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+        .gauge .unit { font-size: 18px; opacity: 0.6; margin-left: 5px; }
+        #speed .value { color: #ffaa00; }
+        #fuel .value { color: #00ff88; }
+        #gear .value { color: #ff66aa; }
+        #controls {
+            display: flex;
+            gap: 15px;
+            margin-left: auto;
+        }
+        #controls button {
+            padding: 14px 24px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            background: #2a2a2a;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #000;
+            transition: 0.07s;
+            text-transform: uppercase;
+            min-width: 100px;
+        }
+        #controls button:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+        #gas { background: #00aa44; }
+        #gas:active { background: #00dd55; }
+        #brake { background: #cc2222; }
+        #brake:active { background: #ff4444; }
+        #status {
+            position: absolute;
+            top: 20px; right: 30px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            border-left: 4px solid #0ff;
+        }
+        #car-model {
+            position: absolute;
+            bottom: 100px; left: 30px;
+            color: #fff;
+            font-size: 18px;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 15px;
+            border-radius: 20px;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+<div id="game">
+    <!-- Лобовое стекло + дорога -->
+    <div id="windshield">
+        <div id="road"></div>
+        <div id="car-body"></div>
+        <div id="car-model">🚗 Toyota Probox</div>
+        <div id="status">⏳ Движение</div>
+    </div>
+
+    <!-- Приборная панель -->
+    <div id="dashboard">
+        <div class="gauge" id="speed">
+            <label>⚡ СКОРОСТЬ</label>
+            <span class="value" id="speedValue">0</span><span class="unit">км/ч</span>
+        </div>
+        <div class="gauge" id="fuel">
+            <label>⛽ ТОПЛИВО</label>
+            <span class="value" id="fuelValue">48</span><span class="unit">л</span>
+        </div>
+        <div class="gauge" id="gear">
+            <label>⚙ ПЕРЕДАЧА</label>
+            <span class="value" id="gearValue">N</span>
+        </div>
+        <div id="controls">
+            <button id="gas">⚡ ГАЗ</button>
+            <button id="brake">⛔ ТОРМОЗ</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function(){
+        // --- СОСТОЯНИЕ АВТО ---
+        let speed = 0;            // км/ч
+        let fuel = 48;           // литров
+        let gear = 'N';          // N, 1, 2, 3, 4
+        let engineOn = true;
+        let intervalId = null;
+
+        // Элементы
+        const speedEl = document.getElementById('speedValue');
+        const fuelEl = document.getElementById('fuelValue');
+        const gearEl = document.getElementById('gearValue');
+        const statusEl = document.getElementById('status');
+        const roadEl = document.getElementById('road');
+
+        // --- Функция обновления UI ---
+        function updateUI() {
+            speedEl.textContent = Math.round(speed);
+            fuelEl.textContent = Math.round(fuel * 10) / 10;
+            gearEl.textContent = gear;
+
+            // Динамика дороги (чем быстрее, тем быстрее анимация)
+            const animSpeed = Math.max(0.5, 1.5 - speed / 300);
+            roadEl.style.animationDuration = animSpeed + 's';
+
+            // Статус
+            if (speed < 1) statusEl.textContent = '🛑 Остановка';
+            else if (speed < 40) statusEl.textContent = '🚶 Город';
+            else if (speed < 80) statusEl.textContent = '🚗 Трасса';
+            else statusEl.textContent = '🏁 СКОРОСТЬ!';
+
+            // Если топливо кончилось
+            if (fuel <= 0) {
+                fuel = 0;
+                engineOn = false;
+                statusEl.textContent = '⛽ БЕНЗИН КОНЧИЛСЯ!';
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+        }
+
+        // --- Логика движения (тик каждые 100мс) ---
+        function gameTick() {
+            if (!engineOn || fuel <= 0) {
+                if (speed > 0) speed *= 0.98; // инерция
+                if (speed < 0.1) speed = 0;
+                updateUI();
+                return;
+            }
+
+            // Расход топлива: 0.05 л/км (упрощённо)
+            if (speed > 0) {
+                fuel -= 0.005 * (speed / 20 + 0.5);
+                if (fuel < 0) fuel = 0;
+            }
+
+            // Сопротивление воздуха + трение
+            if (speed > 0) {
+                speed *= 0.992;
+            }
+            if (speed < 0.1) speed = 0;
+
+            // Автоматическое переключение передач (упрощённо)
+            if (speed < 0.5) gear = 'N';
+            else if (speed < 20) gear = '1';
+            else if (speed < 40) gear = '2';
+            else if (speed < 70) gear = '3';
+            else gear = '4';
+
+            updateUI();
+        }
+
+        // --- Запуск/остановка цикла ---
+        function startEngine() {
+            if (intervalId) return;
+            if (fuel <= 0) {
+                statusEl.textContent = '⛽ НЕТ ТОПЛИВА!';
+                return;
+            }
+            engineOn = true;
+            intervalId = setInterval(gameTick, 100);
+            statusEl.textContent = '🏁 Запуск...';
+            updateUI();
+        }
+
+        function stopEngine() {
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+            engineOn = false;
+            statusEl.textContent = '🔑 Двигатель выключен';
+            updateUI();
+        }
+
+        // --- ДЕЙСТВИЯ ВОДИТЕЛЯ ---
+        function pressGas() {
+            if (!engineOn) {
+                if (fuel > 0) {
+                    startEngine();
+                    setTimeout(() => { speed = Math.min(speed + 15, 180); }, 100);
+                }
+                return;
+            }
+            if (fuel <= 0) return;
+            // Разгон
+            speed = Math.min(speed + 8, 180);
+            // Доп. расход при резком газе
+            fuel -= 0.03;
+            if (fuel < 0) fuel = 0;
+            updateUI();
+        }
+
+        function pressBrake() {
+            if (!engineOn) return;
+            speed = Math.max(speed - 25, 0);
+            // Торможение чуть жрёт топливо (ABS)
+            if (speed > 10) fuel -= 0.01;
+            if (fuel < 0) fuel = 0;
+            updateUI();
+        }
+
+        // --- Обработка клавиатуры (для реализма) ---
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                e.preventDefault();
+                pressGas();
+            }
+            if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                e.preventDefault();
+                pressBrake();
+            }
+            if (e.key === 'e' || e.key === 'E') {
+                if (engineOn) stopEngine();
+                else startEngine();
+            }
+        });
+
+        // --- Кнопки ---
+        document.getElementById('gas').addEventListener('mousedown', pressGas);
+        document.getElementById('gas').addEventListener('touchstart', (e) => { e.preventDefault(); pressGas(); });
+        document.getElementById('brake').addEventListener('mousedown', pressBrake);
+        document.getElementById('brake').addEventListener('touchstart', (e) => { e.preventDefault(); pressBrake(); });
+
+        // Запускаем двигатель по умолчанию
+        window.onload = function() {
+            startEngine();
+        };
+
+        // Если вкладка неактивна — экономим ресурсы, но оставляем
+        // Доп. фича: клик по лобовому стеклу — перезапуск
+        document.getElementById('windshield').addEventListener('dblclick', () => {
+            if (!engineOn && fuel > 0) startEngine();
+        });
+
+        console.log('🚗 Toyota Probox заведена! Управление: ↑/W - газ, ↓/S - тормоз, E - старт/стоп');
+    })();
+</script>
+</body>
+                                         </html>
