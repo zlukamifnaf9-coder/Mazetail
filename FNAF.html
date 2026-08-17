@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🍕 FNAF - Ночная смена</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #050505;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Courier New', monospace;
+            padding: 8px;
+            background-image: radial-gradient(ellipse at 30% 50%, #0d0a0a 0%, #000000 80%);
+        }
+
+        #game {
+            max-width: 480px;
+            width: 100%;
+            background: linear-gradient(145deg, #0f0f0f, #070707);
+            border: 2px solid #2a1a0f;
+            border-radius: 28px;
+            padding: 16px;
+            box-shadow: 0 0 80px rgba(255, 30, 0, 0.15), inset 0 0 100px rgba(0, 0, 0, 0.9);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* МУЗЫКА */
+        #bgMusic {
+            position: absolute;
+            opacity: 0;
+            width: 1px;
+            height: 1px;
+            pointer-events: none;
+        }
+
+        #musicToggle {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #2a1a0f;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            color: #886644;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 20;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        #musicToggle:active {
+            transform: scale(0.9);
+            background: #1a0f0a;
+        }
+
+        /* ВЕРХНЯЯ ПАНЕЛЬ */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #1a0f0a;
+        }
+        #title {
+            color: #cc3333;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 30px rgba(255,0,0,0.3);
+            letter-spacing: 1px;
+        }
+        #subtitle {
+            color: #886644;
+            font-size: 9px;
+            opacity: 0.6;
+            text-align: right;
+            line-height: 1.2;
+        }
+
+        /* СТАТЫ */
+        #stats {
+            display: flex;
+            gap: 6px;
+            margin: 10px 0;
+        }
+        .stat {
+            flex: 1;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 8px 4px;
+            text-align: center;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .stat-value.battery { color: #4caf50; }
+        .stat-value.fear { color: #ff6b35; }
+        .stat-value.noise { color: #66ccff; }
+
+        /* ВРЕМЯ / РАУНД */
+        #timeDisplay {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            margin: 4px 0 8px;
+            letter-spacing: 2px;
+        }
+        #timeDisplay span {
+            color: #ffcc44;
+            font-weight: bold;
+            font-size: 20px;
+        }
+
+        /* === КАРТА ОФИСА === */
+        #officeMap {
+            position: relative;
+            background: radial-gradient(ellipse at 50% 80%, #0d0a08, #030303);
+            border: 2px solid #1a100a;
+            border-radius: 16px;
+            height: 180px;
+            margin: 8px 0;
+            overflow: hidden;
+            box-shadow: inset 0 0 60px rgba(0,0,0,0.9);
+            cursor: pointer;
+        }
+
+        .wall {
+            position: absolute;
+            background: rgba(30, 20, 15, 0.6);
+            border: 1px solid #2a1a0f;
+        }
+        .wall-left { left: 0; top: 0; width: 18px; height: 100%; border-radius: 0 4px 4px 0; }
+        .wall-right { right: 0; top: 0; width: 18px; height: 100%; border-radius: 4px 0 0 4px; }
+        .wall-top { left: 0; top: 0; width: 100%; height: 14px; border-radius: 0 0 4px 4px; }
+        .wall-bottom { left: 0; bottom: 0; width: 100%; height: 14px; border-radius: 4px 4px 0 0; }
+
+        .desk {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 32px;
+            background: linear-gradient(0deg, #1a100a, #0d0805);
+            border: 2px solid #2a1a0f;
+            border-radius: 8px 8px 0 0;
+            box-shadow: 0 0 40px rgba(255, 50, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #664433;
+            letter-spacing: 2px;
+        }
+        .desk::after {
+            content: '📋';
+            font-size: 16px;
+            margin-left: 6px;
+        }
+
+        .door {
+            position: absolute;
+            width: 24px;
+            height: 50px;
+            background: rgba(40, 30, 20, 0.8);
+            border: 2px solid #3d2b1f;
+            border-radius: 4px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .door-left { left: 20px; top: 50%; transform: translateY(-50%); }
+        .door-right { right: 20px; top: 50%; transform: translateY(-50%); }
+        .door.closed {
+            background: rgba(60, 40, 30, 0.9);
+            border-color: #885533;
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
+        }
+        .door .door-label {
+            position: absolute;
+            bottom: -16px;
+            font-size: 6px;
+            color: #665544;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        .animatronic {
+            position: absolute;
+            font-size: 22px;
+            transition: all 2s ease;
+            filter: drop-shadow(0 0 15px rgba(255, 50, 0, 0.3));
+            z-index: 5;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .animatronic.visible {
+            opacity: 1;
+        }
+        .animatronic.freddy { color: #b45f06; }
+        .animatronic.bonnie { color: #8e44ad; }
+        .animatronic.chica { color: #f1c40f; }
+        .animatronic.foxy { color: #c0392b; }
+
+        #camIndicator {
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            border: 1px solid #2a1a0f;
+            border-radius: 20px;
+            padding: 3px 14px;
+            font-size: 8px;
+            color: #66ccff;
+            letter-spacing: 2px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 10;
+        }
+        #camIndicator.active {
+            opacity: 1;
+        }
+
+        /* === ПЛАНШЕТ С КАМЕРАМИ === */
+        #tablet {
+            background: rgba(5, 5, 10, 0.97);
+            border: 2px solid #2a1a0f;
+            border-radius: 16px;
+            padding: 12px;
+            margin: 8px 0;
+            display: none;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(4px);
+            max-height: 380px;
+            overflow-y: auto;
+        }
+        #tablet.open {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        #camGrid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 6px;
+        }
+        .cam {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid #1a1a1a;
+            border-radius: 10px;
+            padding: 10px 4px;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+            min-height: 80px;
+            position: relative;
+        }
+        .cam:active {
+            transform: scale(0.94);
+        }
+        .cam .cam-icon {
+            font-size: 30px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .cam .cam-name {
+            color: #aaa;
+            font-size: 8px;
+            letter-spacing: 1px;
+        }
+        .cam .cam-status {
+            font-size: 7px;
+            display: block;
+            margin-top: 3px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .cam .cam-status.safe {
+            color: #4caf50;
+        }
+        .cam .cam-status.danger {
+            color: #ff4444;
+            animation: blink 0.8s infinite;
+        }
+        .cam .cam-status.warning {
+            color: #ffbb33;
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.3;
+            }
+        }
+
+        /* Комната при клике на камеру */
+        #roomView {
+            margin-top: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #2a1a0f;
+            border-radius: 12px;
+            padding: 16px;
+            text-align: center;
+            min-height: 100px;
+            display: none;
+            position: relative;
+        }
+        #roomView.open {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+        #roomView .room-icon {
+            font-size: 60px;
+            display: block;
+            margin-bottom: 6px;
+        }
+        #roomView .room-desc {
+            color: #aaa;
+            font-size: 11px;
+            line-height: 1.6;
+        }
+        #roomView .room-desc .highlight {
+            color: #ff6b35;
+            font-weight: bold;
+        }
+        #roomView .room-time {
+            color: #666;
+            font-size: 9px;
+            margin-top: 6px;
+        }
+
+        #closeTablet {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            background: #1a0f0a;
+            border: 1px solid #2a1a0f;
+            border-radius: 10px;
+            color: #886644;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        #closeTablet:active {
+            transform: scale(0.96);
+        }
+
+        /* === ЛОГ === */
+        #log {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid #111;
+            border-radius: 10px;
+            padding: 8px;
+            min-height: 55px;
+            max-height: 90px;
+            overflow-y: auto;
+            margin: 6px 0;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #999;
+        }
+        #log::-webkit-scrollbar {
+            width: 3px;
+        }
+        #log::-webkit-scrollbar-thumb {
+            background: #2a1a0f;
+            border-radius: 4px;
+        }
+        .log-entry {
+            padding: 2px 0;
+            border-bottom: 1px solid #0a0a0a;
+            animation: fadeIn 0.3s;
+        }
+        .log-entry.danger {
+            color: #ff5555;
+        }
+        .log-entry.success {
+            color: #66ff88;
+        }
+        .log-entry.info {
+            color: #66ccff;
+        }
+        .log-entry.fear {
+            color: #ff8844;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-6px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* === КНОПКИ ДЕЙСТВИЙ === */
+        #actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            margin: 6px 0;
+        }
+        .btn {
+            background: linear-gradient(145deg, #161616, #0a0a0a);
+            border: 1px solid #1a1a1a;
+            color: #ccc;
+            padding: 10px 2px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: bold;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+            line-height: 1.2;
+            touch-action: manipulation;
+        }
+        .btn:active {
+            transform: scale(0.92);
+            background: #1a0a0a;
+            border-color: #ff4444;
+        }
+        .btn .cost {
+            display: block;
+            font-size: 7px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .btn.danger {
+            color: #ff6b6b;
+        }
+        .btn.safe {
+            color: #66ccff;
+        }
+        .btn.warning {
+            color: #ffbb33;
+        }
+        .btn:disabled {
+            opacity: 0.25;
+            transform: none !important;
+            pointer-events: none;
+        }
+
+        #resetBtn {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            background: linear-gradient(145deg, #1a0f0a, #0a0505);
+            border: 2px solid #3d2b1f;
+            color: #cc8844;
+            border-radius: 14px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+            text-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
+        }
+        #resetBtn:active {
+            transform: scale(0.96);
+            background: #2a1a0a;
+        }
+
+        .footer {
+            text-align: center;
+            color: #332211;
+            font-size: 7px;
+            margin-top: 8px;
+            opacity: 0.3;
+            letter-spacing: 1px;
+        }
+
+        @media (max-width: 420px) {
+            #officeMap {
+                height: 140px;
+            }
+            .desk {
+                width: 70px;
+                height: 26px;
+                font-size: 7px;
+                bottom: 22px;
+            }
+            .door {
+                width: 18px;
+                height: 38px;
+                font-size: 11px;
+            }
+            .door-left {
+                left: 16px;
+            }
+            .door-right {
+                right: 16px;
+            }
+            .animatronic {
+                font-size: 18px;
+            }
+            .cam .cam-icon {
+                font-size: 22px;
+            }
+            #title {
+                font-size: 15px;
+            }
+            .stat-value {
+                font-size: 15px;
+            }
+            .btn {
+                font-size: 8px;
+                padding: 8px 2px;
+            }
+            #log {
+                font-size: 9px;
+                min-height: 40px;
+                max-height: 60px;
+            }
+            #camGrid {
+                grid-template-columns: 1fr 1fr;
+            }
+            #roomView .room-icon {
+                font-size: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game">
+
+    <!-- МУЗЫКА -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://www.myinstants.com/media/sounds/excuse-me-sir_9GVvxO3.mp3" type="audio/mpeg">
+    </audio>
+    <button id="musicToggle" onclick="toggleMusic()">🔇</button>
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ -->
+    <div id="header">
+        <div id="title">🍕 НОЧНАЯ СМЕНА</div>
+        <div id="subtitle">Freddy Fazbear's Pizza<br>Выживи 6 часов</div>
+    </div>
+
+    <!-- СТАТЫ -->
+    <div id="stats">
+        <div class="stat"><div class="stat-label">🔋 Батарея</div><div class="stat-value battery" id="batteryDisplay">100%</div></div>
+        <div class="stat"><div class="stat-label">😨 Страх</div><div class="stat-value fear" id="fearDisplay">0%</div></div>
+        <div class="stat"><div class="stat-label">🔊 Шум</div><div class="stat-value noise" id="noiseDisplay">0</div></div>
+    </div>
+
+    <!-- ВРЕМЯ -->
+    <div id="timeDisplay">⏰ <span id="timeNum">12:00</span> AM</div>
+
+    <!-- === КАРТА ОФИСА === -->
+    <div id="officeMap">
+        <div class="wall wall-left"></div>
+        <div class="wall wall-right"></div>
+        <div class="wall wall-top"></div>
+        <div class="wall wall-bottom"></div>
+
+        <div id="camIndicator">📹 КАМЕРЫ ВКЛ</div>
+
+        <div class="door door-left" id="doorLeft" onclick="toggleDoor('left')">
+            🚪<span class="door-label">ЛЕВАЯ</span>
+        </div>
+        <div class="door door-right" id="doorRight" onclick="toggleDoor('right')">
+            🚪<span class="door-label">ПРАВАЯ</span>
+        </div>
+
+        <div class="desk">ОХРАНА</div>
+
+        <div class="animatronic freddy" id="animFreddy" style="bottom:50%; left:10%;">🐻</div>
+        <div class="animatronic bonnie" id="animBonnie" style="bottom:30%; right:10%;">🐰</div>
+        <div class="animatronic chica" id="animChica" style="top:20%; left:40%;">🐤</div>
+        <div class="animatronic foxy" id="animFoxy" style="top:10%; right:30%;">🦊</div>
+    </div>
+
+    <!-- === ПЛАНШЕТ === -->
+    <div id="tablet">
+        <div id="camGrid">
+            <div class="cam" data-cam="stage" onclick="viewRoom('stage')">
+                <span class="cam-icon">🎭</span>
+                <span class="cam-name">СЦЕНА</span>
+                <span class="cam-status safe">● чисто</span>
+            </div>
+            <div class="cam" data-cam="dining" onclick="viewRoom('dining')">
+                <span class="cam-icon">🍕</span>
+                <span class="cam-name">ЗАЛ</span>
+                <span class="cam-status safe">● чисто</span>
+            </div>
+            <div class="cam" data-cam="kitchen" onclick="viewRoom('kitchen')">
+                <span class="cam-icon">🍳</span>
+                <span class="cam-name">КУХНЯ</span>
+                <span class="cam-status safe">● чисто</span>
+            </div>
+            <div class="cam" data-cam="hall" onclick="viewRoom('hall')">
+                <span class="cam-icon">🚪</span>
+                <span class="cam-name">КОРИДОР</span>
+                <span class="cam-status safe">● чисто</span>
+            </div>
+            <div class="cam" data-cam="backstage" onclick="viewRoom('backstage')">
+                <span class="cam-icon">🎪</span>
+                <span class="cam-name">ЗАКУЛИСЬЕ</span>
+                <span class="cam-status safe">● чисто</span>
+            </div>
+            <div class="cam" data-cam="office" onclick="viewRoom('office')">
+                <span class="cam-icon">🪑</span>
+                <span class="cam-name">ОФИС</span>
+                <span class="cam-status safe">● вы здесь</span>
+            </div>
+        </div>
+
+        <!-- Просмотр комнаты -->
+        <div id="roomView">
+            <span class="room-icon" id="roomIcon">📷</span>
+            <div class="room-desc" id="roomDesc">Выберите камеру для просмотра</div>
+            <div class="room-time" id="roomTime"></div>
+        </div>
+
+        <button id="closeTablet" onclick="closeTablet()">✕ ЗАКРЫТЬ ПЛАНШЕТ</button>
+    </div>
+
+    <!-- ЛОГ -->
+    <div id="log">
+        <div class="log-entry info">🔦 Смена начинается... 12:00 AM</div>
+    </div>
+
+    <!-- КНОПКИ -->
+    <div id="actions">
+        <button class="btn safe" onclick="doAction('cam')">📹 Камеры<span class="cost">-5%</span></button>
+        <button class="btn danger" onclick="doAction('left')">🚪 Левая дверь<span class="cost">-3%</span></button>
+        <button class="btn danger" onclick="doAction('right')">🚪 Правая дверь<span class="cost">-3%</span></button>
+        <button class="btn safe" onclick="doAction('light')">💡 Свет<span class="cost">-2%</span></button>
+        <button class="btn warning" onclick="doAction('rewind')">⏪ Перемотка<span class="cost">-10%</span></button>
+        <button class="btn" onclick="doAction('quiet')">🤫 Тихо<span class="cost">+страх</span></button>
+    </div>
+
+    <button id="resetBtn" onclick="resetGame()">🔄 НОВАЯ ИГРА</button>
+    <div class="footer">Сделано с ❤️ и терпением. Чтобы вы помнили.</div>
+</div>
+
+<script>
+    // ================================================================
+    //  FNAF 3.0 — ПОЛНАЯ ПЕРЕРАБОТКА
+    //  - Время идёт само (каждые 10 сек = 1 час)
+    //  - Энергия тратится постоянно (-2% в минуту)
+    //  - Камеры показывают комнаты с описанием
+    //  - Музыка: "Excuse me sir"
+    // ================================================================
+
+    const state = {
+        battery: 100,
+        fear: 0,
+        noise: 0,
+        hour: 0, // 0 = 12:00 AM, 6 = 6:00 AM (победа)
+        alive: true,
+        won: false,
+        gameOver: false,
+        foxyTimer: 0,
+        leftDoorClosed: false,
+        rightDoorClosed: false,
+        tabletOpen: false,
+        camView: 'office',
+        energyDrainInterval: null,
+        timeInterval: null,
+        animatronics: {
+            freddy: { x: 10, y: 50, visible: false, side: 'right' },
+            bonnie: { x: 80, y: 30, visible: false, side: 'left' },
+            chica: { x: 40, y: 20, visible: false, side: 'right' },
+            foxy: { x: 70, y: 10, visible: false, side: 'left' }
+        },
+        roomStates: {
+            stage: { icon: '🎭', desc: 'Пустая сцена. Тени танцуют на занавесках.', animatronic: 'freddy' },
+            dining: { icon: '🍕', desc: 'Пустой зал. На столе остывшая пицца.', animatronic: 'chica' },
+            kitchen: { icon: '🍳', desc: 'Кухня тиха. Слышно только жужжание холодильника.', animatronic: 'chica' },
+            hall: { icon: '🚪', desc: 'Длинный тёмный коридор. В конце кто-то стоит?', animatronic: 'bonnie' },
+            backstage: { icon: '🎪', desc: 'Закулисье. Старые костюмы висят на вешалках.', animatronic: 'foxy' },
+            office: { icon: '🪑', desc: 'Ваш офис. Двери закрыты? Вы в безопасности... пока.', animatronic: null }
+        },
+        musicOn: false
+    };
+
+    // --- Элементы ---
+    const logEl = document.getElementById('log');
+    const batteryEl = document.getElementById('batteryDisplay');
+    const fearEl = document.getElementById('fearDisplay');
+    const noiseEl = document.getElementById('noiseDisplay');
+    const timeEl = document.getElementById('timeNum');
+    const tabletEl = document.getElementById('tablet');
+    const camIndicator = document.getElementById('camIndicator');
+    const roomView = document.getElementById('roomView');
+    const roomIcon = document.getElementById('roomIcon');
+    const roomDesc = document.getElementById('roomDesc');
+    const roomTime = document.getElementById('roomTime');
+    const audio = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicToggle');
+    const doorLeft = document.getElementById('doorLeft');
+    const doorRight = document.getElementById('doorRight');
+
+    // --- МУЗЫКА ---
+    function toggleMusic() {
+        state.musicOn = !state.musicOn;
+        if (state.musicOn) {
+            audio.volume = 0.3;
+            audio.play().catch(() => {});
+            musicBtn.textContent = '🔊';
+        } else {
+            audio.pause();
+            musicBtn.textContent = '🔇';
+        }
+    }
+
+    // --- ВРЕМЯ И ЭНЕРГИЯ (автоматические тики) ---
+    function startTime() {
+        if (state.timeInterval) clearInterval(state.timeInterval);
+        if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
+
+        // Время: каждые 8 секунд = +1 час
+        state.timeInterval = setInterval(() => {
+            if (!state.alive || state.gameOver || state.won) return;
+            state.hour++;
+            updateTimeDisplay();
+
+            // Победа в 6:00 AM
+            if (state.hour >= 6) {
+                state.won = true;
+                addLog('🏆 ВЫ ВЫЖИЛИ! 6:00 AM!', 'success');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                updateUI();
+                return;
+            }
+
+            // Каждый час — случайное событие
+            if (state.hour > 0 && state.hour % 1 === 0) {
+                triggerHourEvent();
+            }
+
+            // Аниматроники двигаются каждый час
+            moveAnimatronics();
+
+        }, 8000);
+
+        // Энергия: тратится каждые 3 секунды (-1%)
+        state.energyDrainInterval = setInterval(() => {
+            if (!state.alive || state.gameOver || state.won) return;
+            // Базовая трата
+            let drain = 0.8;
+            // Если планшет открыт — трата больше
+            if (state.tabletOpen) drain += 1.2;
+            state.battery = Math.max(0, state.battery - drain);
+
+            if (state.battery <= 0) {
+                state.alive = false;
+                state.gameOver = true;
+                addLog('🔋 БАТАРЕЯ РАЗРЯЖЕНА! GAME OVER', 'danger');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                updateUI();
+            }
+            updateUI();
+        }, 3000);
+    }
+
+    // --- ОБНОВЛЕНИЕ ВРЕМЕНИ ---
+    function updateTimeDisplay() {
+        const hours = state.hour + 12;
+        const displayHour = hours > 12 ? hours - 12 : hours;
+        const ampm = hours >= 12 ? 'AM' : 'PM';
+        timeEl.textContent = `${displayHour}:00 ${ampm}`;
+    }
+
+    // --- СОБЫТИЕ КАЖДЫЙ ЧАС ---
+    function triggerHourEvent() {
+        const roll = Math.floor(Math.random() * 20) + 1;
+        if (roll < 8) {
+            // Кто-то приближается
+            const names = ['Фредди', 'Бонни', 'Чика', 'Фокси'];
+            const who = names[Math.floor(Math.random() * names.length)];
+            addLog(`⚠️ ${who} активизировался!`, 'danger');
+            state.fear += 10;
+            // Показываем на карте
+            for (let name in state.animatronics) {
+                if (name === who.toLowerCase()) {
+                    state.animatronics[name].visible = true;
+                    state.animatronics[name].x = 20 + Math.random() * 60;
+                    state.animatronics[name].y = 20 + Math.random() * 50;
+                }
+            }
+            updateAnimatronics();
+        } else if (roll < 15) {
+            addLog('🌙 Тихий час... Ничего не происходит.', 'info');
+        } else {
+            addLog('⚡ Странный шум в вентиляции!', 'fear');
+            state.fear += 5;
+        }
+        updateUI();
+    }
+
+    // --- ДВИЖЕНИЕ АНИМАТРОНИКОВ ---
+    function moveAnimatronics() {
+        for (let name in state.animatronics) {
+            if (Math.random() > 0.5) {
+                state.animatronics[name].visible = true;
+                state.animatronics[name].x = 10 + Math.random() * 80;
+                state.animatronics[name].y = 10 + Math.random() * 70;
+            } else {
+                state.animatronics[name].visible = false;
+            }
+        }
+        updateAnimatronics();
+    }
+
+    // --- ОБНОВЛЕНИЕ UI ---
+    function updateUI() {
+        batteryEl.textContent = Math.max(0, Math.round(state.battery)) + '%';
+        fearEl.textContent = Math.min(100, Math.round(state.fear)) + '%';
+        noiseEl.textContent = state.noise;
+        fearEl.style.color = state.fear > 70 ? '#ff2222' : state.fear > 40 ? '#ff8844' : '#ff6b35';
+
+        doorLeft.classList.toggle('closed', state.leftDoorClosed);
+        doorRight.classList.toggle('closed', state.rightDoorClosed);
+        doorLeft.innerHTML = state.leftDoorClosed ? '🔒<span class="door-label">ЛЕВАЯ</span>' :
+            '🚪<span class="door-label">ЛЕВАЯ</span>';
+        doorRight.innerHTML = state.rightDoorClosed ? '🔒<span class="door-label">ПРАВАЯ</span>' :
+            '🚪<span class="door-label">ПРАВАЯ</span>';
+
+        document.querySelectorAll('#actions .btn').forEach(b =>
+            b.disabled = !state.alive || state.gameOver || state.won
+        );
+    }
+
+    // --- ЛОГ ---
+    function addLog(msg, type = 'info') {
+        const div = document.createElement('div');
+        div.className = `log-entry ${type}`;
+        div.textContent = msg;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+        while (logEl.children.length > 30) logEl.removeChild(logEl.firstChild);
+    }
+
+    // --- АНИМАТРОНИКИ НА КАРТЕ ---
+    function updateAnimatronics() {
+        const anims = {
+            freddy: document.getElementById('animFreddy'),
+            bonnie: document.getElementById('animBonnie'),
+            chica: document.getElementById('animChica'),
+            foxy: document.getElementById('animFoxy')
+        };
+        for (let [name, el] of Object.entries(anims)) {
+            const data = state.animatronics[name];
+            if (data.visible) {
+                el.style.opacity = '1';
+                el.style.left = data.x + '%';
+                el.style.bottom = data.y + '%';
+                el.classList.add('visible');
+            } else {
+                el.style.opacity = '0';
+                el.classList.remove('visible');
+            }
+        }
+    }
+
+    // --- ПЛАНШЕТ ---
+    function openTablet() {
+        if (!state.alive || state.gameOver || state.won) return;
+        state.tabletOpen = true;
+        tabletEl.classList.add('open');
+        camIndicator.classList.add('active');
+        // Обновляем статусы камер
+        updateCamStatuses();
+        updateUI();
+    }
+
+    function closeTablet() {
+        state.tabletOpen = false;
+        tabletEl.classList.remove('open');
+        camIndicator.classList.remove('active');
+        roomView.classList.remove('open');
+        updateUI();
+    }
+
+    // Клик по карте = планшет
+    document.getElementById('officeMap').addEventListener('click', (e) => {
+        if (e.target.closest('.door')) return;
+        if (state.alive && !state.gameOver && !state.won) {
+            if (state.tabletOpen) closeTablet();
+            else openTablet();
+        }
+    });
+
+    // --- ОБНОВЛЕНИЕ СТАТУСОВ КАМЕР ---
+    function updateCamStatuses() {
+        document.querySelectorAll('.cam').forEach(cam => {
+            const status = cam.querySelector('.cam-status');
+            const name = cam.dataset.cam;
+            const roll = Math.random();
+
+            // Если в комнате аниматроник
+            let hasAnimatronic = false;
+            for (let aname in state.animatronics) {
+                const data = state.animatronics[aname];
+                if (data.visible && data.x > 30 && data.x < 70 && data.y > 30 && data.y < 60) {
+                    hasAnimatronic = true;
+                }
+            }
+
+            if (name === 'office') {
+                status.textContent = '● вы здесь';
+                status.className = 'cam-status safe';
+                return;
+            }
+
+            if (hasAnimatronic && roll > 0.5) {
+                status.textContent = '⚠️ ДВИЖЕНИЕ!';
+                status.className = 'cam-status danger';
+            } else if (roll < 0.3) {
+                status.textContent = '● пусто';
+                status.className = 'cam-status safe';
+            } else {
+                status.textContent = '● чисто';
+                status.className = 'cam-status safe';
+            }
+        });
+    }
+
+    // --- ПРОСМОТР КОМНАТЫ (по клику на камеру) ---
+    function viewRoom(roomId) {
+        if (!state.tabletOpen) return;
+        const room = state.roomStates[roomId];
+        if (!room) return;
+
+        roomView.classList.add('open');
+        roomIcon.textContent = room.icon;
+
+        // Проверяем, есть ли аниматроник в этой комнате
+        let animatronicHere = false;
+        let animName = '';
+        for (let name in state.animatronics) {
+            if (room.animatronic === name && state.animatronics[name].visible) {
+                animatronicHere = true;
+                animName = name.charAt(0).toUpperCase() + name.slice(1);
+            }
+        }
+
+        let desc = room.desc;
+        if (animatronicHere) {
+            desc += ` <span class="highlight">⚠️ ВНИМАНИЕ! ${animName} здесь!</span>`;
+            state.fear += 8;
+            addLog(`👀 ${animName} замечен в ${roomId}!`, 'danger');
+        }
+
+        roomDesc.innerHTML = desc;
+        roomTime.textContent = `⏰ ${timeEl.textContent}`;
+        updateUI();
+
+        // Закрываем планшет через 5 секунд (реалистично)
+        setTimeout(() => {
+            if (state.tabletOpen) closeTablet();
+        }, 4000);
+    }
+
+    // --- ДВЕРИ ---
+    function toggleDoor(side) {
+        if (!state.alive || state.gameOver || state.won) return;
+        if (side === 'left') {
+            state.leftDoorClosed = !state.leftDoorClosed;
+            addLog(`🚪 Левая дверь ${state.leftDoorClosed ? 'ЗАКРЫТА' : 'ОТКРЫТА'}`, 'info');
+        } else {
+            state.rightDoorClosed = !state.rightDoorClosed;
+            addLog(`🚪 Правая дверь ${state.rightDoorClosed ? 'ЗАКРЫТА' : 'ОТКРЫТА'}`, 'info');
+        }
+        state.battery = Math.max(0, state.battery - 2);
+        updateUI();
+    }
+
+    // --- ДЕЙСТВИЯ ---
+    function doAction(action) {
+        if (!state.alive || state.gameOver || state.won) return;
+
+        // Закрываем планшет
+        if (state.tabletOpen) closeTablet();
+
+        let cost = 0;
+        let fearCost = 0;
+
+        switch (action) {
+            case 'cam':
+                cost = 5;
+                state.foxyTimer = 0;
+                addLog('📹 Вы смотрите камеры...', 'info');
+                openTablet();
+                break;
+            case 'left':
+                toggleDoor('left');
+                return;
+            case 'right':
+                toggleDoor('right');
+                return;
+            case 'light':
+                cost = 2;
+                addLog('💡 Включили свет...', 'info');
+                if (Math.random() < 0.3) {
+                    addLog('👀 В свете фигура!', 'danger');
+                    state.fear += 10;
+                }
+                break;
+            case 'rewind':
+                cost = 10;
+                addLog('⏪ Перемотка камер!', 'warning');
+                for (let name in state.animatronics) {
+                    state.animatronics[name].visible = false;
+                }
+                updateAnimatronics();
+                break;
+            case 'quiet':
+                fearCost = 8;
+                addLog('🤫 Тихо...', 'info');
+                break;
+            default:
+                return;
+        }
+
+        state.battery = Math.max(0, state.battery - cost);
+        state.fear = Math.min(100, state.fear + fearCost);
+
+        // --- Фокси ---
+        state.foxyTimer++;
+        if (state.foxyTimer >= 3 && state.alive) {
+            addLog('🦊 ФОКСИ БЕЖИТ!', 'danger');
+            if (!state.leftDoorClosed && !state.rightDoorClosed) {
+                state.alive = false;
+                state.gameOver = true;
+                addLog('💀 Фокси убил вас!', 'danger');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                updateUI();
+                return;
+            } else {
+                addLog('🚪 Фокси врезался в дверь!', 'success');
+                state.fear += 15;
+                state.foxyTimer = 0;
+            }
+        }
+
+        // --- Шум ---
+        if (state.noise >= 5) {
+            addLog('🔊 Слишком шумно!', 'danger');
+            state.fear += 10;
+            state.noise = 0;
+        }
+
+        // --- Проверка смерти ---
+        if (state.fear >= 100) {
+            state.alive = false;
+            state.gameOver = true;
+            addLog('💔 Сердечный приступ! GAME OVER', 'danger');
+            clearInterval(state.timeInterval);
+            clearInterval(state.energyDrainInterval);
+            updateUI();
+            return;
+        }
+
+        updateUI();
+    }
+
+    // --- СБРОС ---
+    function resetGame() {
+        state.battery = 100;
+        state.fear = 0;
+        state.noise = 0;
+        state.hour = 0;
+        state.alive = true;
+        state.gameOver = false;
+        state.won = false;
+        state.foxyTimer = 0;
+        state.leftDoorClosed = false;
+        state.rightDoorClosed = false;
+        state.tabletOpen = false;
+        state.musicOn = false;
+
+        for (let name in state.animatronics) {
+            state.animatronics[name].visible = false;
+        }
+
+        if (state.timeInterval) clearInterval(state.timeInterval);
+        if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
+
+        tabletEl.classList.remove('open');
+        camIndicator.classList.remove('active');
+        roomView.classList.remove('open');
+        logEl.innerHTML = `<div class="log-entry info">🔄 Новая игра! 12:00 AM. Выживите до 6:00!</div>`;
+
+        updateTimeDisplay();
+        updateAnimatronics();
+        updateUI();
+
+        // Старт времени
+        startTime();
+
+        // Музыка выключена
+        audio.pause();
+        musicBtn.textContent = '🔇';
+        state.musicOn = false;
+
+        addLog('💡 Нажмите на карту, чтобы открыть планшет с камерами.', 'info');
+        addLog('💡 Время идёт само! Энергия тратится постоянно.', 'info');
+    }
+
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    resetGame();
+
+    // Авто-подсказка
+    setTimeout(() => {
+        addLog('🎵 Нажмите 🔇 в углу, чтобы включить музыку.', 'info');
+    }, 2000);
+</script>
+</body>
+  </html>
