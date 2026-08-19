@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍕 FNAF - Полная коллекция</title>
+    <title>🍕 FNAF - Ночная смена 5.0</title>
     <style>
         * {
             margin: 0;
@@ -35,7 +35,7 @@
             overflow: hidden;
         }
 
-        /* === ЗВУКИ (скрытые) === */
+        /* === ЗВУКИ === */
         .sound {
             position: absolute;
             opacity: 0;
@@ -44,7 +44,6 @@
             pointer-events: none;
         }
 
-        /* === МУЗЫКА === */
         #bgMusic {
             position: absolute;
             opacity: 0;
@@ -74,6 +73,11 @@
         #musicToggle:active {
             transform: scale(0.9);
             background: #1a0f0a;
+        }
+        #musicToggle.playing {
+            color: #66ccff;
+            border-color: #66ccff;
+            box-shadow: 0 0 20px rgba(102, 204, 255, 0.2);
         }
 
         /* === ВЕРХНЯЯ ПАНЕЛЬ === */
@@ -112,6 +116,7 @@
             border-radius: 10px;
             padding: 8px 4px;
             text-align: center;
+            position: relative;
         }
         .stat-label {
             color: #666;
@@ -232,6 +237,7 @@
             font-size: 14px;
             cursor: pointer;
             z-index: 2;
+            flex-direction: column;
         }
         .door-left {
             left: 20px;
@@ -249,25 +255,73 @@
             box-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
         }
         .door .door-label {
-            position: absolute;
-            bottom: -16px;
             font-size: 6px;
             color: #665544;
             white-space: nowrap;
             letter-spacing: 1px;
         }
+        .door .door-warning {
+            font-size: 14px;
+            position: absolute;
+            top: -22px;
+            display: none;
+        }
+        .door .door-warning.show {
+            display: block;
+            animation: blink 0.5s infinite;
+        }
+        .door .door-foxy {
+            font-size: 18px;
+            position: absolute;
+            top: -26px;
+            display: none;
+        }
+        .door .door-foxy.show {
+            display: block;
+            animation: blink 0.3s infinite;
+        }
 
+        /* === ЗОНЫ НА КАРТЕ (скрытые, для логики) === */
+        .zone {
+            position: absolute;
+            font-size: 7px;
+            color: #333;
+            opacity: 0.3;
+            pointer-events: none;
+            letter-spacing: 1px;
+        }
+        .zone-stage {
+            bottom: 70px;
+            left: 35%;
+        }
+        .zone-hall {
+            bottom: 50px;
+            left: 45%;
+        }
+        .zone-corridor {
+            bottom: 30px;
+            left: 55%;
+        }
+
+        /* === АНИМАТРОНИКИ (по зонам) === */
         .animatronic {
             position: absolute;
             font-size: 20px;
-            transition: all 2s ease;
-            filter: drop-shadow(0 0 15px rgba(255, 50, 0, 0.3));
+            transition: all 0.8s ease;
+            filter: drop-shadow(0 0 15px rgba(255, 50, 0, 0.2));
             z-index: 5;
             opacity: 0;
             pointer-events: none;
         }
         .animatronic.visible {
             opacity: 1;
+        }
+        .animatronic .anim-name {
+            font-size: 6px;
+            color: #555;
+            display: block;
+            text-align: center;
+            margin-top: -4px;
         }
         .animatronic.freddy {
             color: #b45f06;
@@ -280,21 +334,25 @@
         }
         .animatronic.foxy {
             color: #c0392b;
+            font-size: 22px;
         }
         .animatronic.golden {
             color: #ffd700;
-            font-size: 26px;
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            font-size: 24px;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
         }
         .animatronic.endoskeleton {
-            color: #aaaaaa;
-            font-size: 18px;
-            filter: drop-shadow(0 0 10px rgba(200, 200, 200, 0.2));
+            color: #888;
+            font-size: 16px;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .animatronic.endoskeleton.visible {
+            opacity: 0.4;
         }
         .animatronic.sparky {
             color: #ff6b6b;
-            font-size: 22px;
-            filter: drop-shadow(0 0 20px rgba(255, 50, 0, 0.4));
+            font-size: 20px;
         }
 
         #camIndicator {
@@ -315,6 +373,43 @@
         }
         #camIndicator.active {
             opacity: 1;
+        }
+
+        /* === СЕКРЕТНАЯ КНОПКА 🚸 === */
+        #secretBtn {
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 215, 0, 0.1);
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 22px;
+            color: #ffd700;
+            cursor: pointer;
+            z-index: 15;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            animation: goldenGlow 1s infinite alternate;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+        #secretBtn.show {
+            display: flex;
+        }
+        #secretBtn:active {
+            transform: scale(0.85);
+        }
+        @keyframes goldenGlow {
+            0% {
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+            }
+            100% {
+                box-shadow: 0 0 60px rgba(255, 215, 0, 0.6);
+            }
         }
 
         /* === ПЛАНШЕТ === */
@@ -358,14 +453,14 @@
             text-align: center;
             transition: all 0.2s;
             cursor: pointer;
-            min-height: 70px;
+            min-height: 65px;
             position: relative;
         }
         .cam:active {
             transform: scale(0.94);
         }
         .cam .cam-icon {
-            font-size: 26px;
+            font-size: 24px;
             display: block;
             margin-bottom: 2px;
         }
@@ -402,42 +497,6 @@
             }
         }
 
-        /* === КОМНАТА === */
-        #roomView {
-            margin-top: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 2px solid #2a1a0f;
-            border-radius: 12px;
-            padding: 14px;
-            text-align: center;
-            min-height: 90px;
-            display: none;
-            position: relative;
-        }
-        #roomView.open {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-        #roomView .room-icon {
-            font-size: 50px;
-            display: block;
-            margin-bottom: 4px;
-        }
-        #roomView .room-desc {
-            color: #aaa;
-            font-size: 10px;
-            line-height: 1.6;
-        }
-        #roomView .room-desc .highlight {
-            color: #ff6b35;
-            font-weight: bold;
-        }
-        #roomView .room-desc .golden {
-            color: #ffd700;
-            font-weight: bold;
-            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
-        }
-
         #closeTablet {
             width: 100%;
             margin-top: 10px;
@@ -460,8 +519,8 @@
             border: 1px solid #111;
             border-radius: 10px;
             padding: 8px;
-            min-height: 50px;
-            max-height: 80px;
+            min-height: 45px;
+            max-height: 70px;
             overflow-y: auto;
             margin: 6px 0;
             font-size: 9px;
@@ -609,14 +668,14 @@
         }
         #foxyMinigame .foxy-icon {
             font-size: 80px;
-            animation: shake 0.3s infinite alternate;
+            animation: shake 0.2s infinite alternate;
         }
         @keyframes shake {
             from {
-                transform: translateX(-10px) rotate(-5deg);
+                transform: translateX(-15px) rotate(-8deg);
             }
             to {
-                transform: translateX(10px) rotate(5deg);
+                transform: translateX(15px) rotate(8deg);
             }
         }
         #foxyMinigame .foxy-text {
@@ -653,6 +712,121 @@
             pointer-events: none;
         }
 
+        /* === СЕКРЕТНАЯ КОНЦОВКА (Спринг Бонни) === */
+        #springBonnieGame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a0a;
+            z-index: 60;
+            border-radius: 28px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            image-rendering: pixelated;
+        }
+        #springBonnieGame.active {
+            display: flex;
+        }
+        #springBonnieGame .sbg-title {
+            color: #ff6b35;
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(255, 50, 0, 0.3);
+        }
+        #springBonnieGame .sbg-map {
+            background: #111;
+            border: 2px solid #2a1a0f;
+            border-radius: 12px;
+            padding: 10px;
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            height: 240px;
+            overflow: hidden;
+        }
+        .sbg-tile {
+            position: absolute;
+            font-size: 20px;
+        }
+        .sbg-player {
+            position: absolute;
+            font-size: 28px;
+            transition: all 0.2s ease;
+            z-index: 10;
+            filter: drop-shadow(0 0 10px rgba(128, 0, 255, 0.3));
+        }
+        .sbg-enemy {
+            position: absolute;
+            font-size: 22px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 5;
+        }
+        .sbg-enemy.show {
+            opacity: 0.6;
+        }
+        .sbg-spring {
+            position: absolute;
+            font-size: 30px;
+            z-index: 8;
+            display: none;
+        }
+        .sbg-spring.show {
+            display: block;
+            animation: goldenGlow 0.5s infinite alternate;
+        }
+        .sbg-msg {
+            color: #888;
+            font-size: 10px;
+            margin: 8px 0;
+            text-align: center;
+            line-height: 1.6;
+            min-height: 30px;
+        }
+        .sbg-msg .highlight {
+            color: #ff6b35;
+            font-weight: bold;
+        }
+        .sbg-msg .golden {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .sbg-btn {
+            padding: 10px 30px;
+            background: linear-gradient(145deg, #1a0f0a, #0a0505);
+            border: 2px solid #3d2b1f;
+            color: #cc8844;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 6px;
+        }
+        .sbg-btn:active {
+            transform: scale(0.95);
+        }
+        .sbg-btn:disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .sbg-blood {
+            position: absolute;
+            font-size: 40px;
+            opacity: 0;
+            transition: opacity 0.5s;
+            z-index: 20;
+            pointer-events: none;
+        }
+        .sbg-blood.show {
+            opacity: 0.8;
+        }
+
         @media (max-width: 420px) {
             #officeMap {
                 height: 140px;
@@ -677,9 +851,6 @@
             .animatronic {
                 font-size: 16px;
             }
-            .cam .cam-icon {
-                font-size: 20px;
-            }
             #title {
                 font-size: 15px;
             }
@@ -698,14 +869,23 @@
             #camGrid {
                 grid-template-columns: 1fr 1fr;
             }
-            #roomView .room-icon {
-                font-size: 40px;
-            }
             #foxyMinigame .foxy-icon {
                 font-size: 60px;
             }
-            #foxyMinigame .foxy-text {
+            .sbg-tile {
                 font-size: 14px;
+            }
+            .sbg-player {
+                font-size: 20px;
+            }
+            #springBonnieGame .sbg-map {
+                height: 180px;
+            }
+            #secretBtn {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+                bottom: 4px;
             }
         }
     </style>
@@ -727,10 +907,16 @@
     <audio class="sound" id="soundGolden" preload="auto">
         <source src="https://www.myinstants.com/media/sounds/golden-freddy-laugh.mp3" type="audio/mpeg">
     </audio>
+    <audio class="sound" id="soundSpring" preload="auto">
+        <source src="https://www.myinstants.com/media/sounds/springlock-fail.mp3" type="audio/mpeg">
+    </audio>
+    <audio class="sound" id="soundMarionette" preload="auto">
+        <source src="https://www.myinstants.com/media/sounds/marionette-laugh.mp3" type="audio/mpeg">
+    </audio>
 
     <!-- === МУЗЫКА === -->
     <audio id="bgMusic" loop preload="auto">
-        <source src="https://www.myinstants.com/media/sounds/excuse-me-sir_9GVvxO3.mp3" type="audio/mpeg">
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3" type="audio/mpeg">
     </audio>
     <button id="musicToggle" onclick="toggleMusic()">🔇</button>
 
@@ -760,22 +946,34 @@
         <div id="camIndicator">📹 КАМЕРЫ ВКЛ</div>
 
         <div class="door door-left" id="doorLeft" onclick="toggleDoor('left')">
+            <span class="door-warning" id="warningLeft">⚠️</span>
+            <span class="door-foxy" id="foxyLeft">❗</span>
             🚪<span class="door-label">ЛЕВАЯ</span>
         </div>
         <div class="door door-right" id="doorRight" onclick="toggleDoor('right')">
+            <span class="door-warning" id="warningRight">⚠️</span>
+            <span class="door-foxy" id="foxyRight">❗</span>
             🚪<span class="door-label">ПРАВАЯ</span>
         </div>
 
         <div class="desk">ОХРАНА</div>
 
-        <!-- Все аниматроники -->
-        <div class="animatronic freddy" id="animFreddy" style="bottom:50%; left:10%;">🐻</div>
-        <div class="animatronic bonnie" id="animBonnie" style="bottom:30%; right:10%;">🐰</div>
-        <div class="animatronic chica" id="animChica" style="top:20%; left:40%;">🐤</div>
-        <div class="animatronic foxy" id="animFoxy" style="top:10%; right:30%;">🦊</div>
-        <div class="animatronic golden" id="animGolden" style="bottom:60%; left:50%;">👑🐻</div>
-        <div class="animatronic endoskeleton" id="animEndo" style="top:40%; right:50%;">🦾</div>
-        <div class="animatronic sparky" id="animSparky" style="bottom:10%; left:50%;">⚡🐶</div>
+        <!-- Зоны (метки) -->
+        <div class="zone zone-stage">🎭 СЦЕНА</div>
+        <div class="zone zone-hall">🚪 ЗАЛ</div>
+        <div class="zone zone-corridor">🛤️ КОРИДОР</div>
+
+        <!-- Аниматроники -->
+        <div class="animatronic freddy" id="animFreddy">🐻<span class="anim-name">Фредди</span></div>
+        <div class="animatronic bonnie" id="animBonnie">🐰<span class="anim-name">Бонни</span></div>
+        <div class="animatronic chica" id="animChica">🐤<span class="anim-name">Чика</span></div>
+        <div class="animatronic foxy" id="animFoxy">🦊<span class="anim-name">Фокси</span></div>
+        <div class="animatronic golden" id="animGolden">👑🐻<span class="anim-name">Голден</span></div>
+        <div class="animatronic endoskeleton" id="animEndo">🦾<span class="anim-name">Эндо</span></div>
+        <div class="animatronic sparky" id="animSparky">⚡🐶<span class="anim-name">Спарки</span></div>
+
+        <!-- Секретная кнопка 🚸 -->
+        <button id="secretBtn" onclick="startSpringBonnie()">🚸</button>
     </div>
 
     <!-- === ПЛАНШЕТ === -->
@@ -786,30 +984,30 @@
                 <span class="cam-name">СЦЕНА</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="dining" onclick="viewRoom('dining')">
-                <span class="cam-icon">🍕</span>
+            <div class="cam" data-cam="hall" onclick="viewRoom('hall')">
+                <span class="cam-icon">🚪</span>
                 <span class="cam-name">ЗАЛ</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="kitchen" onclick="viewRoom('kitchen')">
-                <span class="cam-icon">🍳</span>
-                <span class="cam-name">КУХНЯ</span>
-                <span class="cam-status safe">● чисто</span>
-            </div>
-            <div class="cam" data-cam="hall" onclick="viewRoom('hall')">
-                <span class="cam-icon">🚪</span>
+            <div class="cam" data-cam="corridor" onclick="viewRoom('corridor')">
+                <span class="cam-icon">🛤️</span>
                 <span class="cam-name">КОРИДОР</span>
-                <span class="cam-status safe">● чисто</span>
-            </div>
-            <div class="cam" data-cam="backstage" onclick="viewRoom('backstage')">
-                <span class="cam-icon">🎪</span>
-                <span class="cam-name">ЗАКУЛИСЬЕ</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
             <div class="cam" data-cam="office" onclick="viewRoom('office')">
                 <span class="cam-icon">🪑</span>
                 <span class="cam-name">ОФИС</span>
                 <span class="cam-status safe">● вы здесь</span>
+            </div>
+            <div class="cam" data-cam="kitchen" onclick="viewRoom('kitchen')">
+                <span class="cam-icon">🍳</span>
+                <span class="cam-name">КУХНЯ</span>
+                <span class="cam-status safe">● чисто</span>
+            </div>
+            <div class="cam" data-cam="backstage" onclick="viewRoom('backstage')">
+                <span class="cam-icon">🎪</span>
+                <span class="cam-name">ЗАКУЛИСЬЕ</span>
+                <span class="cam-status safe">● чисто</span>
             </div>
             <div class="cam" data-cam="storage" onclick="viewRoom('storage')">
                 <span class="cam-icon">📦</span>
@@ -827,13 +1025,6 @@
                 <span class="cam-status safe">● чисто</span>
             </div>
         </div>
-
-        <!-- Комната -->
-        <div id="roomView">
-            <span class="room-icon" id="roomIcon">📷</span>
-            <div class="room-desc" id="roomDesc">Выберите камеру для просмотра</div>
-        </div>
-
         <button id="closeTablet" onclick="closeTablet()">✕ ЗАКРЫТЬ ПЛАНШЕТ</button>
     </div>
 
@@ -849,11 +1040,11 @@
         <button class="btn danger" onclick="doAction('right')">🚪 Правая дверь<span class="cost">-3%</span></button>
         <button class="btn safe" onclick="doAction('light')">💡 Свет<span class="cost">-2%</span></button>
         <button class="btn warning" onclick="doAction('rewind')">⏪ Перемотка<span class="cost">-10%</span></button>
-        <button class="btn golden" onclick="doAction('golden')">👑 Призвать Голдена<span class="cost">-20%</span></button>
+        <button class="btn golden" onclick="doAction('golden')">👑 Голден<span class="cost">-20%</span></button>
     </div>
 
     <button id="resetBtn" onclick="resetGame()">🔄 НОВАЯ ИГРА</button>
-    <div class="footer">Сделано с ❤️ и страхом. Все аниматроники в сборе!</div>
+    <div class="footer">Сделано с ❤️ и страхом</div>
 
     <!-- === МИНИ-ИГРА С ФОКСИ === -->
     <div id="foxyMinigame">
@@ -863,14 +1054,28 @@
         <button class="foxy-btn" id="foxyBtn" onclick="foxyQTE('left')">🚪 ЛЕВАЯ</button>
         <button class="foxy-btn" id="foxyBtnRight" onclick="foxyQTE('right')">🚪 ПРАВАЯ</button>
     </div>
+
+    <!-- === СЕКРЕТНАЯ КОНЦОВКА (СПРИНГ БОННИ) === -->
+    <div id="springBonnieGame">
+        <div class="sbg-title">🔮 СЕКРЕТНАЯ КОНЦОВКА</div>
+        <div class="sbg-map" id="sbgMap">
+            <!-- Карта генерируется скриптом -->
+        </div>
+        <div class="sbg-msg" id="sbgMsg">⬆️⬇️⬅️➡️ Дойдите до туалета (🚽)</div>
+        <button class="sbg-btn" id="sbgBtn" onclick="springBonnieAction()">⬆️ ВПЕРЁД</button>
+        <button class="sbg-btn" id="sbgBtn2" onclick="springBonnieInteract()" style="display:none;">🚽 ВЗАИМОДЕЙСТВОВАТЬ</button>
+        <button class="sbg-btn" id="sbgReset" onclick="resetGame()" style="display:none;">🔄 НАЧАТЬ ЗАНОВО</button>
+    </div>
 </div>
 
 <script>
     // ================================================================
-    //  FNAF 4.0 — ПОЛНАЯ ВЕРСИЯ
-    //  + Golden Freddy, Endoskeleton, Sparky
-    //  + Мини-игра с Фокси (QTE)
-    //  + Звуковые эффекты
+    //  FNAF 5.0 — ПОЛНАЯ ПЕРЕРАБОТКА
+    //  - Логичное движение по зонам (СЦЕНА → ЗАЛ → КОРИДОР → ДВЕРЬ → ОФИС)
+    //  - Эндоскелет — декорация в мастерской
+    //  - ⚠️ у двери если аниматроник рядом
+    //  - ❗ у двери если Фокси бежит
+    //  - Секретная концовка 🚸 (Спринг Бонни)
     // ================================================================
 
     const state = {
@@ -887,29 +1092,42 @@
         rightDoorClosed: false,
         tabletOpen: false,
         goldenSummoned: false,
+        secretUnlocked: false,
+        springBonnieActive: false,
         timeInterval: null,
         energyDrainInterval: null,
+        // Зоны: 0=сцена, 1=зал, 2=коридор, 3=дверь, 4=офис
         animatronics: {
-            freddy: { x: 10, y: 50, visible: false, side: 'right', emoji: '🐻' },
-            bonnie: { x: 80, y: 30, visible: false, side: 'left', emoji: '🐰' },
-            chica: { x: 40, y: 20, visible: false, side: 'right', emoji: '🐤' },
-            foxy: { x: 70, y: 10, visible: false, side: 'left', emoji: '🦊' },
-            golden: { x: 50, y: 60, visible: false, side: 'both', emoji: '👑🐻' },
-            endoskeleton: { x: 60, y: 40, visible: false, side: 'both', emoji: '🦾' },
-            sparky: { x: 30, y: 10, visible: false, side: 'right', emoji: '⚡🐶' }
+            freddy: { zone: 0, side: 'left', emoji: '🐻', visible: false, atDoor: false },
+            bonnie: { zone: 0, side: 'right', emoji: '🐰', visible: false, atDoor: false },
+            chica: { zone: 0, side: 'left', emoji: '🐤', visible: false, atDoor: false },
+            foxy: { zone: 0, side: 'left', emoji: '🦊', visible: false, atDoor: false, running: false },
+            golden: { zone: -1, side: 'both', emoji: '👑🐻', visible: false, atDoor: false },
+            sparky: { zone: -1, side: 'right', emoji: '⚡🐶', visible: false, atDoor: false }
         },
+        // Эндоскелет — просто декорация в мастерской
+        endoskeleton: { visible: true, x: 65, y: 35 },
         roomStates: {
-            stage: { icon: '🎭', desc: 'Пустая сцена. Тени танцуют.', animatronic: 'freddy' },
-            dining: { icon: '🍕', desc: 'Пустой зал. Остывшая пицца.', animatronic: 'chica' },
-            kitchen: { icon: '🍳', desc: 'Кухня тиха. Жужжит холодильник.', animatronic: 'chica' },
-            hall: { icon: '🚪', desc: 'Тёмный коридор. Кто-то стоит в конце.', animatronic: 'bonnie' },
-            backstage: { icon: '🎪', desc: 'Закулисье. Старые костюмы.', animatronic: 'foxy' },
-            office: { icon: '🪑', desc: 'Ваш офис. Пока безопасно.', animatronic: null },
-            storage: { icon: '📦', desc: 'Склад. Коробки повсюду.', animatronic: 'sparky' },
-            basement: { icon: '⬇️', desc: 'Подвал. Темно и сыро.', animatronic: 'golden' },
-            parts: { icon: '🔧', desc: 'Мастерская. Запчасти для аниматроников.', animatronic: 'endoskeleton' }
+            stage: { icon: '🎭', desc: 'Пустая сцена. Тени танцуют.', zone: 0 },
+            hall: { icon: '🚪', desc: 'Пустой зал. Остывшая пицца.', zone: 1 },
+            corridor: { icon: '🛤️', desc: 'Тёмный коридор. Кто-то стоит в конце.', zone: 2 },
+            office: { icon: '🪑', desc: 'Ваш офис. Пока безопасно.', zone: 4 },
+            kitchen: { icon: '🍳', desc: 'Кухня тиха. Жужжит холодильник.', zone: -1 },
+            backstage: { icon: '🎪', desc: 'Закулисье. Старые костюмы.', zone: -1 },
+            storage: { icon: '📦', desc: 'Склад. Коробки повсюду.', zone: -1 },
+            basement: { icon: '⬇️', desc: 'Подвал. Темно и сыро.', zone: -1 },
+            parts: { icon: '🔧', desc: 'Мастерская. 🦾 Эндоскелет висит на стене.', zone: -1 }
         },
-        musicOn: false
+        musicOn: false,
+        // Для секретной концовки
+        sbg: {
+            playerX: 1,
+            playerY: 3,
+            map: [],
+            foundSpring: false,
+            step: 0,
+            gameOver: false
+        }
     };
 
     // --- Элементы ---
@@ -920,15 +1138,18 @@
     const timeEl = document.getElementById('timeNum');
     const tabletEl = document.getElementById('tablet');
     const camIndicator = document.getElementById('camIndicator');
-    const roomView = document.getElementById('roomView');
-    const roomIcon = document.getElementById('roomIcon');
-    const roomDesc = document.getElementById('roomDesc');
     const audio = document.getElementById('bgMusic');
     const musicBtn = document.getElementById('musicToggle');
     const doorLeft = document.getElementById('doorLeft');
     const doorRight = document.getElementById('doorRight');
+    const warningLeft = document.getElementById('warningLeft');
+    const warningRight = document.getElementById('warningRight');
+    const foxyLeft = document.getElementById('foxyLeft');
+    const foxyRight = document.getElementById('foxyRight');
     const foxyMinigame = document.getElementById('foxyMinigame');
     const foxyTimerEl = document.getElementById('foxyTimer');
+    const secretBtn = document.getElementById('secretBtn');
+    const springBonnieGame = document.getElementById('springBonnieGame');
 
     // --- Звуки ---
     function playSound(id) {
@@ -943,13 +1164,183 @@
     function toggleMusic() {
         state.musicOn = !state.musicOn;
         if (state.musicOn) {
-            audio.volume = 0.25;
+            audio.volume = 0.2;
             audio.play().catch(() => {});
             musicBtn.textContent = '🔊';
+            musicBtn.classList.add('playing');
         } else {
             audio.pause();
             musicBtn.textContent = '🔇';
+            musicBtn.classList.remove('playing');
         }
+    }
+
+    // --- Зоны (позиции на карте) ---
+    function getZonePosition(zone, side) {
+        const positions = {
+            0: { x: 35, y: 70 }, // СЦЕНА
+            1: { x: 50, y: 50 }, // ЗАЛ
+            2: { x: 65, y: 35 }, // КОРИДОР
+            3: { x: side === 'left' ? 22 : 78, y: 50 }, // ДВЕРЬ
+            4: { x: 50, y: 25 } // ОФИС (только для показа)
+        };
+        return positions[zone] || positions[0];
+    }
+
+    // --- Обновление аниматроников на карте ---
+    function updateAnimatronics() {
+        const map = {
+            freddy: document.getElementById('animFreddy'),
+            bonnie: document.getElementById('animBonnie'),
+            chica: document.getElementById('animChica'),
+            foxy: document.getElementById('animFoxy'),
+            golden: document.getElementById('animGolden'),
+            sparky: document.getElementById('animSparky'),
+            endo: document.getElementById('animEndo')
+        };
+
+        // Эндоскелет — всегда в мастерской
+        if (map.endo) {
+            map.endo.style.left = '65%';
+            map.endo.style.bottom = '35%';
+            map.endo.style.opacity = '0.4';
+            map.endo.classList.add('visible');
+        }
+
+        // Остальные аниматроники
+        for (let [name, el] of Object.entries(map)) {
+            if (name === 'endo') continue;
+            const data = state.animatronics[name];
+            if (!data) continue;
+
+            const pos = getZonePosition(data.zone, data.side);
+            if (data.visible || data.atDoor || data.zone === 3) {
+                el.style.opacity = '1';
+                el.style.left = pos.x + '%';
+                el.style.bottom = pos.y + '%';
+                el.classList.add('visible');
+
+                // Если у двери — подсветка
+                if (data.zone === 3) {
+                    el.style.filter = 'drop-shadow(0 0 25px rgba(255,50,0,0.6))';
+                } else {
+                    el.style.filter = 'drop-shadow(0 0 15px rgba(255,50,0,0.2))';
+                }
+            } else {
+                el.style.opacity = '0';
+                el.classList.remove('visible');
+            }
+        }
+
+        // Обновляем предупреждения у дверей
+        updateDoorWarnings();
+    }
+
+    // --- Предупреждения у дверей ---
+    function updateDoorWarnings() {
+        let leftDanger = false;
+        let rightDanger = false;
+        let leftFoxy = false;
+        let rightFoxy = false;
+
+        for (let name in state.animatronics) {
+            const data = state.animatronics[name];
+            if (data.zone === 3 && data.visible) {
+                if (data.side === 'left') leftDanger = true;
+                if (data.side === 'right') rightDanger = true;
+                if (name === 'foxy' && data.running) {
+                    if (data.side === 'left') leftFoxy = true;
+                    if (data.side === 'right') rightFoxy = true;
+                }
+            }
+        }
+
+        warningLeft.classList.toggle('show', leftDanger);
+        warningRight.classList.toggle('show', rightDanger);
+        foxyLeft.classList.toggle('show', leftFoxy);
+        foxyRight.classList.toggle('show', rightFoxy);
+    }
+
+    // --- Логика движения аниматроников (каждый час) ---
+    function moveAnimatronics() {
+        const names = ['freddy', 'bonnie', 'chica'];
+        // Каждый час кто-то двигается
+        const mover = names[Math.floor(Math.random() * names.length)];
+        const data = state.animatronics[mover];
+
+        // Двигаем по зонам: 0→1→2→3
+        if (data.zone < 3) {
+            data.zone++;
+            data.visible = true;
+            addLog(`🔍 ${mover.charAt(0).toUpperCase() + mover.slice(1)} переместился в зону ${data.zone}`, 'info');
+
+            // Если дошёл до двери (зона 3)
+            if (data.zone === 3) {
+                data.atDoor = true;
+                addLog(`⚠️ ${mover.charAt(0).toUpperCase() + mover.slice(1)} у двери!`, 'danger');
+                playSound('soundScare');
+                state.fear += 15;
+                // Проверка: если дверь открыта — смерть
+                if (data.side === 'left' && !state.leftDoorClosed) {
+                    state.alive = false;
+                    state.gameOver = true;
+                    addLog(`💀 ${mover.charAt(0).toUpperCase() + mover.slice(1)} ворвался! GAME OVER`, 'danger');
+                    clearInterval(state.timeInterval);
+                    clearInterval(state.energyDrainInterval);
+                    updateUI();
+                    return;
+                } else if (data.side === 'right' && !state.rightDoorClosed) {
+                    state.alive = false;
+                    state.gameOver = true;
+                    addLog(`💀 ${mover.charAt(0).toUpperCase() + mover.slice(1)} ворвался! GAME OVER`, 'danger');
+                    clearInterval(state.timeInterval);
+                    clearInterval(state.energyDrainInterval);
+                    updateUI();
+                    return;
+                }
+            }
+        } else {
+            // Если уже у двери — пытается войти
+            if (data.side === 'left' && !state.leftDoorClosed) {
+                state.alive = false;
+                state.gameOver = true;
+                addLog(`💀 ${mover.charAt(0).toUpperCase() + mover.slice(1)} ворвался! GAME OVER`, 'danger');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                updateUI();
+                return;
+            } else if (data.side === 'right' && !state.rightDoorClosed) {
+                state.alive = false;
+                state.gameOver = true;
+                addLog(`💀 ${mover.charAt(0).toUpperCase() + mover.slice(1)} ворвался! GAME OVER`, 'danger');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                updateUI();
+                return;
+            } else {
+                // Стучится
+                addLog(`🚪 ${mover.charAt(0).toUpperCase() + mover.slice(1)} стучится в дверь!`, 'fear');
+                state.fear += 5;
+            }
+        }
+
+        // Фокси — особый
+        const foxy = state.animatronics.foxy;
+        if (foxy.zone < 2 && Math.random() > 0.6) {
+            foxy.zone++;
+            foxy.visible = true;
+            if (foxy.zone === 2) {
+                addLog('🦊 Фокси в коридоре! Он готовится бежать!', 'danger');
+            }
+        }
+        // Если Фокси в зоне 2 и прошло 2 часа без камер — бежит
+        if (foxy.zone === 2 && state.foxyTimer >= 2) {
+            startFoxyQTE();
+            state.foxyTimer = 0;
+        }
+
+        updateAnimatronics();
+        updateUI();
     }
 
     // --- Время и энергия ---
@@ -967,19 +1358,33 @@
                 addLog('🏆 ВЫ ВЫЖИЛИ! 6:00 AM!', 'success');
                 clearInterval(state.timeInterval);
                 clearInterval(state.energyDrainInterval);
+                // Показываем секретную кнопку
+                if (!state.secretUnlocked) {
+                    secretBtn.classList.add('show');
+                    addLog('🚸 Секретная концовка доступна! Нажмите 🚸 у двери!', 'golden');
+                }
                 updateUI();
                 return;
             }
 
-            triggerHourEvent();
+            // Движение аниматроников каждый час
             moveAnimatronics();
 
-        }, 8000);
+            // Секретная кнопка появляется в 5:00
+            if (state.hour === 5 && !state.secretUnlocked) {
+                secretBtn.classList.add('show');
+                addLog('🚸 Секретная концовка доступна! Нажмите 🚸 у левой двери!', 'golden');
+            }
+
+            // Фокси считает ходы
+            state.foxyTimer++;
+
+        }, 10000); // 10 секунд = 1 час
 
         state.energyDrainInterval = setInterval(() => {
             if (!state.alive || state.gameOver || state.won) return;
-            let drain = 0.8;
-            if (state.tabletOpen) drain += 1.2;
+            let drain = 0.5;
+            if (state.tabletOpen) drain += 0.8;
             state.battery = Math.max(0, state.battery - drain);
 
             if (state.battery <= 0) {
@@ -1001,110 +1406,6 @@
         timeEl.textContent = `${displayHour}:00 ${hours >= 12 ? 'AM' : 'PM'}`;
     }
 
-    // --- События ---
-    function triggerHourEvent() {
-        const roll = Math.floor(Math.random() * 20) + 1;
-
-        // Golden Freddy (редкий шанс)
-        if (roll === 1 && !state.goldenSummoned) {
-            state.goldenSummoned = true;
-            addLog('👑 ЗОЛОТОЙ ФРЕДДИ появился в подвале!', 'golden');
-            playSound('soundGolden');
-            state.animatronics.golden.visible = true;
-            state.animatronics.golden.x = 45;
-            state.animatronics.golden.y = 40;
-            state.fear += 30;
-            updateAnimatronics();
-            updateUI();
-            return;
-        }
-
-        // Эндоскелет (редкий)
-        if (roll === 2) {
-            addLog('🦾 Эндоскелет движется в мастерской!', 'fear');
-            state.animatronics.endoskeleton.visible = true;
-            state.animatronics.endoskeleton.x = 50 + Math.random() * 20;
-            state.animatronics.endoskeleton.y = 30 + Math.random() * 20;
-            state.fear += 15;
-            updateAnimatronics();
-            updateUI();
-            return;
-        }
-
-        // Спарки (редкий)
-        if (roll === 3) {
-            addLog('⚡ Спарки пробежал по складу!', 'danger');
-            state.animatronics.sparky.visible = true;
-            state.animatronics.sparky.x = 20 + Math.random() * 30;
-            state.animatronics.sparky.y = 10 + Math.random() * 20;
-            state.fear += 10;
-            updateAnimatronics();
-            updateUI();
-            return;
-        }
-
-        // Обычные
-        if (roll < 8) {
-            const names = ['Фредди', 'Бонни', 'Чика', 'Фокси'];
-            const who = names[Math.floor(Math.random() * names.length)];
-            addLog(`⚠️ ${who} активизировался!`, 'danger');
-            state.fear += 10;
-            for (let name in state.animatronics) {
-                if (name === who.toLowerCase()) {
-                    state.animatronics[name].visible = true;
-                    state.animatronics[name].x = 20 + Math.random() * 60;
-                    state.animatronics[name].y = 20 + Math.random() * 50;
-                }
-            }
-            updateAnimatronics();
-        } else if (roll < 15) {
-            addLog('🌙 Тихий час...', 'info');
-        } else {
-            addLog('⚡ Странный шум в вентиляции!', 'fear');
-            state.fear += 5;
-        }
-        updateUI();
-    }
-
-    // --- Движение аниматроников ---
-    function moveAnimatronics() {
-        for (let name in state.animatronics) {
-            if (name === 'golden' && state.goldenSummoned) continue;
-            if (Math.random() > 0.5) {
-                state.animatronics[name].visible = true;
-                state.animatronics[name].x = 10 + Math.random() * 80;
-                state.animatronics[name].y = 10 + Math.random() * 70;
-            } else {
-                state.animatronics[name].visible = false;
-            }
-        }
-        updateAnimatronics();
-    }
-
-    function updateAnimatronics() {
-        const map = {
-            freddy: document.getElementById('animFreddy'),
-            bonnie: document.getElementById('animBonnie'),
-            chica: document.getElementById('animChica'),
-            foxy: document.getElementById('animFoxy'),
-            golden: document.getElementById('animGolden'),
-            endoskeleton: document.getElementById('animEndo'),
-            sparky: document.getElementById('animSparky')
-        };
-        for (let [name, el] of Object.entries(map)) {
-            const data = state.animatronics[name];
-            if (data && data.visible) {
-                el.style.opacity = '1';
-                el.style.left = data.x + '%';
-                el.style.bottom = data.y + '%';
-                el.classList.add('visible');
-            } else if (el) {
-                el.style.opacity = '0';
-                el.classList.remove('visible');
-            }
-        }
-    }
-
     // --- UI ---
     function updateUI() {
         batteryEl.textContent = Math.max(0, Math.round(state.battery)) + '%';
@@ -1114,14 +1415,19 @@
 
         doorLeft.classList.toggle('closed', state.leftDoorClosed);
         doorRight.classList.toggle('closed', state.rightDoorClosed);
-        doorLeft.innerHTML = state.leftDoorClosed ? '🔒<span class="door-label">ЛЕВАЯ</span>' :
-            '🚪<span class="door-label">ЛЕВАЯ</span>';
-        doorRight.innerHTML = state.rightDoorClosed ? '🔒<span class="door-label">ПРАВАЯ</span>' :
-            '🚪<span class="door-label">ПРАВАЯ</span>';
+        doorLeft.innerHTML = state.leftDoorClosed ?
+            '🔒<span class="door-label">ЛЕВАЯ</span><span class="door-warning" id="warningLeft">⚠️</span><span class="door-foxy" id="foxyLeft">❗</span>' :
+            '🚪<span class="door-label">ЛЕВАЯ</span><span class="door-warning" id="warningLeft">⚠️</span><span class="door-foxy" id="foxyLeft">❗</span>';
+        doorRight.innerHTML = state.rightDoorClosed ?
+            '🔒<span class="door-label">ПРАВАЯ</span><span class="door-warning" id="warningRight">⚠️</span><span class="door-foxy" id="foxyRight">❗</span>' :
+            '🚪<span class="door-label">ПРАВАЯ</span><span class="door-warning" id="warningRight">⚠️</span><span class="door-foxy" id="foxyRight">❗</span>';
 
         document.querySelectorAll('#actions .btn').forEach(b =>
-            b.disabled = !state.alive || state.gameOver || state.won
+            b.disabled = !state.alive || state.gameOver || state.won || state.springBonnieActive
         );
+
+        // Обновляем предупреждения
+        updateDoorWarnings();
     }
 
     function addLog(msg, type = 'info') {
@@ -1135,7 +1441,7 @@
 
     // --- Планшет ---
     function openTablet() {
-        if (!state.alive || state.gameOver || state.won) return;
+        if (!state.alive || state.gameOver || state.won || state.springBonnieActive) return;
         state.tabletOpen = true;
         tabletEl.classList.add('open');
         camIndicator.classList.add('active');
@@ -1147,13 +1453,12 @@
         state.tabletOpen = false;
         tabletEl.classList.remove('open');
         camIndicator.classList.remove('active');
-        roomView.classList.remove('open');
         updateUI();
     }
 
     document.getElementById('officeMap').addEventListener('click', (e) => {
-        if (e.target.closest('.door')) return;
-        if (state.alive && !state.gameOver && !state.won) {
+        if (e.target.closest('.door') || e.target.closest('#secretBtn')) return;
+        if (state.alive && !state.gameOver && !state.won && !state.springBonnieActive) {
             if (state.tabletOpen) closeTablet();
             else openTablet();
         }
@@ -1172,17 +1477,23 @@
                 return;
             }
 
+            // Проверяем, есть ли аниматроник в этой зоне
             let hasAnimatronic = false;
-            if (room.animatronic && state.animatronics[room.animatronic]?.visible) {
-                hasAnimatronic = true;
+            let animName = '';
+            for (let aname in state.animatronics) {
+                const data = state.animatronics[aname];
+                if (data.zone === room.zone && data.visible) {
+                    hasAnimatronic = true;
+                    animName = aname;
+                }
             }
 
             if (hasAnimatronic) {
-                status.textContent = '⚠️ ДВИЖЕНИЕ!';
+                status.textContent = `⚠️ ${animName.charAt(0).toUpperCase() + animName.slice(1)} здесь!`;
                 status.className = 'cam-status danger';
-            } else if (Math.random() < 0.2) {
-                status.textContent = '● пусто';
-                status.className = 'cam-status safe';
+            } else if (name === 'parts') {
+                status.textContent = '🦾 Эндоскелет висит';
+                status.className = 'cam-status warning';
             } else {
                 status.textContent = '● чисто';
                 status.className = 'cam-status safe';
@@ -1190,47 +1501,42 @@
         });
     }
 
-    // --- Просмотр комнаты ---
     function viewRoom(roomId) {
         if (!state.tabletOpen) return;
         const room = state.roomStates[roomId];
         if (!room) return;
 
-        roomView.classList.add('open');
-        roomIcon.textContent = room.icon;
-
-        let desc = room.desc;
-        let animatronicHere = false;
+        // Показываем в логе
+        let hasAnimatronic = false;
         let animName = '';
-        let isGolden = false;
-
-        if (room.animatronic && state.animatronics[room.animatronic]?.visible) {
-            animatronicHere = true;
-            const a = room.animatronic;
-            animName = a.charAt(0).toUpperCase() + a.slice(1);
-            if (a === 'golden') {
-                isGolden = true;
-                desc += ` <span class="golden">👑 ВНИМАНИЕ! ЗОЛОТОЙ ФРЕДДИ здесь!</span>`;
-                playSound('soundGolden');
-                state.fear += 20;
-            } else {
-                desc += ` <span class="highlight">⚠️ ${animName} здесь!</span>`;
-                state.fear += 10;
+        for (let aname in state.animatronics) {
+            const data = state.animatronics[aname];
+            if (data.zone === room.zone && data.visible) {
+                hasAnimatronic = true;
+                animName = aname;
             }
-            addLog(`👀 ${animName} замечен в ${roomId}!`, 'danger');
         }
 
-        roomDesc.innerHTML = desc;
-        updateUI();
+        if (hasAnimatronic) {
+            addLog(`👀 ${animName.charAt(0).toUpperCase() + animName.slice(1)} на камере ${roomId}!`, 'danger');
+            state.fear += 5;
+        } else if (roomId === 'parts') {
+            addLog('🦾 В мастерской висит старый эндоскелет...', 'info');
+        } else {
+            addLog(`📹 Камера ${roomId}: чисто`, 'info');
+        }
 
+        // Закрываем планшет через 3 секунды
         setTimeout(() => {
             if (state.tabletOpen) closeTablet();
-        }, 4000);
+        }, 3000);
+
+        updateUI();
     }
 
     // --- Двери ---
     function toggleDoor(side) {
-        if (!state.alive || state.gameOver || state.won || state.foxyQTEActive) return;
+        if (!state.alive || state.gameOver || state.won || state.foxyQTEActive || state.springBonnieActive) return;
         if (side === 'left') {
             state.leftDoorClosed = !state.leftDoorClosed;
             addLog(`🚪 Левая дверь ${state.leftDoorClosed ? 'ЗАКРЫТА' : 'ОТКРЫТА'}`, 'info');
@@ -1243,9 +1549,9 @@
         updateUI();
     }
 
-    // --- МИНИ-ИГРА С ФОКСИ (QTE) ---
+    // --- QTE Фокси ---
     function startFoxyQTE() {
-        if (state.foxyQTEActive) return;
+        if (state.foxyQTEActive || !state.alive || state.gameOver || state.won) return;
         state.foxyQTEActive = true;
         foxyMinigame.classList.add('active');
         playSound('soundFoxy');
@@ -1258,11 +1564,10 @@
             foxyTimerEl.textContent = timeLeft;
             if (timeLeft <= 0) {
                 clearInterval(timer);
-                // Не успели — смерть
                 if (state.foxyQTEActive) {
                     state.alive = false;
                     state.gameOver = true;
-                    addLog('🦊 Фокси убил вас! Не успели закрыть дверь!', 'danger');
+                    addLog('🦊 Фокси убил вас!', 'danger');
                     playSound('soundScare');
                     foxyMinigame.classList.remove('active');
                     state.foxyQTEActive = false;
@@ -1273,7 +1578,6 @@
             }
         }, 1000);
 
-        // Кнопки активируются
         document.getElementById('foxyBtn').disabled = false;
         document.getElementById('foxyBtnRight').disabled = false;
     }
@@ -1293,12 +1597,15 @@
         playSound('soundDoor');
         state.fear += 10;
         state.foxyTimer = 0;
+        state.animatronics.foxy.zone = 0;
+        state.animatronics.foxy.visible = false;
+        updateAnimatronics();
         updateUI();
     }
 
     // --- Действия ---
     function doAction(action) {
-        if (!state.alive || state.gameOver || state.won || state.foxyQTEActive) return;
+        if (!state.alive || state.gameOver || state.won || state.foxyQTEActive || state.springBonnieActive) return;
         if (state.tabletOpen) closeTablet();
 
         let cost = 0;
@@ -1320,38 +1627,46 @@
             case 'light':
                 cost = 2;
                 addLog('💡 Включили свет...', 'info');
-                if (Math.random() < 0.25) {
-                    addLog('👀 В свете фигура!', 'danger');
-                    state.fear += 10;
-                    playSound('soundScare');
+                // Проверяем, есть ли кто у двери
+                let atLeft = false,
+                    atRight = false;
+                for (let name in state.animatronics) {
+                    const data = state.animatronics[name];
+                    if (data.zone === 3 && data.visible) {
+                        if (data.side === 'left') atLeft = true;
+                        if (data.side === 'right') atRight = true;
+                    }
                 }
+                if (atLeft) addLog('👀 Слева кто-то есть!', 'danger');
+                if (atRight) addLog('👀 Справа кто-то есть!', 'danger');
+                if (atLeft || atRight) state.fear += 10;
                 break;
             case 'rewind':
                 cost = 10;
                 addLog('⏪ Перемотка камер!', 'warning');
                 for (let name in state.animatronics) {
-                    state.animatronics[name].visible = false;
+                    if (name !== 'golden' && name !== 'sparky') {
+                        state.animatronics[name].zone = 0;
+                        state.animatronics[name].visible = false;
+                        state.animatronics[name].atDoor = false;
+                    }
                 }
+                state.foxyTimer = 0;
                 updateAnimatronics();
                 break;
             case 'golden':
                 cost = 20;
                 if (!state.goldenSummoned) {
                     state.goldenSummoned = true;
+                    state.animatronics.golden.zone = 2;
                     state.animatronics.golden.visible = true;
-                    state.animatronics.golden.x = 50;
-                    state.animatronics.golden.y = 50;
-                    addLog('👑 Вы призвали Золотого Фредди! ОН СМОТРИТ НА ВАС!', 'golden');
+                    addLog('👑 ЗОЛОТОЙ ФРЕДДИ явился!', 'golden');
                     playSound('soundGolden');
-                    state.fear += 40;
+                    state.fear += 25;
                     updateAnimatronics();
                 } else {
-                    addLog('👑 Золотой Фредди уже здесь... Он не уйдёт.', 'golden');
+                    addLog('👑 Голден уже здесь...', 'golden');
                 }
-                break;
-            case 'quiet':
-                fearCost = 8;
-                addLog('🤫 Тихо...', 'info');
                 break;
             default:
                 return;
@@ -1359,23 +1674,6 @@
 
         state.battery = Math.max(0, state.battery - cost);
         state.fear = Math.min(100, state.fear + fearCost);
-
-        // Фокси
-        state.foxyTimer++;
-        if (state.foxyTimer >= 3 && state.alive) {
-            addLog('🦊 ФОКСИ БЕЖИТ! БЫСТРО ЗАКРОЙТЕ ДВЕРЬ!', 'danger');
-            startFoxyQTE();
-            state.foxyTimer = 0;
-            updateUI();
-            return;
-        }
-
-        // Шум
-        if (state.noise >= 5) {
-            addLog('🔊 Слишком шумно!', 'danger');
-            state.fear += 10;
-            state.noise = 0;
-        }
 
         if (state.fear >= 100) {
             state.alive = false;
@@ -1389,6 +1687,193 @@
         }
 
         updateUI();
+    }
+
+    // ================================================================
+    //  СЕКРЕТНАЯ КОНЦОВКА — СПРИНГ БОННИ
+    // ================================================================
+
+    function startSpringBonnie() {
+        if (state.springBonnieActive || state.secretUnlocked) return;
+        if (state.hour < 5 && !state.won) {
+            addLog('🚸 Секретная концовка доступна только в 5:00 AM или после победы!', 'fear');
+            return;
+        }
+
+        state.springBonnieActive = true;
+        state.secretUnlocked = true;
+        secretBtn.classList.remove('show');
+        springBonnieGame.classList.add('active');
+
+        // Инициализируем карту
+        initSpringBonnieMap();
+    }
+
+    function initSpringBonnieMap() {
+        const mapData = [
+            ['⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛'],
+            ['⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛'],
+            ['⬛', '⬜', '⬛', '⬛', '⬛', '⬜', '⬛'],
+            ['⬛', '⬜', '⬛', '🚽', '⬛', '⬜', '⬛'],
+            ['⬛', '⬜', '⬜', '⬜', '⬜', '⬜', '⬛'],
+            ['⬛', '⬛', '⬛', '⬛', '⬛', '⬛', '⬛']
+        ];
+
+        state.sbg.map = mapData;
+        state.sbg.playerX = 1;
+        state.sbg.playerY = 4;
+        state.sbg.foundSpring = false;
+        state.sbg.step = 0;
+        state.sbg.gameOver = false;
+
+        document.getElementById('sbgBtn').style.display = 'inline-block';
+        document.getElementById('sbgBtn2').style.display = 'none';
+        document.getElementById('sbgReset').style.display = 'none';
+        document.getElementById('sbgMsg').innerHTML = '⬆️⬇️⬅️➡️ Дойдите до туалета (🚽)';
+        document.getElementById('sbgBtn').textContent = '⬆️ ВПЕРЁД';
+
+        renderSpringBonnieMap();
+    }
+
+    function renderSpringBonnieMap() {
+        const mapEl = document.getElementById('sbgMap');
+        mapEl.innerHTML = '';
+
+        const map = state.sbg.map;
+        const playerX = state.sbg.playerX;
+        const playerY = state.sbg.playerY;
+
+        for (let y = 0; y < map.length; y++) {
+            for (let x = 0; x < map[y].length; x++) {
+                const tile = document.createElement('div');
+                tile.className = 'sbg-tile';
+                tile.style.left = (x * 40 + 10) + 'px';
+                tile.style.top = (y * 35 + 10) + 'px';
+
+                if (x === playerX && y === playerY) {
+                    tile.textContent = '🟣';
+                    tile.style.fontSize = '28px';
+                    tile.style.zIndex = '10';
+                    tile.style.filter = 'drop-shadow(0 0 10px rgba(128,0,255,0.3))';
+                } else if (map[y][x] === '🚽') {
+                    tile.textContent = '🚽';
+                    tile.style.fontSize = '24px';
+                    if (state.sbg.foundSpring) {
+                        tile.textContent = '🐰';
+                        tile.style.fontSize = '30px';
+                        tile.style.color = '#ffd700';
+                        tile.style.filter = 'drop-shadow(0 0 20px rgba(255,215,0,0.5))';
+                    }
+                } else if (map[y][x] === '⬛') {
+                    tile.textContent = '⬛';
+                    tile.style.fontSize = '14px';
+                    tile.style.opacity = '0.3';
+                } else {
+                    tile.textContent = '⬜';
+                    tile.style.fontSize = '14px';
+                    tile.style.opacity = '0.2';
+                }
+
+                mapEl.appendChild(tile);
+            }
+        }
+    }
+
+    function springBonnieAction() {
+        if (state.sbg.gameOver) return;
+
+        const directions = [
+            { dx: 0, dy: -1, label: '⬆️' },
+            { dx: 0, dy: 1, label: '⬇️' },
+            { dx: -1, dy: 0, label: '⬅️' },
+            { dx: 1, dy: 0, label: '➡️' }
+        ];
+
+        // Циклическое движение
+        const dir = directions[state.sbg.step % directions.length];
+        state.sbg.step++;
+
+        const newX = state.sbg.playerX + dir.dx;
+        const newY = state.sbg.playerY + dir.dy;
+
+        // Проверка стен
+        if (newY < 0 || newY >= state.sbg.map.length || newX < 0 || newX >= state.sbg.map[0].length) {
+            document.getElementById('sbgMsg').innerHTML = '❌ Стена! Попробуйте другой путь.';
+            return;
+        }
+
+        if (state.sbg.map[newY][newX] === '⬛') {
+            document.getElementById('sbgMsg').innerHTML = '❌ Стена! Попробуйте другой путь.';
+            return;
+        }
+
+        // Двигаем
+        state.sbg.playerX = newX;
+        state.sbg.playerY = newY;
+
+        // Проверка — дошли до туалета?
+        if (state.sbg.map[newY][newX] === '🚽') {
+            if (!state.sbg.foundSpring) {
+                state.sbg.foundSpring = true;
+                document.getElementById('sbgMsg').innerHTML = '🚽 Вы нашли туалет! Нажмите "ВЗАИМОДЕЙСТВОВАТЬ"';
+                document.getElementById('sbgBtn').style.display = 'none';
+                document.getElementById('sbgBtn2').style.display = 'inline-block';
+                renderSpringBonnieMap();
+                return;
+            }
+        }
+
+        // Если нашли Спринг Бонни
+        if (state.sbg.foundSpring && state.sbg.map[newY][newX] === '🐰') {
+            springBonnieEnding();
+            return;
+        }
+
+        renderSpringBonnieMap();
+        document.getElementById('sbgMsg').innerHTML = `⬆️⬇️⬅️➡️ Идите к туалету (${state.sbg.step} шагов)`;
+    }
+
+    function springBonnieInteract() {
+        if (!state.sbg.foundSpring || state.sbg.gameOver) return;
+
+        document.getElementById('sbgMsg').innerHTML = '🐰 Вы залезаете в костюм Спринг Бонни...';
+        document.getElementById('sbgBtn2').disabled = true;
+
+        // Эффект — души детей
+        setTimeout(() => {
+            document.getElementById('sbgMsg').innerHTML = '👻👻👻 Души убитых детей появляются вокруг...';
+            playSound('soundMarionette');
+        }, 1000);
+
+        setTimeout(() => {
+            document.getElementById('sbgMsg').innerHTML = '🎭 Марионетка смеётся...';
+        }, 2500);
+
+        setTimeout(() => {
+            document.getElementById('sbgMsg').innerHTML = '💀 <span class="highlight">БАЦ! КОСТЮМ ЗАЩЕЛКИВАЕТСЯ!</span>';
+            playSound('soundSpring');
+        }, 4000);
+
+        setTimeout(() => {
+            document.getElementById('sbgMsg').innerHTML = '🩸 <span class="highlight">УИЛЬЯМ АФТОН ИСТЕКАЕТ КРОВЬЮ...</span>';
+            // Показываем кровь
+            const blood = document.createElement('div');
+            blood.className = 'sbg-blood show';
+            blood.textContent = '🩸🩸🩸';
+            blood.style.cssText =
+                'position:absolute;font-size:60px;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;opacity:0.8;pointer-events:none;';
+            document.getElementById('sbgMap').appendChild(blood);
+        }, 5500);
+
+        setTimeout(() => {
+            document.getElementById('sbgMsg').innerHTML =
+                '🔮 <span class="golden">ВЫ ПРОШЛИ НА СЕКРЕТНУЮ КОНЦОВКУ!</span><br>Уильям Афтон заживо сгнил в костюме Спринг Бонни.';
+            state.sbg.gameOver = true;
+            document.getElementById('sbgBtn2').style.display = 'none';
+            document.getElementById('sbgReset').style.display = 'inline-block';
+            addLog('🔮 СЕКРЕТНАЯ КОНЦОВКА: Спринг Бонни!', 'golden');
+            playSound('soundScare');
+        }, 7500);
     }
 
     // --- Сброс ---
@@ -1406,20 +1891,28 @@
         state.rightDoorClosed = false;
         state.tabletOpen = false;
         state.goldenSummoned = false;
+        state.secretUnlocked = false;
+        state.springBonnieActive = false;
 
         for (let name in state.animatronics) {
+            state.animatronics[name].zone = 0;
             state.animatronics[name].visible = false;
+            state.animatronics[name].atDoor = false;
+            state.animatronics[name].running = false;
         }
+        // Эндоскелет всегда виден в мастерской
+        state.endoskeleton.visible = true;
 
         if (state.timeInterval) clearInterval(state.timeInterval);
         if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
 
         tabletEl.classList.remove('open');
         camIndicator.classList.remove('active');
-        roomView.classList.remove('open');
         foxyMinigame.classList.remove('active');
+        springBonnieGame.classList.remove('active');
+        secretBtn.classList.remove('show');
 
-        logEl.innerHTML = `<div class="log-entry info">🔄 Новая игра! 12:00 AM. Все аниматроники ждут...</div>`;
+        logEl.innerHTML = `<div class="log-entry info">🔄 Новая игра! 12:00 AM. Следите за зонами!</div>`;
 
         updateTimeDisplay();
         updateAnimatronics();
@@ -1428,18 +1921,20 @@
 
         audio.pause();
         musicBtn.textContent = '🔇';
+        musicBtn.classList.remove('playing');
         state.musicOn = false;
 
-        addLog('👑 В игре появились: Золотой Фредди, Эндоскелет и Спарки!', 'golden');
-        addLog('🦊 Если Фокси бежит — у вас 3 секунды, чтобы закрыть дверь!', 'danger');
+        addLog('🗺️ Аниматроники двигаются по зонам: СЦЕНА → ЗАЛ → КОРИДОР → ДВЕРЬ', 'info');
+        addLog('⚠️ Если аниматроник у двери — появится предупреждение', 'info');
+        addLog('🚸 Секретная концовка станет доступна в 5:00 AM!', 'golden');
     }
 
     // --- Инициализация ---
     resetGame();
 
     setTimeout(() => {
-        addLog('🎵 Нажмите 🔇 для музыки. Удачи, сторож!', 'info');
+        addLog('🎵 Нажмите 🔇 для жуткой музыки.', 'info');
     }, 2000);
 </script>
 </body>
-    </html>
+            </html>
