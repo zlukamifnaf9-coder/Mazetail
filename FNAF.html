@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🍕 FNAF - Ночная смена 5.1</title>
+    <title>Five Nights at Freddy's</title>
     <style>
+        /* ============================================================
+           ГЛОБАЛЬНЫЕ СТИЛИ
+           ============================================================ */
         * {
             margin: 0;
             padding: 0;
@@ -12,30 +15,35 @@
             user-select: none;
         }
 
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
         body {
-            background: #050505;
+            background: #0a0a0a;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             padding: 8px;
-            background-image: radial-gradient(ellipse at 30% 50%, #0d0a0a 0%, #000000 80%);
+            background-image: radial-gradient(ellipse at 50% 30%, #1a0a0a, #000000);
         }
 
         #game {
-            max-width: 480px;
+            max-width: 420px;
             width: 100%;
-            background: linear-gradient(145deg, #0f0f0f, #070707);
-            border: 2px solid #2a1a0f;
-            border-radius: 28px;
+            background: #0f0f0f;
+            border: 3px solid #2a1a0f;
+            border-radius: 20px;
             padding: 16px;
-            box-shadow: 0 0 80px rgba(255, 30, 0, 0.15), inset 0 0 100px rgba(0, 0, 0, 0.9);
+            box-shadow: 0 0 80px rgba(255, 30, 0, 0.15);
             position: relative;
             overflow: hidden;
+            min-height: 680px;
         }
 
-        /* === ЗВУКИ === */
+        /* ============================================================
+           ЗВУКИ
+           ============================================================ */
         .sound {
             position: absolute;
             opacity: 0;
@@ -44,7 +52,6 @@
             pointer-events: none;
         }
 
-        /* === ЖУТКАЯ МУЗЫКА (реально мрачная) === */
         #bgMusic {
             position: absolute;
             opacity: 0;
@@ -53,6 +60,9 @@
             pointer-events: none;
         }
 
+        /* ============================================================
+           МУЗЫКА (кнопка)
+           ============================================================ */
         #musicToggle {
             position: absolute;
             top: 12px;
@@ -65,11 +75,12 @@
             color: #886644;
             font-size: 14px;
             cursor: pointer;
-            z-index: 20;
+            z-index: 30;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+            font-family: 'Press Start 2P', monospace;
         }
         #musicToggle:active {
             transform: scale(0.9);
@@ -81,365 +92,386 @@
             box-shadow: 0 0 20px rgba(102, 204, 255, 0.2);
         }
 
-        /* === ВЕРХНЯЯ ПАНЕЛЬ === */
-        #header {
+        /* ============================================================
+           МЕНЮ
+           ============================================================ */
+        #menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 600px;
+            text-align: center;
+            padding: 20px 10px;
+            position: relative;
+        }
+        #menu.hidden {
+            display: none;
+        }
+
+        #menu .title {
+            font-size: 22px;
+            color: #cc3333;
+            text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            letter-spacing: 2px;
+            line-height: 1.4;
+            margin-bottom: 20px;
+        }
+        #menu .title .small {
+            font-size: 12px;
+            color: #886644;
+            display: block;
+            margin-top: 4px;
+        }
+
+        #menu .menu-btn {
+            background: transparent;
+            border: 2px solid #3d2b1f;
+            color: #cc8844;
+            padding: 12px 30px;
+            margin: 6px 0;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 80%;
+            max-width: 250px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+        #menu .menu-btn:active {
+            transform: scale(0.94);
+            background: #1a0f0a;
+            border-color: #ff8844;
+        }
+        #menu .menu-btn:hover {
+            background: #1a0f0a;
+        }
+        #menu .menu-btn .sub {
+            font-size: 7px;
+            color: #665544;
+            display: block;
+            margin-top: 4px;
+        }
+
+        #menu .menu-btn.night {
+            border-color: #664400;
+            color: #ffd700;
+            font-size: 9px;
+        }
+
+        #menu .credits {
+            color: #332211;
+            font-size: 7px;
+            margin-top: 20px;
+            opacity: 0.4;
+            letter-spacing: 1px;
+        }
+
+        /* Мигающая надпись (как в оригинале) */
+        #menu .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0;
+            }
+        }
+
+        /* ============================================================
+           ОФИС (основной экран)
+           ============================================================ */
+        #office {
+            display: none;
+            flex-direction: column;
+            min-height: 600px;
+            position: relative;
+        }
+        #office.active {
+            display: flex;
+        }
+
+        /* Верхняя панель */
+        #office-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #1a0f0a;
+            padding: 6px 4px 10px 4px;
+            border-bottom: 2px solid #1a0f0a;
         }
-        #title {
-            color: #cc3333;
-            font-size: 18px;
-            font-weight: bold;
-            text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
-            letter-spacing: 1px;
-        }
-        #subtitle {
-            color: #886644;
-            font-size: 9px;
-            opacity: 0.6;
-            text-align: right;
-            line-height: 1.2;
-        }
-
-        /* === СТАТЫ === */
-        #stats {
-            display: flex;
-            gap: 6px;
-            margin: 10px 0;
-        }
-        .stat {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid #1a1a1a;
-            border-radius: 10px;
-            padding: 8px 4px;
-            text-align: center;
-            position: relative;
-        }
-        .stat-label {
-            color: #666;
-            font-size: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .stat-value {
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .stat-value.battery {
-            color: #4caf50;
-        }
-        .stat-value.fear {
-            color: #ff6b35;
-        }
-        .stat-value.noise {
+        #office-header .time {
             color: #66ccff;
-        }
-
-        /* === ВРЕМЯ === */
-        #timeDisplay {
-            text-align: center;
-            color: #888;
-            font-size: 12px;
-            margin: 4px 0 8px;
+            font-size: 14px;
             letter-spacing: 2px;
         }
-        #timeDisplay span {
-            color: #ffcc44;
-            font-weight: bold;
-            font-size: 20px;
+        #office-header .night {
+            color: #ff8844;
+            font-size: 11px;
         }
-        #timeProgress {
-            width: 100%;
-            height: 4px;
-            background: #1a1a1a;
-            border-radius: 4px;
-            margin: 4px 0 8px;
-            overflow: hidden;
-        }
-        #timeProgress .bar {
-            height: 100%;
-            width: 0%;
-            background: linear-gradient(90deg, #4caf50, #ffcc44, #ff4444);
-            border-radius: 4px;
-            transition: width 1s linear;
+        #office-header .night span {
+            color: #ff4444;
         }
 
-        /* === КАРТА ОФИСА === */
-        #officeMap {
+        /* Центр офиса (вид на двери) */
+        #office-view {
             position: relative;
             background: radial-gradient(ellipse at 50% 80%, #0d0a08, #030303);
             border: 2px solid #1a100a;
             border-radius: 16px;
-            height: 180px;
+            height: 200px;
             margin: 8px 0;
             overflow: hidden;
             box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.9);
-            cursor: pointer;
         }
 
-        .wall {
+        /* Стены офиса */
+        .office-wall {
             position: absolute;
-            background: rgba(30, 20, 15, 0.6);
-            border: 1px solid #2a1a0f;
+            background: rgba(30, 20, 15, 0.5);
+            border: 1px solid #1a0f0a;
         }
-        .wall-left {
+        .office-wall-left {
             left: 0;
             top: 0;
-            width: 18px;
+            width: 40px;
             height: 100%;
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 8px 8px 0;
+            background: linear-gradient(90deg, rgba(20, 15, 10, 0.8), transparent);
         }
-        .wall-right {
+        .office-wall-right {
             right: 0;
             top: 0;
-            width: 18px;
+            width: 40px;
             height: 100%;
-            border-radius: 4px 0 0 4px;
+            border-radius: 8px 0 0 8px;
+            background: linear-gradient(270deg, rgba(20, 15, 10, 0.8), transparent);
         }
-        .wall-top {
+        .office-wall-top {
             left: 0;
             top: 0;
             width: 100%;
-            height: 14px;
-            border-radius: 0 0 4px 4px;
-        }
-        .wall-bottom {
-            left: 0;
-            bottom: 0;
-            width: 100%;
-            height: 14px;
-            border-radius: 4px 4px 0 0;
+            height: 20px;
+            border-radius: 0 0 8px 8px;
+            background: linear-gradient(180deg, rgba(20, 15, 10, 0.6), transparent);
         }
 
-        .desk {
+        /* Стол */
+        .office-desk {
             position: absolute;
-            bottom: 30px;
+            bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
-            width: 100px;
-            height: 32px;
+            width: 120px;
+            height: 30px;
             background: linear-gradient(0deg, #1a100a, #0d0805);
             border: 2px solid #2a1a0f;
             border-radius: 8px 8px 0 0;
-            box-shadow: 0 0 40px rgba(255, 50, 0, 0.1);
+            box-shadow: 0 0 40px rgba(255, 50, 0, 0.05);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 9px;
-            color: #664433;
+            font-size: 8px;
+            color: #554433;
             letter-spacing: 2px;
         }
-        .desk::after {
+        .office-desk::after {
             content: '📋';
-            font-size: 16px;
+            font-size: 14px;
             margin-left: 6px;
         }
 
-        .door {
+        /* Двери в офисе */
+        .office-door {
             position: absolute;
-            width: 24px;
-            height: 50px;
-            background: rgba(40, 30, 20, 0.8);
-            border: 2px solid #3d2b1f;
+            width: 30px;
+            height: 70px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(40, 30, 20, 0.7);
+            border: 2px solid #2a1a0f;
             border-radius: 4px;
             transition: all 0.3s;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            z-index: 5;
             cursor: pointer;
-            z-index: 2;
-            flex-direction: column;
         }
-        .door-left {
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
+        .office-door-left {
+            left: 10px;
         }
-        .door-right {
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
+        .office-door-right {
+            right: 10px;
         }
-        .door.closed {
-            background: rgba(60, 40, 30, 0.9);
-            border-color: #885533;
-            box-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
+        .office-door .door-icon {
+            font-size: 18px;
         }
-        .door .door-label {
+        .office-door .door-label {
             font-size: 6px;
             color: #665544;
-            white-space: nowrap;
+            margin-top: 2px;
             letter-spacing: 1px;
         }
-        .door .door-warning {
-            font-size: 14px;
+        .office-door.closed {
+            background: rgba(60, 40, 30, 0.9);
+            border-color: #885533;
+            box-shadow: 0 0 20px rgba(255, 100, 0, 0.15);
+        }
+        .office-door .door-warning {
             position: absolute;
-            top: -22px;
+            top: -20px;
+            font-size: 14px;
             display: none;
         }
-        .door .door-warning.show {
+        .office-door .door-warning.show {
             display: block;
             animation: blink 0.5s infinite;
         }
-        .door .door-foxy {
-            font-size: 18px;
+        .office-door .door-foxy {
             position: absolute;
-            top: -26px;
+            top: -24px;
+            font-size: 18px;
             display: none;
         }
-        .door .door-foxy.show {
+        .office-door .door-foxy.show {
             display: block;
             animation: blink 0.3s infinite;
         }
 
-        /* === ЗОНЫ === */
-        .zone {
+        /* Пиксельный Фредди в офисе (иногда появляется) */
+        #officeFreddy {
             position: absolute;
-            font-size: 7px;
-            color: #333;
-            opacity: 0.3;
-            pointer-events: none;
-            letter-spacing: 1px;
-        }
-        .zone-stage {
-            bottom: 70px;
-            left: 35%;
-        }
-        .zone-hall {
-            bottom: 50px;
-            left: 45%;
-        }
-        .zone-corridor {
-            bottom: 30px;
-            left: 55%;
-        }
-
-        /* === АНИМАТРОНИКИ === */
-        .animatronic {
-            position: absolute;
-            font-size: 20px;
-            transition: all 1.5s ease;
-            filter: drop-shadow(0 0 15px rgba(255, 50, 0, 0.2));
-            z-index: 5;
-            opacity: 0;
-            pointer-events: none;
-        }
-        .animatronic.visible {
-            opacity: 1;
-        }
-        .animatronic .anim-name {
-            font-size: 6px;
-            color: #555;
-            display: block;
-            text-align: center;
-            margin-top: -4px;
-        }
-        .animatronic.freddy {
-            color: #b45f06;
-        }
-        .animatronic.bonnie {
-            color: #8e44ad;
-        }
-        .animatronic.chica {
-            color: #f1c40f;
-        }
-        .animatronic.foxy {
-            color: #c0392b;
-            font-size: 22px;
-        }
-        .animatronic.golden {
-            color: #ffd700;
-            font-size: 24px;
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
-        }
-        .animatronic.endoskeleton {
-            color: #888;
-            font-size: 16px;
-            opacity: 0.4;
-            pointer-events: none;
-        }
-        .animatronic.endoskeleton.visible {
-            opacity: 0.4;
-        }
-        .animatronic.sparky {
-            color: #ff6b6b;
-            font-size: 20px;
-        }
-
-        #camIndicator {
-            position: absolute;
-            top: 8px;
+            font-size: 50px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #2a1a0f;
-            border-radius: 20px;
-            padding: 3px 14px;
-            font-size: 8px;
-            color: #66ccff;
-            letter-spacing: 2px;
+            transform: translate(-50%, -50%);
             opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 10;
+            transition: opacity 0.5s;
+            z-index: 6;
+            pointer-events: none;
+            filter: drop-shadow(0 0 30px rgba(255, 50, 0, 0.3));
         }
-        #camIndicator.active {
-            opacity: 1;
+        #officeFreddy.show {
+            opacity: 0.5;
         }
 
-        /* === СЕКРЕТНАЯ КНОПКА === */
-        #secretBtn {
-            position: absolute;
-            bottom: 8px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 215, 0, 0.1);
-            border: 2px solid #ffd700;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            font-size: 22px;
-            color: #ffd700;
-            cursor: pointer;
-            z-index: 15;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            animation: goldenGlow 1s infinite alternate;
-            text-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
-        }
-        #secretBtn.show {
+        /* Нижняя панель офиса */
+        #office-footer {
             display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px 4px 4px;
+            border-top: 2px solid #1a0f0a;
+            margin-top: 4px;
         }
-        #secretBtn:active {
-            transform: scale(0.85);
+        #office-footer .power {
+            color: #4caf50;
+            font-size: 10px;
         }
-        @keyframes goldenGlow {
-            0% {
-                box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-            }
-            100% {
-                box-shadow: 0 0 60px rgba(255, 215, 0, 0.6);
-            }
+        #office-footer .power .val {
+            color: #66ff88;
+        }
+        #office-footer .power .low {
+            color: #ff4444;
+            animation: blink 0.5s infinite;
+        }
+        #office-footer .usage {
+            color: #888;
+            font-size: 8px;
+        }
+        #office-footer .usage .bar {
+            display: inline-block;
+            width: 60px;
+            height: 6px;
+            background: #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+        #office-footer .usage .bar .fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #4caf50, #ffcc44, #ff4444);
+            border-radius: 4px;
+            transition: width 0.5s;
         }
 
-        /* === ПЛАНШЕТ === */
+        /* ============================================================
+           КНОПКИ ДЕЙСТВИЙ (под офисом)
+           ============================================================ */
+        #office-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 5px;
+            margin: 6px 0;
+        }
+        .office-btn {
+            background: linear-gradient(145deg, #161616, #0a0a0a);
+            border: 1px solid #1a1a1a;
+            color: #ccc;
+            padding: 10px 2px;
+            border-radius: 12px;
+            font-size: 8px;
+            font-weight: bold;
+            font-family: 'Press Start 2P', monospace;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-align: center;
+            line-height: 1.3;
+            touch-action: manipulation;
+        }
+        .office-btn:active {
+            transform: scale(0.92);
+            background: #1a0a0a;
+            border-color: #ff4444;
+        }
+        .office-btn .cost {
+            display: block;
+            font-size: 6px;
+            color: #666;
+            margin-top: 2px;
+        }
+        .office-btn.danger {
+            color: #ff6b6b;
+        }
+        .office-btn.safe {
+            color: #66ccff;
+        }
+        .office-btn.warning {
+            color: #ffbb33;
+        }
+        .office-btn.golden {
+            color: #ffd700;
+            border-color: #664400;
+        }
+        .office-btn:disabled {
+            opacity: 0.25;
+            transform: none !important;
+            pointer-events: none;
+        }
+
+        /* ============================================================
+           КАМЕРЫ (планшет)
+           ============================================================ */
         #tablet {
-            background: rgba(5, 5, 10, 0.97);
+            display: none;
+            background: rgba(5, 5, 10, 0.98);
             border: 2px solid #2a1a0f;
             border-radius: 16px;
             padding: 12px;
             margin: 8px 0;
-            display: none;
             box-shadow: 0 0 60px rgba(0, 0, 0, 0.9);
             backdrop-filter: blur(4px);
-            max-height: 420px;
+            max-height: 450px;
             overflow-y: auto;
+            position: relative;
+            z-index: 20;
         }
         #tablet.open {
             display: block;
@@ -456,7 +488,29 @@
             }
         }
 
-        #camGrid {
+        #tablet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #1a0f0a;
+            margin-bottom: 8px;
+        }
+        #tablet-header .time {
+            color: #66ccff;
+            font-size: 11px;
+        }
+        #tablet-header .cam-name {
+            color: #ff8844;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+        #tablet-header .cam-name .sub {
+            color: #665544;
+            font-size: 7px;
+        }
+
+        #cam-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 5px;
@@ -469,14 +523,14 @@
             text-align: center;
             transition: all 0.2s;
             cursor: pointer;
-            min-height: 65px;
+            min-height: 70px;
             position: relative;
         }
         .cam:active {
             transform: scale(0.94);
         }
         .cam .cam-icon {
-            font-size: 24px;
+            font-size: 28px;
             display: block;
             margin-bottom: 2px;
         }
@@ -503,14 +557,30 @@
         .cam .cam-status.warning {
             color: #ffbb33;
         }
-        @keyframes blink {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.3;
-            }
+
+        /* Пиксельный аниматроник на камере */
+        .cam-pixel {
+            display: inline-block;
+            font-size: 30px;
+            line-height: 1;
+            margin-bottom: 2px;
+            filter: drop-shadow(0 0 10px rgba(255, 50, 0, 0.2));
+        }
+
+        #tablet-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 8px;
+            border-top: 1px solid #1a0f0a;
+            margin-top: 8px;
+        }
+        #tablet-footer .power {
+            color: #4caf50;
+            font-size: 8px;
+        }
+        #tablet-footer .power .val {
+            color: #66ff88;
         }
 
         #closeTablet {
@@ -521,27 +591,30 @@
             border: 1px solid #2a1a0f;
             border-radius: 10px;
             color: #886644;
-            font-size: 12px;
+            font-size: 10px;
             cursor: pointer;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
         }
         #closeTablet:active {
             transform: scale(0.96);
         }
 
-        /* === ЛОГ === */
+        /* ============================================================
+           ЛОГ
+           ============================================================ */
         #log {
             background: rgba(0, 0, 0, 0.6);
             border: 1px solid #111;
             border-radius: 10px;
-            padding: 8px;
-            min-height: 45px;
-            max-height: 70px;
+            padding: 6px 8px;
+            min-height: 40px;
+            max-height: 60px;
             overflow-y: auto;
-            margin: 6px 0;
-            font-size: 9px;
-            line-height: 1.5;
-            color: #999;
+            margin: 4px 0;
+            font-size: 7px;
+            line-height: 1.6;
+            color: #888;
+            font-family: 'Press Start 2P', monospace;
         }
         #log::-webkit-scrollbar {
             width: 3px;
@@ -573,7 +646,7 @@
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateX(-6px);
+                transform: translateX(-4px);
             }
             to {
                 opacity: 1;
@@ -581,154 +654,9 @@
             }
         }
 
-        /* === КНОПКИ === */
-        #actions {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 5px;
-            margin: 6px 0;
-        }
-        .btn {
-            background: linear-gradient(145deg, #161616, #0a0a0a);
-            border: 1px solid #1a1a1a;
-            color: #ccc;
-            padding: 10px 2px;
-            border-radius: 12px;
-            font-size: 9px;
-            font-weight: bold;
-            font-family: 'Courier New', monospace;
-            cursor: pointer;
-            transition: all 0.15s;
-            text-align: center;
-            line-height: 1.2;
-            touch-action: manipulation;
-        }
-        .btn:active {
-            transform: scale(0.92);
-            background: #1a0a0a;
-            border-color: #ff4444;
-        }
-        .btn .cost {
-            display: block;
-            font-size: 7px;
-            color: #666;
-            margin-top: 2px;
-        }
-        .btn.danger {
-            color: #ff6b6b;
-        }
-        .btn.safe {
-            color: #66ccff;
-        }
-        .btn.warning {
-            color: #ffbb33;
-        }
-        .btn.golden {
-            color: #ffd700;
-            border-color: #664400;
-        }
-        .btn:disabled {
-            opacity: 0.25;
-            transform: none !important;
-            pointer-events: none;
-        }
-
-        #resetBtn {
-            width: 100%;
-            padding: 14px;
-            margin-top: 8px;
-            background: linear-gradient(145deg, #1a0f0a, #0a0505);
-            border: 2px solid #3d2b1f;
-            color: #cc8844;
-            border-radius: 14px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            transition: all 0.2s;
-            text-shadow: 0 0 20px rgba(255, 100, 0, 0.2);
-        }
-        #resetBtn:active {
-            transform: scale(0.96);
-            background: #2a1a0a;
-        }
-
-        .footer {
-            text-align: center;
-            color: #332211;
-            font-size: 7px;
-            margin-top: 8px;
-            opacity: 0.3;
-            letter-spacing: 1px;
-        }
-
-        /* === МИНИ-ИГРА С ФОКСИ === */
-        #foxyMinigame {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 50;
-            border-radius: 28px;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-        }
-        #foxyMinigame.active {
-            display: flex;
-            animation: fadeIn 0.2s;
-        }
-        #foxyMinigame .foxy-icon {
-            font-size: 80px;
-            animation: shake 0.2s infinite alternate;
-        }
-        @keyframes shake {
-            from {
-                transform: translateX(-15px) rotate(-8deg);
-            }
-            to {
-                transform: translateX(15px) rotate(8deg);
-            }
-        }
-        #foxyMinigame .foxy-text {
-            color: #ff4444;
-            font-size: 18px;
-            margin: 10px 0;
-            text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
-        }
-        #foxyMinigame .foxy-timer {
-            color: #888;
-            font-size: 14px;
-            margin: 6px 0;
-        }
-        #foxyMinigame .foxy-btn {
-            padding: 16px 40px;
-            background: linear-gradient(145deg, #2a1a0a, #1a0a00);
-            border: 3px solid #ff4444;
-            border-radius: 16px;
-            color: #ff4444;
-            font-size: 20px;
-            font-weight: bold;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            transition: all 0.1s;
-            margin-top: 10px;
-        }
-        #foxyMinigame .foxy-btn:active {
-            transform: scale(0.9);
-            background: #ff4444;
-            color: #000;
-        }
-        #foxyMinigame .foxy-btn:disabled {
-            opacity: 0.3;
-            pointer-events: none;
-        }
-
-        /* === СЕКРЕТНАЯ КОНЦОВКА (Спринг Бонни) === */
+        /* ============================================================
+           СЕКРЕТНАЯ КОНЦОВКА
+           ============================================================ */
         #springBonnieGame {
             position: absolute;
             top: 0;
@@ -737,67 +665,67 @@
             height: 100%;
             background: #0a0a0a;
             z-index: 60;
-            border-radius: 28px;
+            border-radius: 20px;
             display: none;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 16px;
-            image-rendering: pixelated;
         }
         #springBonnieGame.active {
             display: flex;
         }
         #springBonnieGame .sbg-title {
             color: #ff6b35;
-            font-size: 14px;
+            font-size: 12px;
             margin-bottom: 6px;
             text-shadow: 0 0 30px rgba(255, 50, 0, 0.3);
             letter-spacing: 2px;
+            font-family: 'Press Start 2P', monospace;
         }
         #springBonnieGame .sbg-map {
             background: #111;
             border: 2px solid #2a1a0f;
             border-radius: 12px;
-            padding: 8px;
+            padding: 6px;
             position: relative;
             width: 100%;
-            max-width: 340px;
-            height: 220px;
+            max-width: 300px;
+            height: 200px;
             overflow: hidden;
         }
         .sbg-tile {
             position: absolute;
-            font-size: 18px;
+            font-size: 16px;
             transition: all 0.1s;
+            font-family: 'Press Start 2P', monospace;
         }
         .sbg-player {
             position: absolute;
-            font-size: 26px;
+            font-size: 24px;
             z-index: 10;
             filter: drop-shadow(0 0 10px rgba(128, 0, 255, 0.3));
             transition: all 0.15s ease;
         }
         .sbg-msg {
             color: #888;
-            font-size: 10px;
+            font-size: 8px;
             margin: 6px 0;
             text-align: center;
             line-height: 1.6;
             min-height: 24px;
+            font-family: 'Press Start 2P', monospace;
         }
         .sbg-msg .highlight {
             color: #ff6b35;
-            font-weight: bold;
         }
         .sbg-msg .golden {
             color: #ffd700;
-            font-weight: bold;
         }
         .sbg-controls {
             display: grid;
-            grid-template-columns: 60px 60px 60px;
-            grid-template-rows: 50px 50px 50px;
+            grid-template-columns: 44px 44px 44px;
+            grid-template-rows: 40px 40px 40px;
             gap: 4px;
             margin-top: 6px;
         }
@@ -805,10 +733,10 @@
             background: linear-gradient(145deg, #1a0f0a, #0a0505);
             border: 2px solid #2a1a0f;
             color: #886644;
-            border-radius: 10px;
-            font-size: 18px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             transition: all 0.1s;
             display: flex;
             align-items: center;
@@ -846,7 +774,7 @@
             background: linear-gradient(145deg, #2a1a0a, #1a0a00);
             border-color: #ffd700;
             color: #ffd700;
-            font-size: 14px;
+            font-size: 12px;
         }
         .sbg-btn.action:active {
             background: #ffd700;
@@ -854,14 +782,14 @@
         }
         #sbgReset {
             margin-top: 6px;
-            padding: 8px 24px;
+            padding: 8px 20px;
             background: linear-gradient(145deg, #1a0f0a, #0a0505);
             border: 2px solid #3d2b1f;
             color: #cc8844;
             border-radius: 12px;
-            font-size: 12px;
+            font-size: 10px;
             cursor: pointer;
-            font-family: 'Courier New', monospace;
+            font-family: 'Press Start 2P', monospace;
             display: none;
         }
         #sbgReset:active {
@@ -870,7 +798,7 @@
 
         .sbg-blood {
             position: absolute;
-            font-size: 50px;
+            font-size: 40px;
             opacity: 0;
             transition: opacity 0.5s;
             z-index: 20;
@@ -880,73 +808,177 @@
             opacity: 0.8;
         }
 
+        /* ============================================================
+           QTE ФОКСИ
+           ============================================================ */
+        #foxyMinigame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 50;
+            border-radius: 20px;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        #foxyMinigame.active {
+            display: flex;
+            animation: fadeIn 0.2s;
+        }
+        #foxyMinigame .foxy-icon {
+            font-size: 70px;
+            animation: shake 0.2s infinite alternate;
+        }
+        @keyframes shake {
+            from {
+                transform: translateX(-15px) rotate(-8deg);
+            }
+            to {
+                transform: translateX(15px) rotate(8deg);
+            }
+        }
+        #foxyMinigame .foxy-text {
+            color: #ff4444;
+            font-size: 14px;
+            margin: 10px 0;
+            text-shadow: 0 0 30px rgba(255, 0, 0, 0.3);
+            font-family: 'Press Start 2P', monospace;
+        }
+        #foxyMinigame .foxy-timer {
+            color: #888;
+            font-size: 12px;
+            margin: 6px 0;
+            font-family: 'Press Start 2P', monospace;
+        }
+        #foxyMinigame .foxy-btn {
+            padding: 14px 30px;
+            background: linear-gradient(145deg, #2a1a0a, #1a0a00);
+            border: 3px solid #ff4444;
+            border-radius: 12px;
+            color: #ff4444;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Press Start 2P', monospace;
+            transition: all 0.1s;
+            margin-top: 8px;
+        }
+        #foxyMinigame .foxy-btn:active {
+            transform: scale(0.9);
+            background: #ff4444;
+            color: #000;
+        }
+        #foxyMinigame .foxy-btn:disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* ============================================================
+           АДАПТАЦИЯ
+           ============================================================ */
         @media (max-width: 420px) {
-            #officeMap {
-                height: 140px;
+            #game {
+                padding: 12px;
+                min-height: 600px;
             }
-            .desk {
-                width: 70px;
-                height: 26px;
-                font-size: 7px;
-                bottom: 22px;
+            #menu .title {
+                font-size: 18px;
             }
-            .door {
-                width: 18px;
-                height: 38px;
-                font-size: 11px;
-            }
-            .door-left {
-                left: 16px;
-            }
-            .door-right {
-                right: 16px;
-            }
-            .animatronic {
-                font-size: 16px;
-            }
-            #title {
-                font-size: 15px;
-            }
-            .stat-value {
-                font-size: 15px;
-            }
-            .btn {
+            #menu .menu-btn {
                 font-size: 8px;
-                padding: 8px 2px;
+                padding: 10px 20px;
             }
-            #log {
-                font-size: 8px;
-                min-height: 40px;
-                max-height: 60px;
+            #office-view {
+                height: 160px;
             }
-            #camGrid {
-                grid-template-columns: 1fr 1fr;
+            .office-door {
+                width: 24px;
+                height: 55px;
             }
-            #foxyMinigame .foxy-icon {
-                font-size: 60px;
-            }
-            .sbg-tile {
+            .office-door .door-icon {
                 font-size: 14px;
             }
-            .sbg-player {
-                font-size: 20px;
+            .office-desk {
+                width: 90px;
+                height: 24px;
+                font-size: 6px;
+                bottom: 14px;
+            }
+            #office-header .time {
+                font-size: 11px;
+            }
+            #office-header .night {
+                font-size: 9px;
+            }
+            #office-footer .power {
+                font-size: 8px;
+            }
+            #office-footer .usage {
+                font-size: 6px;
+            }
+            #office-footer .usage .bar {
+                width: 40px;
+                height: 4px;
+            }
+            .office-btn {
+                font-size: 7px;
+                padding: 8px 2px;
+            }
+            #cam-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .cam .cam-icon {
+                font-size: 22px;
+            }
+            #tablet-header .time {
+                font-size: 9px;
+            }
+            #tablet-header .cam-name {
+                font-size: 7px;
+            }
+            #log {
+                font-size: 6px;
+                min-height: 30px;
+                max-height: 50px;
+            }
+            .sbg-controls {
+                grid-template-columns: 36px 36px 36px;
+                grid-template-rows: 32px 32px 32px;
+            }
+            .sbg-btn {
+                font-size: 12px;
             }
             #springBonnieGame .sbg-map {
                 height: 160px;
-                max-width: 280px;
+                max-width: 260px;
             }
-            #secretBtn {
-                width: 32px;
-                height: 32px;
-                font-size: 16px;
-                bottom: 4px;
+            .sbg-tile {
+                font-size: 12px;
             }
-            .sbg-controls {
-                grid-template-columns: 48px 48px 48px;
-                grid-template-rows: 40px 40px 40px;
+            .sbg-player {
+                font-size: 18px;
             }
-            .sbg-btn {
-                font-size: 14px;
+            #foxyMinigame .foxy-icon {
+                font-size: 50px;
+            }
+            #foxyMinigame .foxy-text {
+                font-size: 11px;
+            }
+            #foxyMinigame .foxy-btn {
+                font-size: 12px;
+                padding: 10px 20px;
+            }
+            #musicToggle {
+                width: 26px;
+                height: 26px;
+                font-size: 11px;
+                top: 10px;
+                right: 12px;
             }
         }
     </style>
@@ -955,7 +987,9 @@
 
 <div id="game">
 
-    <!-- === ЗВУКИ === -->
+    <!-- ============================================================
+    ЗВУКИ
+    ============================================================ -->
     <audio class="sound" id="soundDoor" preload="auto">
         <source src="https://www.myinstants.com/media/sounds/door-open.mp3" type="audio/mpeg">
     </audio>
@@ -975,138 +1009,143 @@
         <source src="https://www.myinstants.com/media/sounds/marionette-laugh.mp3" type="audio/mpeg">
     </audio>
 
-    <!-- === ЖУТКАЯ МУЗЫКА (мрачный эмбиент) === -->
+    <!-- МУЗЫКА (твой файл) -->
     <audio id="bgMusic" loop preload="auto">
-        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_2c7e5a2b1c.mp3?filename=dark-ambient-116552.mp3" type="audio/mpeg">
-        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3" type="audio/mpeg">
+        <source src="horror.mp3" type="audio/mpeg">
     </audio>
+
     <button id="musicToggle" onclick="toggleMusic()">🔇</button>
 
-    <!-- === ВЕРХНЯЯ ПАНЕЛЬ === -->
-    <div id="header">
-        <div id="title">🍕 НОЧНАЯ СМЕНА</div>
-        <div id="subtitle">Freddy Fazbear's Pizza<br>Выживи 6 часов</div>
-    </div>
-
-    <!-- === СТАТЫ === -->
-    <div id="stats">
-        <div class="stat"><div class="stat-label">🔋 Батарея</div><div class="stat-value battery" id="batteryDisplay">100%</div></div>
-        <div class="stat"><div class="stat-label">😨 Страх</div><div class="stat-value fear" id="fearDisplay">0%</div></div>
-        <div class="stat"><div class="stat-label">🔊 Шум</div><div class="stat-value noise" id="noiseDisplay">0</div></div>
-    </div>
-
-    <!-- === ВРЕМЯ === -->
-    <div id="timeDisplay">⏰ <span id="timeNum">12:00</span> AM</div>
-    <div id="timeProgress"><div class="bar" id="timeBar"></div></div>
-
-    <!-- === КАРТА ОФИСА === -->
-    <div id="officeMap">
-        <div class="wall wall-left"></div>
-        <div class="wall wall-right"></div>
-        <div class="wall wall-top"></div>
-        <div class="wall wall-bottom"></div>
-
-        <div id="camIndicator">📹 КАМЕРЫ ВКЛ</div>
-
-        <div class="door door-left" id="doorLeft" onclick="toggleDoor('left')">
-            <span class="door-warning" id="warningLeft">⚠️</span>
-            <span class="door-foxy" id="foxyLeft">❗</span>
-            🚪<span class="door-label">ЛЕВАЯ</span>
-        </div>
-        <div class="door door-right" id="doorRight" onclick="toggleDoor('right')">
-            <span class="door-warning" id="warningRight">⚠️</span>
-            <span class="door-foxy" id="foxyRight">❗</span>
-            🚪<span class="door-label">ПРАВАЯ</span>
+    <!-- ============================================================
+    МЕНЮ
+    ============================================================ -->
+    <div id="menu">
+        <div class="title">
+            FIVE NIGHTS<br>AT FREDDY'S
+            <span class="small">🍕 Fazbear Entertainment</span>
         </div>
 
-        <div class="desk">ОХРАНА</div>
+        <button class="menu-btn" onclick="startNewGame()">NEW GAME</button>
+        <button class="menu-btn" disabled>CONTINUE</button>
 
-        <div class="zone zone-stage">🎭 СЦЕНА</div>
-        <div class="zone zone-hall">🚪 ЗАЛ</div>
-        <div class="zone zone-corridor">🛤️ КОРИДОР</div>
+        <button class="menu-btn night" onclick="startNight(5)">NIGHT 5</button>
+        <button class="menu-btn night" onclick="startNight(6)">6TH NIGHT</button>
+        <button class="menu-btn night" onclick="startCustomNight()">CUSTOM NIGHT</button>
 
-        <div class="animatronic freddy" id="animFreddy">🐻<span class="anim-name">Фредди</span></div>
-        <div class="animatronic bonnie" id="animBonnie">🐰<span class="anim-name">Бонни</span></div>
-        <div class="animatronic chica" id="animChica">🐤<span class="anim-name">Чика</span></div>
-        <div class="animatronic foxy" id="animFoxy">🦊<span class="anim-name">Фокси</span></div>
-        <div class="animatronic golden" id="animGolden">👑🐻<span class="anim-name">Голден</span></div>
-        <div class="animatronic endoskeleton" id="animEndo">🦾<span class="anim-name">Эндо</span></div>
-        <div class="animatronic sparky" id="animSparky">⚡🐶<span class="anim-name">Спарки</span></div>
-
-        <button id="secretBtn" onclick="startSpringBonnie()">🚸</button>
+        <div class="credits">Сделано с ❤️ и страхом</div>
     </div>
 
-    <!-- === ПЛАНШЕТ === -->
+    <!-- ============================================================
+    ОФИС
+    ============================================================ -->
+    <div id="office">
+        <div id="office-header">
+            <div class="time" id="officeTime">12:00 AM</div>
+            <div class="night">NIGHT <span id="officeNight">1</span></div>
+        </div>
+
+        <div id="office-view">
+            <div class="office-wall office-wall-left"></div>
+            <div class="office-wall office-wall-right"></div>
+            <div class="office-wall office-wall-top"></div>
+
+            <div class="office-door office-door-left" id="doorLeft" onclick="toggleDoor('left')">
+                <span class="door-warning" id="warningLeft">⚠️</span>
+                <span class="door-foxy" id="foxyLeft">❗</span>
+                <span class="door-icon">🚪</span>
+                <span class="door-label">ЛЕВАЯ</span>
+            </div>
+
+            <div class="office-door office-door-right" id="doorRight" onclick="toggleDoor('right')">
+                <span class="door-warning" id="warningRight">⚠️</span>
+                <span class="door-foxy" id="foxyRight">❗</span>
+                <span class="door-icon">🚪</span>
+                <span class="door-label">ПРАВАЯ</span>
+            </div>
+
+            <div class="office-desk">ОХРАНА</div>
+
+            <!-- Пиксельный Фредди (появляется редко) -->
+            <div id="officeFreddy">🐻</div>
+        </div>
+
+        <div id="office-footer">
+            <div class="power">⚡ POWER LEFT: <span class="val" id="batteryDisplay">100%</span></div>
+            <div class="usage">
+                USAGE
+                <span class="bar"><span class="fill" id="usageBar"></span></span>
+            </div>
+        </div>
+
+        <div id="log">
+            <div class="log-entry info">🔦 Смена начинается... 12:00 AM</div>
+        </div>
+
+        <div id="office-actions">
+            <button class="office-btn safe" onclick="doAction('cam')">📹 КАМЕРЫ<span class="cost">-5%</span></button>
+            <button class="office-btn danger" onclick="doAction('left')">🚪 ЛЕВАЯ<span class="cost">-3%</span></button>
+            <button class="office-btn danger" onclick="doAction('right')">🚪 ПРАВАЯ<span class="cost">-3%</span></button>
+            <button class="office-btn safe" onclick="doAction('light')">💡 СВЕТ<span class="cost">-2%</span></button>
+            <button class="office-btn warning" onclick="doAction('rewind')">⏪ ПЕРЕМОТКА<span class="cost">-10%</span></button>
+            <button class="office-btn golden" onclick="doAction('golden')">👑 ГОЛДЕН<span class="cost">-20%</span></button>
+        </div>
+
+        <button id="resetBtn" onclick="resetGame()" style="width:100%;padding:12px;margin-top:6px;background:linear-gradient(145deg,#1a0f0a,#0a0505);border:2px solid #3d2b1f;color:#cc8844;border-radius:12px;font-size:10px;cursor:pointer;font-family:'Press Start 2P',monospace;">🔄 НОВАЯ ИГРА</button>
+    </div>
+
+    <!-- ============================================================
+    КАМЕРЫ (ПЛАНШЕТ)
+    ============================================================ -->
     <div id="tablet">
-        <div id="camGrid">
-            <div class="cam" data-cam="stage" onclick="viewRoom('stage')">
-                <span class="cam-icon">🎭</span>
+        <div id="tablet-header">
+            <div class="time" id="tabletTime">12:00 AM</div>
+            <div class="cam-name" id="tabletCamName">SHOW STAGE <span class="sub">●</span></div>
+        </div>
+
+        <div id="cam-grid">
+            <div class="cam" data-cam="stage" onclick="viewCam('stage')">
+                <span class="cam-pixel">🎭</span>
                 <span class="cam-name">СЦЕНА</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="hall" onclick="viewRoom('hall')">
-                <span class="cam-icon">🚪</span>
+            <div class="cam" data-cam="hall" onclick="viewCam('hall')">
+                <span class="cam-pixel">🚪</span>
                 <span class="cam-name">ЗАЛ</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="corridor" onclick="viewRoom('corridor')">
-                <span class="cam-icon">🛤️</span>
+            <div class="cam" data-cam="corridor" onclick="viewCam('corridor')">
+                <span class="cam-pixel">🛤️</span>
                 <span class="cam-name">КОРИДОР</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="office" onclick="viewRoom('office')">
-                <span class="cam-icon">🪑</span>
-                <span class="cam-name">ОФИС</span>
-                <span class="cam-status safe">● вы здесь</span>
-            </div>
-            <div class="cam" data-cam="kitchen" onclick="viewRoom('kitchen')">
-                <span class="cam-icon">🍳</span>
+            <div class="cam" data-cam="kitchen" onclick="viewCam('kitchen')">
+                <span class="cam-pixel">🍳</span>
                 <span class="cam-name">КУХНЯ</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="backstage" onclick="viewRoom('backstage')">
-                <span class="cam-icon">🎪</span>
+            <div class="cam" data-cam="backstage" onclick="viewCam('backstage')">
+                <span class="cam-pixel">🎪</span>
                 <span class="cam-name">ЗАКУЛИСЬЕ</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
-            <div class="cam" data-cam="storage" onclick="viewRoom('storage')">
-                <span class="cam-icon">📦</span>
-                <span class="cam-name">СКЛАД</span>
-                <span class="cam-status safe">● чисто</span>
-            </div>
-            <div class="cam" data-cam="basement" onclick="viewRoom('basement')">
-                <span class="cam-icon">⬇️</span>
-                <span class="cam-name">ПОДВАЛ</span>
-                <span class="cam-status safe">● чисто</span>
-            </div>
-            <div class="cam" data-cam="parts" onclick="viewRoom('parts')">
-                <span class="cam-icon">🔧</span>
+            <div class="cam" data-cam="parts" onclick="viewCam('parts')">
+                <span class="cam-pixel">🔧</span>
                 <span class="cam-name">МАСТЕРСКАЯ</span>
                 <span class="cam-status safe">● чисто</span>
             </div>
         </div>
+
+        <div id="tablet-footer">
+            <div class="power">⚡ POWER: <span class="val" id="tabletBattery">100%</span></div>
+            <div class="power" style="color:#888;font-size:7px;">USAGE: <span id="tabletUsage">0%</span></div>
+        </div>
+
         <button id="closeTablet" onclick="closeTablet()">✕ ЗАКРЫТЬ ПЛАНШЕТ</button>
     </div>
 
-    <!-- === ЛОГ === -->
-    <div id="log">
-        <div class="log-entry info">🔦 Смена начинается... 12:00 AM</div>
-    </div>
-
-    <!-- === КНОПКИ === -->
-    <div id="actions">
-        <button class="btn safe" onclick="doAction('cam')">📹 Камеры<span class="cost">-5%</span></button>
-        <button class="btn danger" onclick="doAction('left')">🚪 Левая дверь<span class="cost">-3%</span></button>
-        <button class="btn danger" onclick="doAction('right')">🚪 Правая дверь<span class="cost">-3%</span></button>
-        <button class="btn safe" onclick="doAction('light')">💡 Свет<span class="cost">-2%</span></button>
-        <button class="btn warning" onclick="doAction('rewind')">⏪ Перемотка<span class="cost">-10%</span></button>
-        <button class="btn golden" onclick="doAction('golden')">👑 Голден<span class="cost">-20%</span></button>
-    </div>
-
-    <button id="resetBtn" onclick="resetGame()">🔄 НОВАЯ ИГРА</button>
-    <div class="footer">Сделано с ❤️ и страхом</div>
-
-    <!-- === МИНИ-ИГРА С ФОКСИ === -->
+    <!-- ============================================================
+    QTE ФОКСИ
+    ============================================================ -->
     <div id="foxyMinigame">
         <div class="foxy-icon">🦊</div>
         <div class="foxy-text">⚠️ ФОКСИ БЕЖИТ!</div>
@@ -1115,11 +1154,13 @@
         <button class="foxy-btn" id="foxyBtnRight" onclick="foxyQTE('right')">🚪 ПРАВАЯ</button>
     </div>
 
-    <!-- === СЕКРЕТНАЯ КОНЦОВКА === -->
+    <!-- ============================================================
+    СЕКРЕТНАЯ КОНЦОВКА (СПРИНГ БОННИ)
+    ============================================================ -->
     <div id="springBonnieGame">
         <div class="sbg-title">🔮 СЕКРЕТНАЯ КОНЦОВКА</div>
         <div class="sbg-map" id="sbgMap"></div>
-        <div class="sbg-msg" id="sbgMsg">⬆️⬇️⬅️➡️ Дойдите до туалета (🚽)</div>
+        <div class="sbg-msg" id="sbgMsg">⬆️⬇️⬅️➡️ Дойдите до туалета 🚽</div>
         <div class="sbg-controls">
             <button class="sbg-btn up" onclick="sbgMove(0,-1)">⬆️</button>
             <button class="sbg-btn down" onclick="sbgMove(0,1)">⬇️</button>
@@ -1129,22 +1170,29 @@
         </div>
         <button id="sbgReset" onclick="resetGame()">🔄 НАЧАТЬ ЗАНОВО</button>
     </div>
+
 </div>
 
 <script>
     // ================================================================
-    //  FNAF 5.1 — ФИНАЛЬНАЯ ВЕРСИЯ
-    //  - Время: 3 минуты = 1 час (всего 18 минут игры)
-    //  - Жуткая музыка (мрачный эмбиент)
-    //  - 4 кнопки управления в секретной концовке
-    //  - Исправлен баланс
+    //  FNAF 1.0 — ПОЛНАЯ КОПИЯ (Пиксельная версия)
+    //  - Меню как в игре
+    //  - Офис с дверями
+    //  - Камеры
+    //  - Пиксельные аниматроники (эмодзи + стиль)
+    //  - Твоя музыка (horror.mp3)
+    //  - Секретная концовка
     // ================================================================
 
+    // ================================================================
+    //  СОСТОЯНИЕ
+    // ================================================================
     const state = {
         battery: 100,
         fear: 0,
         noise: 0,
         hour: 0,
+        night: 1,
         alive: true,
         won: false,
         gameOver: false,
@@ -1158,47 +1206,39 @@
         springBonnieActive: false,
         timeInterval: null,
         energyDrainInterval: null,
+        usage: 0,
+        currentCam: 'stage',
         animatronics: {
             freddy: { zone: 0, side: 'left', emoji: '🐻', visible: false, atDoor: false },
             bonnie: { zone: 0, side: 'right', emoji: '🐰', visible: false, atDoor: false },
             chica: { zone: 0, side: 'left', emoji: '🐤', visible: false, atDoor: false },
             foxy: { zone: 0, side: 'left', emoji: '🦊', visible: false, atDoor: false, running: false },
-            golden: { zone: -1, side: 'both', emoji: '👑🐻', visible: false, atDoor: false },
-            sparky: { zone: -1, side: 'right', emoji: '⚡🐶', visible: false, atDoor: false }
+            golden: { zone: -1, side: 'both', emoji: '👑🐻', visible: false, atDoor: false }
         },
-        endoskeleton: { visible: true, x: 65, y: 35 },
-        roomStates: {
-            stage: { icon: '🎭', desc: 'Пустая сцена. Тени танцуют.', zone: 0 },
-            hall: { icon: '🚪', desc: 'Пустой зал. Остывшая пицца.', zone: 1 },
-            corridor: { icon: '🛤️', desc: 'Тёмный коридор. Кто-то стоит в конце.', zone: 2 },
-            office: { icon: '🪑', desc: 'Ваш офис. Пока безопасно.', zone: 4 },
-            kitchen: { icon: '🍳', desc: 'Кухня тиха. Жужжит холодильник.', zone: -1 },
-            backstage: { icon: '🎪', desc: 'Закулисье. Старые костюмы.', zone: -1 },
-            storage: { icon: '📦', desc: 'Склад. Коробки повсюду.', zone: -1 },
-            basement: { icon: '⬇️', desc: 'Подвал. Темно и сыро.', zone: -1 },
-            parts: { icon: '🔧', desc: 'Мастерская. 🦾 Эндоскелет висит на стене.', zone: -1 }
-        },
-        musicOn: false,
         sbg: {
             playerX: 1,
             playerY: 4,
             map: [],
             foundSpring: false,
             gameOver: false
-        }
+        },
+        musicOn: false
     };
 
-    // --- Элементы ---
+    // ================================================================
+    //  ЭЛЕМЕНТЫ
+    // ================================================================
+    const menuEl = document.getElementById('menu');
+    const officeEl = document.getElementById('office');
+    const tabletEl = document.getElementById('tablet');
     const logEl = document.getElementById('log');
     const batteryEl = document.getElementById('batteryDisplay');
-    const fearEl = document.getElementById('fearDisplay');
-    const noiseEl = document.getElementById('noiseDisplay');
-    const timeEl = document.getElementById('timeNum');
-    const timeBar = document.getElementById('timeBar');
-    const tabletEl = document.getElementById('tablet');
-    const camIndicator = document.getElementById('camIndicator');
-    const audio = document.getElementById('bgMusic');
-    const musicBtn = document.getElementById('musicToggle');
+    const tabletBatteryEl = document.getElementById('tabletBattery');
+    const timeEl = document.getElementById('officeTime');
+    const tabletTimeEl = document.getElementById('tabletTime');
+    const nightEl = document.getElementById('officeNight');
+    const usageBar = document.getElementById('usageBar');
+    const tabletUsageEl = document.getElementById('tabletUsage');
     const doorLeft = document.getElementById('doorLeft');
     const doorRight = document.getElementById('doorRight');
     const warningLeft = document.getElementById('warningLeft');
@@ -1207,10 +1247,13 @@
     const foxyRight = document.getElementById('foxyRight');
     const foxyMinigame = document.getElementById('foxyMinigame');
     const foxyTimerEl = document.getElementById('foxyTimer');
-    const secretBtn = document.getElementById('secretBtn');
     const springBonnieGame = document.getElementById('springBonnieGame');
+    const audio = document.getElementById('bgMusic');
+    const musicBtn = document.getElementById('musicToggle');
 
-    // --- Звуки ---
+    // ================================================================
+    //  ЗВУКИ
+    // ================================================================
     function playSound(id) {
         try {
             const s = document.getElementById(id);
@@ -1219,7 +1262,9 @@
         } catch (e) {}
     }
 
-    // --- Жуткая музыка ---
+    // ================================================================
+    //  МУЗЫКА
+    // ================================================================
     function toggleMusic() {
         state.musicOn = !state.musicOn;
         if (state.musicOn) {
@@ -1234,59 +1279,94 @@
         }
     }
 
-    // --- Зоны ---
+    // ================================================================
+    //  МЕНЮ
+    // ================================================================
+    function startNewGame() {
+        state.night = 1;
+        state.hour = 0;
+        state.battery = 100;
+        state.fear = 0;
+        state.alive = true;
+        state.won = false;
+        state.gameOver = false;
+        state.leftDoorClosed = false;
+        state.rightDoorClosed = false;
+        state.goldenSummoned = false;
+        state.secretUnlocked = false;
+        for (let name in state.animatronics) {
+            state.animatronics[name].zone = 0;
+            state.animatronics[name].visible = false;
+            state.animatronics[name].atDoor = false;
+        }
+        menuEl.classList.add('hidden');
+        officeEl.classList.add('active');
+        nightEl.textContent = state.night;
+        logEl.innerHTML = `<div class="log-entry info">🔦 НОЧЬ ${state.night} начинается... 12:00 AM</div>`;
+        startTime();
+        updateUI();
+        addLog('🔮 Секретная концовка станет доступна в 5:00 AM!', 'golden');
+    }
+
+    function startNight(n) {
+        state.night = n;
+        startNewGame();
+        addLog(`🌙 НОЧЬ ${n} — СЛОЖНОСТЬ ПОВЫШЕНА!`, 'danger');
+    }
+
+    function startCustomNight() {
+        state.night = 0;
+        startNewGame();
+        addLog('⚙️ КАСТОМНАЯ НОЧЬ — ВСЕ АНИМАТРОНИКИ АКТИВНЫ!', 'danger');
+    }
+
+    // ================================================================
+    //  ЗОНЫ И ПОЗИЦИИ
+    // ================================================================
     function getZonePosition(zone, side) {
         const positions = {
-            0: { x: 35, y: 70 },
-            1: { x: 50, y: 50 },
-            2: { x: 65, y: 35 },
-            3: { x: side === 'left' ? 22 : 78, y: 50 },
-            4: { x: 50, y: 25 }
+            0: { x: 30, y: 65 },
+            1: { x: 50, y: 45 },
+            2: { x: 68, y: 30 },
+            3: { x: side === 'left' ? 18 : 82, y: 50 },
+            4: { x: 50, y: 20 }
         };
         return positions[zone] || positions[0];
     }
 
-    // --- Обновление ---
-    function updateAnimatronics() {
-        const map = {
-            freddy: document.getElementById('animFreddy'),
-            bonnie: document.getElementById('animBonnie'),
-            chica: document.getElementById('animChica'),
-            foxy: document.getElementById('animFoxy'),
-            golden: document.getElementById('animGolden'),
-            sparky: document.getElementById('animSparky'),
-            endo: document.getElementById('animEndo')
-        };
+    // ================================================================
+    //  ОБНОВЛЕНИЕ UI
+    // ================================================================
+    function updateUI() {
+        const bat = Math.max(0, Math.round(state.battery));
+        batteryEl.textContent = bat + '%';
+        if (tabletBatteryEl) tabletBatteryEl.textContent = bat + '%';
 
-        if (map.endo) {
-            map.endo.style.left = '65%';
-            map.endo.style.bottom = '35%';
-            map.endo.style.opacity = '0.4';
-            map.endo.classList.add('visible');
-        }
+        // Использование
+        const usage = Math.min(100, Math.round((100 - state.battery) * 1.2));
+        usageBar.style.width = usage + '%';
+        if (tabletUsageEl) tabletUsageEl.textContent = usage + '%';
 
-        for (let [name, el] of Object.entries(map)) {
-            if (name === 'endo') continue;
-            const data = state.animatronics[name];
-            if (!data) continue;
+        // Двери
+        doorLeft.classList.toggle('closed', state.leftDoorClosed);
+        doorRight.classList.toggle('closed', state.rightDoorClosed);
+        doorLeft.querySelector('.door-icon').textContent = state.leftDoorClosed ? '🔒' : '🚪';
+        doorRight.querySelector('.door-icon').textContent = state.rightDoorClosed ? '🔒' : '🚪';
 
-            const pos = getZonePosition(data.zone, data.side);
-            if (data.visible || data.atDoor || data.zone === 3) {
-                el.style.opacity = '1';
-                el.style.left = pos.x + '%';
-                el.style.bottom = pos.y + '%';
-                el.classList.add('visible');
-                el.style.filter = data.zone === 3 ? 'drop-shadow(0 0 25px rgba(255,50,0,0.6))' :
-                    'drop-shadow(0 0 15px rgba(255,50,0,0.2))';
-            } else {
-                el.style.opacity = '0';
-                el.classList.remove('visible');
-            }
-        }
-        updateDoorWarnings();
+        // Предупреждения
+        updateWarnings();
+
+        // Кнопки
+        document.querySelectorAll('#office-actions .office-btn').forEach(b =>
+            b.disabled = !state.alive || state.gameOver || state.won || state.springBonnieActive
+        );
+
+        // Батарея красная если мало
+        batteryEl.className = 'val' + (state.battery < 20 ? ' low' : '');
+        if (tabletBatteryEl) tabletBatteryEl.className = 'val' + (state.battery < 20 ? ' low' : '');
     }
 
-    function updateDoorWarnings() {
+    function updateWarnings() {
         let leftDanger = false,
             rightDanger = false;
         let leftFoxy = false,
@@ -1304,13 +1384,90 @@
             }
         }
 
-        warningLeft.classList.toggle('show', leftDanger);
-        warningRight.classList.toggle('show', rightDanger);
+        warningLeft.classList.toggle('show', leftDanger || leftFoxy);
+        warningRight.classList.toggle('show', rightDanger || rightFoxy);
         foxyLeft.classList.toggle('show', leftFoxy);
         foxyRight.classList.toggle('show', rightFoxy);
     }
 
-    // --- Движение аниматроников (каждые 3 минуты) ---
+    function addLog(msg, type = 'info') {
+        const div = document.createElement('div');
+        div.className = `log-entry ${type}`;
+        div.textContent = msg;
+        logEl.appendChild(div);
+        logEl.scrollTop = logEl.scrollHeight;
+        while (logEl.children.length > 25) logEl.removeChild(logEl.firstChild);
+    }
+
+    // ================================================================
+    //  ВРЕМЯ И ЭНЕРГИЯ
+    // ================================================================
+    function startTime() {
+        if (state.timeInterval) clearInterval(state.timeInterval);
+        if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
+
+        const hourDuration = 180000; // 3 минуты = 1 час
+
+        state.timeInterval = setInterval(() => {
+            if (!state.alive || state.gameOver || state.won) return;
+            state.hour++;
+            updateTimeDisplay();
+
+            if (state.hour >= 6) {
+                state.won = true;
+                addLog(`🏆 ВЫ ВЫЖИЛИ! 6:00 AM! НОЧЬ ${state.night} ПРОЙДЕНА!`, 'success');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                if (!state.secretUnlocked) {
+                    document.getElementById('secretBtn').classList.add('show');
+                    addLog('🚸 Секретная концовка доступна! Нажмите 🚸 у левой двери!', 'golden');
+                }
+                updateUI();
+                return;
+            }
+
+            moveAnimatronics();
+
+            if (state.hour === 5 && !state.secretUnlocked) {
+                document.getElementById('secretBtn').classList.add('show');
+                addLog('🚸 Секретная концовка доступна!', 'golden');
+            }
+
+            state.foxyTimer++;
+
+        }, hourDuration);
+
+        // Энергия (медленно)
+        state.energyDrainInterval = setInterval(() => {
+            if (!state.alive || state.gameOver || state.won) return;
+            let drain = 0.12;
+            if (state.tabletOpen) drain += 0.15;
+            state.battery = Math.max(0, state.battery - drain);
+
+            if (state.battery <= 0) {
+                state.alive = false;
+                state.gameOver = true;
+                addLog('🔋 БАТАРЕЯ РАЗРЯЖЕНА! GAME OVER', 'danger');
+                playSound('soundScare');
+                clearInterval(state.timeInterval);
+                clearInterval(state.energyDrainInterval);
+                updateUI();
+            }
+            updateUI();
+        }, 3000);
+    }
+
+    function updateTimeDisplay() {
+        const hours = state.hour + 12;
+        const displayHour = hours > 12 ? hours - 12 : hours;
+        const timeStr = `${displayHour}:00 ${hours >= 12 ? 'AM' : 'PM'}`;
+        timeEl.textContent = timeStr;
+        tabletTimeEl.textContent = timeStr;
+    }
+
+    // ================================================================
+    //  ДВИЖЕНИЕ АНИМАТРОНИКОВ
+    // ================================================================
     function moveAnimatronics() {
         const names = ['freddy', 'bonnie', 'chica'];
         const mover = names[Math.floor(Math.random() * names.length)];
@@ -1319,7 +1476,7 @@
         if (data.zone < 3) {
             data.zone++;
             data.visible = true;
-            addLog(`🔍 ${mover.charAt(0).toUpperCase() + mover.slice(1)} движется в зону ${data.zone}`, 'info');
+            addLog(`🔍 ${mover.charAt(0).toUpperCase() + mover.slice(1)} движется`, 'info');
 
             if (data.zone === 3) {
                 data.atDoor = true;
@@ -1381,126 +1538,17 @@
             state.foxyTimer = 0;
         }
 
-        updateAnimatronics();
+        updateCamStatuses();
         updateUI();
     }
 
-    // --- Время (3 минуты = 1 час) ---
-    function startTime() {
-        if (state.timeInterval) clearInterval(state.timeInterval);
-        if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
-
-        const hourDuration = 180000; // 3 минуты в миллисекундах
-        let hourProgress = 0;
-
-        state.timeInterval = setInterval(() => {
-            if (!state.alive || state.gameOver || state.won) return;
-            state.hour++;
-            updateTimeDisplay();
-
-            if (state.hour >= 6) {
-                state.won = true;
-                addLog('🏆 ВЫ ВЫЖИЛИ! 6:00 AM!', 'success');
-                clearInterval(state.timeInterval);
-                clearInterval(state.energyDrainInterval);
-                if (!state.secretUnlocked) {
-                    secretBtn.classList.add('show');
-                    addLog('🚸 Секретная концовка доступна!', 'golden');
-                }
-                updateUI();
-                return;
-            }
-
-            moveAnimatronics();
-
-            if (state.hour === 5 && !state.secretUnlocked) {
-                secretBtn.classList.add('show');
-                addLog('🚸 Секретная концовка доступна!', 'golden');
-            }
-
-            state.foxyTimer++;
-            hourProgress = 0;
-            timeBar.style.width = '0%';
-
-        }, hourDuration);
-
-        // Прогресс-бар
-        const progressInterval = setInterval(() => {
-            if (!state.alive || state.gameOver || state.won) {
-                clearInterval(progressInterval);
-                return;
-            }
-            hourProgress += 1;
-            const pct = Math.min(100, (hourProgress / (hourDuration / 100)) * 100);
-            timeBar.style.width = pct + '%';
-        }, 100);
-
-        // Энергия
-        state.energyDrainInterval = setInterval(() => {
-            if (!state.alive || state.gameOver || state.won) return;
-            let drain = 0.4;
-            if (state.tabletOpen) drain += 0.6;
-            state.battery = Math.max(0, state.battery - drain);
-
-            if (state.battery <= 0) {
-                state.alive = false;
-                state.gameOver = true;
-                addLog('🔋 БАТАРЕЯ РАЗРЯЖЕНА! GAME OVER', 'danger');
-                playSound('soundScare');
-                clearInterval(state.timeInterval);
-                clearInterval(state.energyDrainInterval);
-                updateUI();
-            }
-            updateUI();
-        }, 3000);
-
-        // Сохраняем интервал для очистки
-        state._progressInterval = progressInterval;
-    }
-
-    function updateTimeDisplay() {
-        const hours = state.hour + 12;
-        const displayHour = hours > 12 ? hours - 12 : hours;
-        timeEl.textContent = `${displayHour}:00 ${hours >= 12 ? 'AM' : 'PM'}`;
-    }
-
-    // --- UI ---
-    function updateUI() {
-        batteryEl.textContent = Math.max(0, Math.round(state.battery)) + '%';
-        fearEl.textContent = Math.min(100, Math.round(state.fear)) + '%';
-        noiseEl.textContent = state.noise;
-        fearEl.style.color = state.fear > 70 ? '#ff2222' : state.fear > 40 ? '#ff8844' : '#ff6b35';
-
-        doorLeft.classList.toggle('closed', state.leftDoorClosed);
-        doorRight.classList.toggle('closed', state.rightDoorClosed);
-        doorLeft.innerHTML = state.leftDoorClosed ?
-            '🔒<span class="door-label">ЛЕВАЯ</span><span class="door-warning" id="warningLeft">⚠️</span><span class="door-foxy" id="foxyLeft">❗</span>' :
-            '🚪<span class="door-label">ЛЕВАЯ</span><span class="door-warning" id="warningLeft">⚠️</span><span class="door-foxy" id="foxyLeft">❗</span>';
-        doorRight.innerHTML = state.rightDoorClosed ?
-            '🔒<span class="door-label">ПРАВАЯ</span><span class="door-warning" id="warningRight">⚠️</span><span class="door-foxy" id="foxyRight">❗</span>' :
-            '🚪<span class="door-label">ПРАВАЯ</span><span class="door-warning" id="warningRight">⚠️</span><span class="door-foxy" id="foxyRight">❗</span>';
-
-        document.querySelectorAll('#actions .btn').forEach(b =>
-            b.disabled = !state.alive || state.gameOver || state.won || state.springBonnieActive
-        );
-        updateDoorWarnings();
-    }
-
-    function addLog(msg, type = 'info') {
-        const div = document.createElement('div');
-        div.className = `log-entry ${type}`;
-        div.textContent = msg;
-        logEl.appendChild(div);
-        logEl.scrollTop = logEl.scrollHeight;
-        while (logEl.children.length > 30) logEl.removeChild(logEl.firstChild);
-    }
-
-    // --- Планшет ---
+    // ================================================================
+    //  КАМЕРЫ
+    // ================================================================
     function openTablet() {
         if (!state.alive || state.gameOver || state.won || state.springBonnieActive) return;
         state.tabletOpen = true;
         tabletEl.classList.add('open');
-        camIndicator.classList.add('active');
         updateCamStatuses();
         updateUI();
     }
@@ -1508,47 +1556,39 @@
     function closeTablet() {
         state.tabletOpen = false;
         tabletEl.classList.remove('open');
-        camIndicator.classList.remove('active');
         updateUI();
     }
-
-    document.getElementById('officeMap').addEventListener('click', (e) => {
-        if (e.target.closest('.door') || e.target.closest('#secretBtn')) return;
-        if (state.alive && !state.gameOver && !state.won && !state.springBonnieActive) {
-            if (state.tabletOpen) closeTablet();
-            else openTablet();
-        }
-    });
 
     function updateCamStatuses() {
         document.querySelectorAll('.cam').forEach(cam => {
             const status = cam.querySelector('.cam-status');
             const name = cam.dataset.cam;
-            const room = state.roomStates[name];
-            if (!room) return;
-
-            if (name === 'office') {
-                status.textContent = '● вы здесь';
-                status.className = 'cam-status safe';
-                return;
-            }
+            const zoneMap = {
+                stage: 0,
+                hall: 1,
+                corridor: 2,
+                kitchen: -1,
+                backstage: -1,
+                parts: -1
+            };
+            const zone = zoneMap[name] || -1;
 
             let hasAnimatronic = false;
             let animName = '';
             for (let aname in state.animatronics) {
                 const data = state.animatronics[aname];
-                if (data.zone === room.zone && data.visible) {
+                if (data.zone === zone && data.visible) {
                     hasAnimatronic = true;
                     animName = aname;
                 }
             }
 
-            if (hasAnimatronic) {
-                status.textContent = `⚠️ ${animName.charAt(0).toUpperCase() + animName.slice(1)}!`;
-                status.className = 'cam-status danger';
-            } else if (name === 'parts') {
-                status.textContent = '🦾 Эндоскелет висит';
+            if (name === 'parts') {
+                status.textContent = '🦾 эндоскелет';
                 status.className = 'cam-status warning';
+            } else if (hasAnimatronic) {
+                status.textContent = `⚠️ ${animName}!`;
+                status.className = 'cam-status danger';
             } else {
                 status.textContent = '● чисто';
                 status.className = 'cam-status safe';
@@ -1556,37 +1596,35 @@
         });
     }
 
-    function viewRoom(roomId) {
+    function viewCam(name) {
         if (!state.tabletOpen) return;
-        const room = state.roomStates[roomId];
-        if (!room) return;
-
-        let hasAnimatronic = false;
-        let animName = '';
-        for (let aname in state.animatronics) {
-            const data = state.animatronics[aname];
-            if (data.zone === room.zone && data.visible) {
-                hasAnimatronic = true;
-                animName = aname;
-            }
-        }
-
-        if (hasAnimatronic) {
-            addLog(`👀 ${animName} на камере ${roomId}!`, 'danger');
-            state.fear += 5;
-        } else if (roomId === 'parts') {
-            addLog('🦾 В мастерской висит старый эндоскелет...', 'info');
-        } else {
-            addLog(`📹 Камера ${roomId}: чисто`, 'info');
-        }
-
-        setTimeout(() => {
-            if (state.tabletOpen) closeTablet();
-        }, 3000);
-        updateUI();
+        state.currentCam = name;
+        const names = {
+            stage: 'SHOW STAGE',
+            hall: 'DINING HALL',
+            corridor: 'CORRIDOR',
+            kitchen: 'KITCHEN',
+            backstage: 'BACKSTAGE',
+            parts: 'PARTS & SERVICE'
+        };
+        document.getElementById('tabletCamName').innerHTML = `${names[name] || name} <span class="sub">●</span>`;
+        updateCamStatuses();
+        addLog(`📹 Камера ${names[name] || name}`, 'info');
     }
 
-    // --- Двери ---
+    // Клик по карте офиса = открыть камеры
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#office-view') && !e.target.closest('.office-door') && !e.target.closest('#officeFreddy')) {
+            if (state.alive && !state.gameOver && !state.won && !state.springBonnieActive) {
+                if (state.tabletOpen) closeTablet();
+                else openTablet();
+            }
+        }
+    });
+
+    // ================================================================
+    //  ДВЕРИ
+    // ================================================================
     function toggleDoor(side) {
         if (!state.alive || state.gameOver || state.won || state.foxyQTEActive || state.springBonnieActive) return;
         if (side === 'left') {
@@ -1601,7 +1639,9 @@
         updateUI();
     }
 
-    // --- QTE Фокси ---
+    // ================================================================
+    //  QTE ФОКСИ
+    // ================================================================
     function startFoxyQTE() {
         if (state.foxyQTEActive || !state.alive || state.gameOver || state.won) return;
         state.foxyQTEActive = true;
@@ -1651,11 +1691,12 @@
         state.foxyTimer = 0;
         state.animatronics.foxy.zone = 0;
         state.animatronics.foxy.visible = false;
-        updateAnimatronics();
         updateUI();
     }
 
-    // --- Действия ---
+    // ================================================================
+    //  ДЕЙСТВИЯ
+    // ================================================================
     function doAction(action) {
         if (!state.alive || state.gameOver || state.won || state.foxyQTEActive || state.springBonnieActive) return;
         if (state.tabletOpen) closeTablet();
@@ -1696,14 +1737,14 @@
                 cost = 10;
                 addLog('⏪ Перемотка камер!', 'warning');
                 for (let name in state.animatronics) {
-                    if (name !== 'golden' && name !== 'sparky') {
+                    if (name !== 'golden') {
                         state.animatronics[name].zone = 0;
                         state.animatronics[name].visible = false;
                         state.animatronics[name].atDoor = false;
                     }
                 }
                 state.foxyTimer = 0;
-                updateAnimatronics();
+                updateCamStatuses();
                 break;
             case 'golden':
                 cost = 20;
@@ -1714,7 +1755,7 @@
                     addLog('👑 ЗОЛОТОЙ ФРЕДДИ явился!', 'golden');
                     playSound('soundGolden');
                     state.fear += 25;
-                    updateAnimatronics();
+                    updateCamStatuses();
                 } else {
                     addLog('👑 Голден уже здесь...', 'golden');
                 }
@@ -1740,9 +1781,8 @@
     }
 
     // ================================================================
-    //  СЕКРЕТНАЯ КОНЦОВКА — 4 КНОПКИ
+    //  СЕКРЕТНАЯ КОНЦОВКА (СПРИНГ БОННИ)
     // ================================================================
-
     function startSpringBonnie() {
         if (state.springBonnieActive || state.secretUnlocked) return;
         if (state.hour < 5 && !state.won) {
@@ -1752,7 +1792,7 @@
 
         state.springBonnieActive = true;
         state.secretUnlocked = true;
-        secretBtn.classList.remove('show');
+        document.getElementById('secretBtn').classList.remove('show');
         springBonnieGame.classList.add('active');
 
         initSpringBonnieMap();
@@ -1777,7 +1817,7 @@
         document.getElementById('sbgActionBtn').disabled = true;
         document.getElementById('sbgActionBtn').textContent = '🚽';
         document.getElementById('sbgReset').style.display = 'none';
-        document.getElementById('sbgMsg').innerHTML = '⬆️⬇️⬅️➡️ Дойдите до туалета (🚽)';
+        document.getElementById('sbgMsg').innerHTML = '⬆️⬇️⬅️➡️ Дойдите до туалета 🚽';
 
         renderSpringBonnieMap();
     }
@@ -1794,19 +1834,19 @@
             for (let x = 0; x < map[y].length; x++) {
                 const tile = document.createElement('div');
                 tile.className = 'sbg-tile';
-                const tileSize = Math.min(40, (mapEl.clientWidth - 20) / map[0].length);
-                tile.style.left = (x * tileSize + 10) + 'px';
-                tile.style.top = (y * tileSize + 10) + 'px';
+                const tileSize = Math.min(36, (mapEl.clientWidth - 16) / map[0].length);
+                tile.style.left = (x * tileSize + 8) + 'px';
+                tile.style.top = (y * tileSize + 8) + 'px';
                 tile.style.width = tileSize + 'px';
                 tile.style.height = tileSize + 'px';
-                tile.style.fontSize = Math.min(20, tileSize * 0.6) + 'px';
+                tile.style.fontSize = Math.min(18, tileSize * 0.55) + 'px';
                 tile.style.display = 'flex';
                 tile.style.alignItems = 'center';
                 tile.style.justifyContent = 'center';
 
                 if (x === px && y === py) {
                     tile.textContent = '🟣';
-                    tile.style.fontSize = Math.min(28, tileSize * 0.8) + 'px';
+                    tile.style.fontSize = Math.min(24, tileSize * 0.75) + 'px';
                     tile.style.zIndex = '10';
                     tile.style.filter = 'drop-shadow(0 0 10px rgba(128,0,255,0.3))';
                 } else if (map[y][x] === '🚽') {
@@ -1819,12 +1859,12 @@
                     }
                 } else if (map[y][x] === '⬛') {
                     tile.textContent = '⬛';
-                    tile.style.opacity = '0.2';
-                    tile.style.fontSize = Math.min(14, tileSize * 0.4) + 'px';
+                    tile.style.opacity = '0.15';
+                    tile.style.fontSize = Math.min(12, tileSize * 0.35) + 'px';
                 } else {
                     tile.textContent = '⬜';
-                    tile.style.opacity = '0.1';
-                    tile.style.fontSize = Math.min(14, tileSize * 0.4) + 'px';
+                    tile.style.opacity = '0.08';
+                    tile.style.fontSize = Math.min(12, tileSize * 0.35) + 'px';
                 }
 
                 mapEl.appendChild(tile);
@@ -1851,7 +1891,6 @@
         state.sbg.playerX = newX;
         state.sbg.playerY = newY;
 
-        // Проверка — дошли до туалета?
         if (state.sbg.map[newY][newX] === '🚽' && !state.sbg.foundSpring) {
             state.sbg.foundSpring = true;
             document.getElementById('sbgMsg').innerHTML = '🚽 Вы нашли туалет! Нажмите 🚽 для взаимодействия!';
@@ -1861,7 +1900,6 @@
             return;
         }
 
-        // Если нашли Спринг Бонни
         if (state.sbg.foundSpring && state.sbg.map[newY][newX] === '🐰') {
             springBonnieEnding();
             return;
@@ -1898,7 +1936,7 @@
             blood.className = 'sbg-blood show';
             blood.textContent = '🩸🩸🩸';
             blood.style.cssText =
-                'position:absolute;font-size:60px;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;opacity:0.8;pointer-events:none;';
+                'position:absolute;font-size:50px;top:50%;left:50%;transform:translate(-50%,-50%);z-index:20;opacity:0.8;pointer-events:none;';
             mapEl.appendChild(blood);
         }, 5500);
 
@@ -1913,11 +1951,15 @@
         }, 7500);
     }
 
-    // --- Сброс ---
+    // ================================================================
+    //  СБРОС
+    // ================================================================
     function resetGame() {
+        if (state.timeInterval) clearInterval(state.timeInterval);
+        if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
+
         state.battery = 100;
         state.fear = 0;
-        state.noise = 0;
         state.hour = 0;
         state.alive = true;
         state.gameOver = false;
@@ -1938,39 +1980,85 @@
             state.animatronics[name].running = false;
         }
 
-        if (state.timeInterval) clearInterval(state.timeInterval);
-        if (state.energyDrainInterval) clearInterval(state.energyDrainInterval);
-        if (state._progressInterval) clearInterval(state._progressInterval);
-
         tabletEl.classList.remove('open');
-        camIndicator.classList.remove('active');
         foxyMinigame.classList.remove('active');
         springBonnieGame.classList.remove('active');
-        secretBtn.classList.remove('show');
+        document.getElementById('secretBtn').classList.remove('show');
 
-        logEl.innerHTML = `<div class="log-entry info">🔄 Новая игра! 12:00 AM. Каждый час = 3 минуты.</div>`;
+        logEl.innerHTML = `<div class="log-entry info">🔄 Игра сброшена. Начните заново.</div>`;
 
-        timeBar.style.width = '0%';
-        updateTimeDisplay();
-        updateAnimatronics();
+        menuEl.classList.remove('hidden');
+        officeEl.classList.remove('active');
+
         updateUI();
-        startTime();
 
         audio.pause();
         musicBtn.textContent = '🔇';
         musicBtn.classList.remove('playing');
         state.musicOn = false;
 
-        addLog('⏱️ Время идёт медленно: 3 минуты = 1 час', 'info');
-        addLog('🎵 Нажмите 🔇 для жуткой музыки.', 'info');
+        addLog('🔄 Возврат в главное меню.', 'info');
     }
 
-    // --- Инициализация ---
-    resetGame();
+    // ================================================================
+    //  СЕКРЕТНАЯ КНОПКА (добавляем в офис)
+    // ================================================================
+    // Добавляем кнопку в офис
+    document.addEventListener('DOMContentLoaded', () => {
+        const view = document.getElementById('office-view');
+        const btn = document.createElement('button');
+        btn.id = 'secretBtn';
+        btn.className = 'secret-btn';
+        btn.textContent = '🚸';
+        btn.style.cssText = `
+            position: absolute;
+            bottom: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,215,0,0.1);
+            border: 2px solid #ffd700;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 18px;
+            color: #ffd700;
+            cursor: pointer;
+            z-index: 15;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: goldenGlow 1s infinite alternate;
+            font-family: 'Press Start 2P', monospace;
+        `;
+        btn.onclick = startSpringBonnie;
+        view.appendChild(btn);
 
-    setTimeout(() => {
-        addLog('🔮 Секретная концовка станет доступна в 5:00 AM!', 'golden');
-    }, 3000);
+        // Стили для кнопки
+        const style = document.createElement('style');
+        style.textContent = `
+            .secret-btn {
+                display: none;
+                align-items: center;
+                justify-content: center;
+            }
+            .secret-btn.show {
+                display: flex;
+            }
+            @keyframes goldenGlow {
+                0% { box-shadow: 0 0 20px rgba(255,215,0,0.2); }
+                100% { box-shadow: 0 0 60px rgba(255,215,0,0.6); }
+            }
+        `;
+        document.head.appendChild(style);
+    });
+
+    // ================================================================
+    //  ИНИЦИАЛИЗАЦИЯ
+    // ================================================================
+    console.log('🍕 FNAF 1.0 — Пиксельная версия загружена!');
+    console.log('🎵 Используй свой horror.mp3 для музыки.');
+    console.log('🔮 Секретная концовка доступна в 5:00 AM.');
 </script>
+
 </body>
-            </html>
+    </html>
