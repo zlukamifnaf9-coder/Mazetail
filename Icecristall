@@ -1,0 +1,1402 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🧊 Айскристалл — Ледяная столица</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: #050810;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            padding: 8px;
+            overflow: hidden;
+            touch-action: none;
+        }
+        .city-block {
+            background: linear-gradient(180deg, #0a1520 0%, #040810 100%);
+            border: 2px solid #00BFFF;
+            border-radius: 16px;
+            padding: 12px 14px 10px;
+            max-width: 1000px;
+            width: 100%;
+            box-shadow: 0 0 100px rgba(0, 191, 255, 0.12);
+            position: relative;
+        }
+        .city-block::before {
+            content: '🧊';
+            position: absolute;
+            top: -11px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a1520;
+            padding: 0 14px;
+            font-size: 16px;
+        }
+        .city-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            border-bottom: 1px solid #0a2a4a;
+            padding-bottom: 5px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .city-header h2 {
+            color: #DAA520;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+        }
+        .city-header .time {
+            color: #4a6a8a;
+            font-size: 9px;
+            letter-spacing: 1px;
+        }
+        .city-header .time span { color: #00BFFF; }
+
+        .district-banner {
+            position: absolute;
+            top: 55%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #00BFFF;
+            font-size: 22px;
+            letter-spacing: 8px;
+            font-weight: bold;
+            text-shadow: 0 0 30px #00BFFF, 0 0 60px rgba(0, 191, 255, 0.5);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.8s;
+            z-index: 5;
+            font-family: 'Courier New', monospace;
+            white-space: nowrap;
+        }
+        .district-banner.show { opacity: 0.7; }
+
+        #cityCanvas {
+            display: block;
+            margin: 0 auto;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            border: 2px solid #0a2a4a;
+            border-radius: 10px;
+            background: #040810;
+            width: 100%;
+            height: auto;
+            aspect-ratio: 900 / 400;
+            box-shadow: inset 0 0 100px rgba(0, 191, 255, 0.06);
+            touch-action: none;
+        }
+
+        .mobile-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            gap: 8px;
+        }
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 42px);
+            grid-template-rows: repeat(2, 42px);
+            gap: 3px;
+        }
+        .dpad button {
+            background: rgba(10, 30, 50, 0.85);
+            border: 1px solid #0a2a4a;
+            border-radius: 8px;
+            color: #5a8aaa;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: monospace;
+            touch-action: none;
+            user-select: none;
+        }
+        .dpad button:active {
+            background: rgba(0, 191, 255, 0.25);
+            border-color: #00BFFF;
+            color: #00BFFF;
+        }
+        .dpad .empty { visibility: hidden; }
+
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+        .action-buttons button {
+            background: rgba(10, 30, 50, 0.85);
+            border: 1px solid #0a2a4a;
+            border-radius: 20px;
+            color: #5a8aaa;
+            font-size: 10px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            touch-action: none;
+        }
+        .action-buttons button:active {
+            background: rgba(218, 165, 32, 0.25);
+            border-color: #DAA520;
+            color: #DAA520;
+        }
+
+        .city-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 6px;
+            gap: 4px;
+        }
+        .legend {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+        .legend span {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #0a2a4a;
+            font-weight: bold;
+            font-size: 7px;
+        }
+        .actions {
+            display: flex;
+            gap: 3px;
+            flex-wrap: wrap;
+        }
+        .actions button {
+            background: transparent;
+            border: 1px solid #0a2a4a;
+            color: #5a7a9a;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 8px;
+            cursor: pointer;
+        }
+        .actions button.active {
+            border-color: #DAA520;
+            color: #DAA520;
+        }
+
+        .minimap {
+            position: absolute;
+            top: 45px;
+            right: 20px;
+            width: 200px;
+            height: 24px;
+            background: rgba(5, 10, 20, 0.92);
+            border: 1px solid #0a2a4a;
+            border-radius: 6px;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .minimap canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .minimap-label {
+            position: absolute;
+            top: 1px;
+            left: 4px;
+            color: #3a5a7a;
+            font-size: 5px;
+            letter-spacing: 1px;
+        }
+
+        .dialog-popup {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0a1520;
+            border: 2px solid #00BFFF;
+            border-radius: 12px;
+            padding: 14px 24px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 0 60px rgba(0, 191, 255, 0.25);
+            z-index: 999;
+        }
+        .dialog-popup.show { display: block; animation: fadeUp 0.3s ease-out; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        .dialog-popup .name {
+            color: #DAA520;
+            font-size: 13px;
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        .dialog-popup .text {
+            color: #aabbdd;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .dialog-popup .close-btn {
+            position: absolute;
+            top: 6px;
+            right: 12px;
+            color: #4a5a7a;
+            cursor: pointer;
+            font-size: 16px;
+            border: none;
+            background: none;
+        }
+        .dialog-popup .close-btn:hover { color: #00BFFF; }
+
+        @media (min-width: 769px) {
+            .mobile-controls { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="city-block">
+    <div class="city-header">
+        <h2>🧊 АЙСКРИСТАЛЛ — ЛЕДЯНАЯ СТОЛИЦА</h2>
+        <div class="time">⏰ <span id="clockDisplay">22:16</span> · ❄️ <span id="tempDisplay">-12°C</span> · 📍 <span id="playerPos">0,0</span></div>
+    </div>
+
+    <div class="minimap">
+        <canvas id="minimapCanvas" width="400" height="48"></canvas>
+        <div class="minimap-label">КАРТА АЙСКРИСТАЛЛА</div>
+    </div>
+
+    <canvas id="cityCanvas" width="900" height="400"></canvas>
+
+    <div class="district-banner" id="districtBanner">СЕВЕРНЫЕ ВОРОТА</div>
+
+    <div class="mobile-controls">
+        <div class="dpad">
+            <button class="empty"></button>
+            <button data-key="w">▲</button>
+            <button class="empty"></button>
+            <button data-key="a">◀</button>
+            <button data-key="s">▼</button>
+            <button data-key="d">▶</button>
+        </div>
+        <div class="action-buttons">
+            <button data-action="rotate-left">↺</button>
+            <button data-action="interact">💬</button>
+            <button data-action="rotate-right">↻</button>
+        </div>
+    </div>
+
+    <div class="city-footer">
+        <div class="legend">
+            <span style="background:#00BFFF; color:#fff;">Кристалл</span>
+            <span style="background:#FF4444; color:#fff;">Сани</span>
+            <span style="background:#44FF88; color:#1a2a00;">NPC</span>
+            <span style="background:#FF88FF; color:#1a0033;">Игрок</span>
+            <span style="background:#DAA520; color:#1a1a00;">Дворец</span>
+        </div>
+        <div class="actions">
+            <button id="toggleSnow" class="active">❄️ Снег</button>
+            <button id="toggleTraffic" class="active">🛷 Сани</button>
+            <button id="toggleNight" class="active">🌙 Ночь</button>
+            <button id="toggleSound">🔊 Звук</button>
+        </div>
+    </div>
+</div>
+
+<div class="dialog-popup" id="dialogPopup">
+    <button class="close-btn" id="dialogClose">✕</button>
+    <div class="name" id="dialogName">🧊 Стражник</div>
+    <div class="text" id="dialogText">— Стой, путник. Король Робин ждёт тебя в северном крыле.</div>
+</div>
+
+<script>
+    // ============================================================
+    //   🧊  АЙСКРИСТАЛЛ — МИР ×8 ДЛИННЕЕ (32 000 px)
+    // ============================================================
+    const canvas = document.getElementById('cityCanvas');
+    const ctx = canvas.getContext('2d');
+    const minimapCanvas = document.getElementById('minimapCanvas');
+    const mctx = minimapCanvas.getContext('2d');
+    const W = 900, H = 400;
+
+    // ОГРОМНЫЙ МИР
+    const WORLD_WIDTH = 32000;    // ← В 8 РАЗ БОЛЬШЕ!
+    const WORLD_HEIGHT = 400;
+
+    // ---------- Районы города ----------
+    const districts = [
+        { name: 'СЕВЕРНЫЕ ВОРОТА',   start: 0,     end: 4000,  color: '#00BFFF' },
+        { name: 'ЛЕДЯНОЙ ПОРТ',       start: 4000,  end: 8000,  color: '#66DDFF' },
+        { name: 'ТОРГОВЫЙ КВАРТАЛ',   start: 8000,  end: 12000, color: '#DAA520' },
+        { name: 'КРИСТАЛЬНЫЙ САД',    start: 12000, end: 16000, color: '#ADFF2F' },
+        { name: 'КОРОЛЕВСКИЙ ДВОР',   start: 16000, end: 20000, color: '#FFD700' },
+        { name: 'ЗАМОРОЖЕННЫЙ ХРАМ',  start: 20000, end: 24000, color: '#FF88FF' },
+        { name: 'ЛЕДЯНЫЕ ПЕЩЕРЫ',     start: 24000, end: 28000, color: '#8FBC8F' },
+        { name: 'СЕВЕРНОЕ СИЯНИЕ',    start: 28000, end: 32000, color: '#00FFAA' },
+    ];
+
+    let currentDistrict = '';
+    let districtBannerTimer = 0;
+
+    let snowEnabled = true;
+    let trafficEnabled = true;
+    let nightMode = true;
+    let soundEnabled = false;
+
+    // ---------- Камера ----------
+    const camera = {
+        x: 200, y: 200,
+        angle: 0,
+        targetAngle: 0,
+    };
+
+    // ---------- Игрок ----------
+    const player = {
+        x: 200,
+        y: 270,
+        speed: 2.5,
+        runSpeed: 4.5,
+        direction: 1,
+        isRunning: false,
+        stepCooldown: 0,
+        bob: 0,
+        name: 'Робин',
+        trail: [],  // следы на снегу
+    };
+
+    // ---------- Клавиатура ----------
+    const keys = {};
+    window.addEventListener('keydown', e => {
+        const k = e.key.toLowerCase();
+        keys[k] = true;
+        if (k === 'ц') keys['w'] = true;
+        if (k === 'ы') keys['s'] = true;
+        if (k === 'ф') keys['a'] = true;
+        if (k === 'в') keys['d'] = true;
+        if (k === 'й') keys['q'] = true;
+        if (k === 'к') keys['r'] = true;
+        if (k === 'у') keys['e'] = true;
+        if (e.key === 'Escape') document.getElementById('dialogPopup').classList.remove('show');
+        if (k === 'e' || k === 'у') tryInteract();
+    });
+    window.addEventListener('keyup', e => {
+        const k = e.key.toLowerCase();
+        keys[k] = false;
+        if (k === 'ц') keys['w'] = false;
+        if (k === 'ы') keys['s'] = false;
+        if (k === 'ф') keys['a'] = false;
+        if (k === 'в') keys['d'] = false;
+        if (k === 'й') keys['q'] = false;
+        if (k === 'к') keys['r'] = false;
+        if (k === 'у') keys['e'] = false;
+    });
+
+    // ---------- Экранные кнопки ----------
+    document.querySelectorAll('.dpad button[data-key]').forEach(btn => {
+        const key = btn.dataset.key;
+        const press = (e) => { e.preventDefault(); keys[key] = true; };
+        const release = (e) => { e.preventDefault(); keys[key] = false; };
+        btn.addEventListener('touchstart', press, {passive: false});
+        btn.addEventListener('touchend', release);
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+    });
+    document.querySelectorAll('.action-buttons button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const action = btn.dataset.action;
+            if (action === 'interact') tryInteract();
+            if (action === 'rotate-left') camera.targetAngle -= 0.15;
+            if (action === 'rotate-right') camera.targetAngle += 0.15;
+        });
+    });
+
+    // ---------- Геометрия дороги ----------
+    const SIDEWALK_TOP_Y = 250;
+    const SIDEWALK_TOP_H = 26;
+    const LANE1_Y = 280;
+    const LANE1_H = 26;
+    const LANE2_Y = 310;
+    const LANE2_H = 26;
+    const SIDEWALK_BOTTOM_Y = 340;
+    const SIDEWALK_BOTTOM_H = 28;
+
+    // ---------- Светофоры и переходы (по всему городу) ----------
+    const trafficLights = [
+        { x: 900,   state: 'red', timer: 0, cycle: [4000, 1500, 4000, 1500], index: 0 },
+        { x: 4500,  state: 'green', timer: 2000, cycle: [4000, 1500, 4000, 1500], index: 2 },
+        { x: 8500,  state: 'red', timer: 1000, cycle: [4000, 1500, 4000, 1500], index: 0 },
+        { x: 12500, state: 'green', timer: 3000, cycle: [4000, 1500, 4000, 1500], index: 2 },
+        { x: 16500, state: 'red', timer: 500,  cycle: [4000, 1500, 4000, 1500], index: 0 },
+        { x: 20500, state: 'green', timer: 2500, cycle: [4000, 1500, 4000, 1500], index: 2 },
+        { x: 24500, state: 'red', timer: 1500, cycle: [4000, 1500, 4000, 1500], index: 0 },
+        { x: 28500, state: 'green', timer: 1000, cycle: [4000, 1500, 4000, 1500], index: 2 },
+    ];
+    const crosswalks = trafficLights.map(t => ({ x: t.x + 10, width: 70 }));
+
+    // ---------- Машины (много!) ----------
+    let cars = [];
+    const CAR_COLORS = ['#FF4444', '#4488FF', '#FF8844', '#44FF88', '#FF44FF', '#FFFF44', '#FF6688', '#88DDFF', '#FFAA44', '#AA88FF'];
+
+    function initCars() {
+        cars = [];
+        // Левая полоса (←)
+        for (let i = 0; i < 40; i++) {
+            cars.push({
+                x: 100 + i * 780 + Math.random() * 300,
+                y: LANE1_Y + 6,
+                speed: 1.5 + Math.random() * 1.5,
+                color: CAR_COLORS[i % CAR_COLORS.length],
+                size: 1.0,
+                direction: -1,
+                lane: 1,
+                stopped: false,
+                honkTimer: 0,
+            });
+        }
+        // Правая полоса (→)
+        for (let i = 0; i < 40; i++) {
+            cars.push({
+                x: 50 + i * 780 + Math.random() * 300,
+                y: LANE2_Y + 6,
+                speed: 1.4 + Math.random() * 1.5,
+                color: CAR_COLORS[(i + 5) % CAR_COLORS.length],
+                size: 1.0,
+                direction: 1,
+                lane: 2,
+                stopped: false,
+                honkTimer: 0,
+            });
+        }
+    }
+    initCars();
+
+    // ---------- NPC (очень много!) ----------
+    let npcs = [];
+    const NPC_TYPES = [
+        { emotion: '😐', name: '🧊 Стражник',   dialog: '— Стой, путник. Король Робин ждёт тебя в северном крыле.' },
+        { emotion: '😊', name: '🛒 Торговец',   dialog: '— Ледяные кристаллы высшего сорта! Всего 50 монет.' },
+        { emotion: '🤔', name: '🧙 Маг',         dialog: '— Я чувствую древнюю магию в этих кристаллах...' },
+        { emotion: '😎', name: '⚔️ Наёмник',    dialog: '— Работёнка? Всегда готов. За монеты, конечно.' },
+        { emotion: '🥶', name: '🧣 Прохожий',   dialog: '— В этом году зима особенно лютая. Береги себя.' },
+        { emotion: '⛄', name: '🧒 Мальчик',     dialog: '— Я слепил снеговика! Хочешь посмотреть?' },
+        { emotion: '🐕', name: '🐶 Собачник',   dialog: '— Тихо, Барсик! Не пугай прохожих...' },
+        { emotion: '😴', name: '💤 Сонный',      dialog: '— М-м-м... пять минуточек ещё...' },
+        { emotion: '🎩', name: '🎭 Аристократ', dialog: '— Добрый вечер. Вы не подскажете, где тут лучший ресторан?' },
+        { emotion: '👑', name: '💎 Богач',       dialog: '— Кристаллы в этом году дорогие... Куда катится мир.' },
+        { emotion: '🎣', name: '🎣 Рыбак',       dialog: '— Здесь подо льдом ловится такая рыба! Закачаешься.' },
+        { emotion: '📜', name: '📜 Писарь',      dialog: '— Королевский указ: вход в замок только по пропускам.' },
+        { emotion: '🎵', name: '🎵 Бард',        dialog: '— Хочешь услышать легенду о Короле Айскристалла?' },
+        { emotion: '🔮', name: '🔮 Гадалка',    dialog: '— Вижу... вижу... тебя ждёт дальняя дорога!' },
+        { emotion: '🛡️', name: '🛡️ Рыцарь',    dialog: '— Защищаю этот квартал от северных тварей.' },
+    ];
+
+    function initNPCs() {
+        npcs = [];
+        for (let i = 0; i < 60; i++) {
+            const lane = i % 2 === 0 ? 'top' : 'bottom';
+            const y = lane === 'top' ? SIDEWALK_TOP_Y + 10 : SIDEWALK_BOTTOM_Y + 12;
+            const x = 150 + i * 520 + Math.random() * 300;
+            const n = NPC_TYPES[i % NPC_TYPES.length];
+            npcs.push({
+                x: x, y: y,
+                homeX: x,
+                walkRange: 50 + Math.random() * 80,
+                speed: 0.1 + Math.random() * 0.2,
+                lane: lane,
+                emotion: n.emotion,
+                name: n.name,
+                dialog: n.dialog,
+                hitbox: { x: x - 16, y: y - 40, w: 32, h: 46 },
+            });
+        }
+    }
+    initNPCs();
+
+    // ---------- Снег ----------
+    let snowflakes = [];
+    function initSnow() {
+        snowflakes = [];
+        for (let i = 0; i < 500; i++) {
+            snowflakes.push({
+                x: Math.random() * W * 2,
+                y: Math.random() * WORLD_HEIGHT,
+                r: 0.5 + Math.random() * 1.8,
+                speed: 0.3 + Math.random() * 0.5,
+                drift: (Math.random() - 0.5) * 0.4,
+                opacity: 0.3 + Math.random() * 0.6,
+            });
+        }
+    }
+    initSnow();
+
+    // ---------- Ледяные шпили (декор) ----------
+    const spires = [];
+    for (let i = 0; i < 200; i++) {
+        spires.push({
+            x: i * 160 + Math.random() * 100,
+            baseY: 140 + Math.random() * 40,
+            height: 30 + Math.random() * 60,
+            width: 6 + Math.random() * 14,
+            offset: Math.random() * 10,
+        });
+    }
+
+    // ---------- Фонари-кристаллы ----------
+    const lamps = [];
+    for (let i = 0; i < 150; i++) {
+        lamps.push({ x: 120 + i * 215, y: 175, offset: i * 1.7 });
+    }
+
+    // ============================================================
+    //   🎨  ОТРИСОВКА
+    // ============================================================
+    function drawCity(timestamp) {
+        // Плавное следование камеры
+        camera.x += (player.x - camera.x) * 0.1;
+        camera.y += (player.y - camera.y) * 0.1;
+        camera.angle += (camera.targetAngle - camera.angle) * 0.12;
+
+        ctx.clearRect(0, 0, W, H);
+
+        ctx.save();
+        ctx.translate(W / 2, H / 2);
+        ctx.rotate(-camera.angle);
+        ctx.translate(-camera.x, -camera.y);
+
+        // Определяем видимую область (для оптимизации)
+        const viewLeft = camera.x - 900;
+        const viewRight = camera.x + 900;
+        const viewTop = camera.y - 400;
+        const viewBottom = camera.y + 400;
+
+        // ---- НЕБО ----
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, 200);
+        if (nightMode) {
+            skyGrad.addColorStop(0, '#020510');
+            skyGrad.addColorStop(0.5, '#0a1525');
+            skyGrad.addColorStop(1, '#0a1a2a');
+        } else {
+            skyGrad.addColorStop(0, '#1a2a4a');
+            skyGrad.addColorStop(0.5, '#2a3a5a');
+            skyGrad.addColorStop(1, '#3a4a6a');
+        }
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(viewLeft, -200, viewRight - viewLeft, 220);
+
+        // ---- ПОЛЯРНОЕ СИЯНИЕ (северный район) ----
+        if (nightMode && player.x > 26000) {
+            const auroraGrad = ctx.createLinearGradient(0, 20, 0, 200);
+            auroraGrad.addColorStop(0, `rgba(0, 255, 170, ${0.15 + 0.1 * Math.sin(timestamp / 2000)})`);
+            auroraGrad.addColorStop(0.5, `rgba(0, 191, 255, ${0.08 + 0.05 * Math.sin(timestamp / 1500 + 1)})`);
+            auroraGrad.addColorStop(1, 'rgba(0, 100, 200, 0)');
+            ctx.fillStyle = auroraGrad;
+            ctx.fillRect(viewLeft, 0, viewRight - viewLeft, 220);
+        }
+
+        // ---- ЗВЁЗДЫ ----
+        if (nightMode) {
+            for (let i = 0; i < 400; i++) {
+                const sx = (i * 137.5 + 43) % WORLD_WIDTH;
+                if (sx < viewLeft || sx > viewRight) continue;
+                const sy = (i * 97.3 + 17) % 180;
+                const br = 0.2 + ((i * 7) % 5) * 0.15;
+                ctx.globalAlpha = br * (0.5 + 0.5 * Math.sin(timestamp / 3000 + i));
+                ctx.fillStyle = 'rgba(200,220,255,0.5)';
+                ctx.beginPath();
+                ctx.arc(sx, sy, 0.5 + (i % 3) * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // ---- ЗДАНИЯ ----
+        ctx.fillStyle = '#081018';
+        ctx.fillRect(viewLeft, 120, viewRight - viewLeft, 140);
+        for (let i = 0; i < 700; i++) {
+            const bx = i * 48;
+            if (bx < viewLeft - 60 || bx > viewRight) continue;
+            const bw = 42;
+            const bh = 35 + (i * 17 + 5) % 55;
+            const district = getDistrictAt(bx);
+            const isRoyal = district && district.name === 'КОРОЛЕВСКИЙ ДВОР';
+            const isTemple = district && district.name === 'ЗАМОРОЖЕННЫЙ ХРАМ';
+            const isIceCave = district && district.name === 'ЛЕДЯНЫЕ ПЕЩЕРЫ';
+
+            // Фон здания
+            if (isRoyal) ctx.fillStyle = '#1a1525';
+            else if (isTemple) ctx.fillStyle = '#251a25';
+            else if (isIceCave) ctx.fillStyle = '#0a1a15';
+            else ctx.fillStyle = '#0d1520';
+            ctx.fillRect(bx, 145 - bh, bw, bh);
+
+            // Окна (ледяные)
+            for (let w = 0; w < 2; w++) {
+                for (let h = 0; h < Math.floor(bh / 16); h++) {
+                    const on = ((i + w + h) % 3) !== 0;
+                    if (isRoyal) ctx.fillStyle = on ? '#DAA520' : '#2a1a2a';
+                    else if (isTemple) ctx.fillStyle = on ? '#FF88FF' : '#1a0a1a';
+                    else if (isIceCave) ctx.fillStyle = on ? '#00FFAA' : '#0a1a1a';
+                    else ctx.fillStyle = on ? '#3a6a6a' : '#0a0a1a';
+
+                    ctx.fillRect(bx + 6 + w * 18, 150 - bh + 4 + h * 16, 10, 10);
+
+                    // Свечение окна
+                    if (on) {
+                        ctx.shadowColor = ctx.fillStyle;
+                        ctx.shadowBlur = 6;
+                        ctx.fillRect(bx + 6 + w * 18, 150 - bh + 4 + h * 16, 10, 10);
+                        ctx.shadowBlur = 0;
+                    }
+                }
+            }
+
+            // Сосульки на крыше
+            if ((i % 4) === 0) {
+                ctx.fillStyle = 'rgba(150, 220, 255, 0.4)';
+                for (let ic = 0; ic < 4; ic++) {
+                    const icx = bx + 4 + ic * 10;
+                    const icH = 6 + (i + ic) % 10;
+                    ctx.beginPath();
+                    ctx.moveTo(icx, 145 - bh);
+                    ctx.lineTo(icx + 3, 145 - bh);
+                    ctx.lineTo(icx + 1.5, 145 - bh + icH);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+            }
+        }
+
+        // ---- ЛЕДЯНЫЕ ШПИЛИ ----
+        spires.forEach(spire => {
+            if (spire.x < viewLeft - 100 || spire.x > viewRight + 100) return;
+            const gl = 0.3 + 0.15 * Math.sin(timestamp / 1500 + spire.offset);
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 8 * gl;
+            ctx.fillStyle = `rgba(100, 200, 255, ${0.5 + gl * 0.3})`;
+            ctx.beginPath();
+            ctx.moveTo(spire.x - spire.width / 2, spire.baseY);
+            ctx.lineTo(spire.x + spire.width / 2, spire.baseY);
+            ctx.lineTo(spire.x, spire.baseY - spire.height);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        // ---- ДОРОГА ----
+        ctx.fillStyle = '#06080f';
+        ctx.fillRect(viewLeft, SIDEWALK_TOP_Y + SIDEWALK_TOP_H, viewRight - viewLeft,
+            (SIDEWALK_BOTTOM_Y + SIDEWALK_BOTTOM_H) - (SIDEWALK_TOP_Y + SIDEWALK_TOP_H));
+
+        // Ледяное покрытие (лёгкий блеск)
+        const iceGrad = ctx.createLinearGradient(0, LANE1_Y, 0, LANE2_Y + LANE2_H);
+        iceGrad.addColorStop(0, 'rgba(100, 200, 255, 0.05)');
+        iceGrad.addColorStop(0.5, 'rgba(0, 191, 255, 0.08)');
+        iceGrad.addColorStop(1, 'rgba(100, 200, 255, 0.05)');
+        ctx.fillStyle = iceGrad;
+        ctx.fillRect(viewLeft, LANE1_Y, viewRight - viewLeft, LANE2_Y + LANE2_H - LANE1_Y);
+
+        // Разделитель
+        ctx.strokeStyle = '#1a3a5a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(viewLeft, LANE1_Y + LANE1_H);
+        ctx.lineTo(viewRight, LANE1_Y + LANE1_H);
+        ctx.stroke();
+        // Пунктир
+        ctx.strokeStyle = '#2a4a6a';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([16, 22]);
+        ctx.beginPath();
+        ctx.moveTo(viewLeft, LANE2_Y);
+        ctx.lineTo(viewRight, LANE2_Y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // ---- ЗЕБРЫ ----
+        crosswalks.forEach(cw => {
+            if (cw.x < viewLeft - 100 || cw.x > viewRight) return;
+            for (let i = 0; i < 7; i++) {
+                const zx = cw.x + i * 12;
+                ctx.fillStyle = '#DDEEFF';
+                ctx.globalAlpha = 0.5 + 0.2 * Math.sin(timestamp / 800 + i);
+                ctx.fillRect(zx, SIDEWALK_TOP_Y + SIDEWALK_TOP_H + 2, 8,
+                    (SIDEWALK_BOTTOM_Y) - (SIDEWALK_TOP_Y + SIDEWALK_TOP_H) - 2);
+                ctx.globalAlpha = 1;
+            }
+        });
+
+        // ---- ТРОТУАРЫ ----
+        ctx.fillStyle = '#101820';
+        ctx.fillRect(viewLeft, SIDEWALK_TOP_Y, viewRight - viewLeft, SIDEWALK_TOP_H);
+        ctx.fillRect(viewLeft, SIDEWALK_BOTTOM_Y, viewRight - viewLeft, SIDEWALK_BOTTOM_H);
+        ctx.fillStyle = '#1a2a3a';
+        for (let i = Math.floor(viewLeft / 25); i < Math.ceil(viewRight / 25); i++) {
+            const tx = i * 25;
+            ctx.fillRect(tx, SIDEWALK_TOP_Y + 2, 2, SIDEWALK_TOP_H - 4);
+            ctx.fillRect(tx + 12, SIDEWALK_BOTTOM_Y + 2, 2, SIDEWALK_BOTTOM_H - 4);
+        }
+        ctx.fillStyle = '#2a4a6a';
+        ctx.fillRect(viewLeft, SIDEWALK_TOP_Y + SIDEWALK_TOP_H - 2, viewRight - viewLeft, 3);
+        ctx.fillRect(viewLeft, SIDEWALK_BOTTOM_Y - 1, viewRight - viewLeft, 3);
+        ctx.fillRect(viewLeft, SIDEWALK_BOTTOM_Y + SIDEWALK_BOTTOM_H - 2, viewRight - viewLeft, 3);
+
+        // ---- ФОНАРИ-КРИСТАЛЛЫ ----
+        lamps.forEach(lamp => {
+            if (lamp.x < viewLeft - 100 || lamp.x > viewRight + 100) return;
+            const glow = 0.7 + 0.3 * Math.sin(timestamp / 1200 + lamp.offset);
+            // Столб
+            ctx.fillStyle = '#0a2a4a';
+            ctx.fillRect(lamp.x - 2, lamp.y, 4, SIDEWALK_TOP_Y + 8 - lamp.y);
+            // Конус света (голубой!)
+            const coneGrad = ctx.createRadialGradient(lamp.x, lamp.y + 25, 5, lamp.x, lamp.y + 100, 120);
+            coneGrad.addColorStop(0, `rgba(100, 200, 255, ${0.18 * glow})`);
+            coneGrad.addColorStop(0.5, `rgba(0, 191, 255, ${0.08 * glow})`);
+            coneGrad.addColorStop(1, 'rgba(0, 150, 255, 0)');
+            ctx.fillStyle = coneGrad;
+            ctx.beginPath();
+            ctx.ellipse(lamp.x, lamp.y + 90, 100, 55, 0, 0, Math.PI * 2);
+            ctx.fill();
+            // Ореол
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 35 * glow;
+            ctx.fillStyle = `rgba(100, 200, 255, ${0.15 * glow})`;
+            ctx.beginPath();
+            ctx.arc(lamp.x, lamp.y, 40 * glow, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            // Кристалл-лампа
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 50 * glow;
+            ctx.fillStyle = `rgba(150, 220, 255, ${0.95 * glow})`;
+            ctx.beginPath();
+            ctx.moveTo(lamp.x, lamp.y - 8);
+            ctx.lineTo(lamp.x + 6, lamp.y);
+            ctx.lineTo(lamp.x, lamp.y + 8);
+            ctx.lineTo(lamp.x - 6, lamp.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        });
+
+        // ---- СВЕТОФОРЫ ----
+        trafficLights.forEach(tl => {
+            if (tl.x < viewLeft - 100 || tl.x > viewRight + 100) return;
+            drawTrafficLight(tl, timestamp);
+        });
+
+        // ---- МАШИНЫ ----
+        if (trafficEnabled) {
+            cars.forEach(car => {
+                // Проверяем ближайший светофор
+                let shouldStop = false;
+                trafficLights.forEach(tl => {
+                    const distToCross = (tl.x - car.x) * car.direction;
+                    if ((tl.state === 'red' || tl.state === 'yellow') && distToCross > 0 && distToCross < 140) {
+                        shouldStop = true;
+                    }
+                });
+
+                if (shouldStop) {
+                    car.stopped = true;
+                    car.honkTimer += 16;
+                    if (car.honkTimer > 4000 && soundEnabled && Math.random() < 0.005) {
+                        playHonk();
+                        car.honkTimer = 0;
+                    }
+                } else {
+                    car.stopped = false;
+                    car.honkTimer = 0;
+                    car.x += car.speed * car.direction;
+                }
+
+                if (car.direction < 0 && car.x < -50) car.x = WORLD_WIDTH + 50;
+                if (car.direction > 0 && car.x > WORLD_WIDTH + 50) car.x = -50;
+
+                // Пропуск если далеко
+                if (car.x < viewLeft - 100 || car.x > viewRight + 100) return;
+
+                const cx = car.x;
+                const cy = car.y;
+                const s = car.size;
+
+                // Свет фар (голубоватый — ледяной)
+                ctx.shadowColor = '#88CCFF';
+                ctx.shadowBlur = 20;
+                ctx.fillStyle = 'rgba(100, 200, 255, 0.08)';
+                ctx.beginPath();
+                ctx.ellipse(cx + 25 * car.direction, cy + 5, 45, 12, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = car.color;
+                ctx.fillRect(cx - 18 * s, cy - 9 * s, 36 * s, 18 * s);
+                ctx.fillStyle = '#88CCFF';
+                ctx.fillRect(cx + 4 * s * car.direction, cy - 14 * s, 14 * s, 9 * s);
+
+                if (car.stopped) {
+                    ctx.fillStyle = '#FF0000';
+                    ctx.shadowColor = '#FF0000';
+                    ctx.shadowBlur = 10;
+                    ctx.fillRect(cx - 18 * s * car.direction, cy - 6 * s, 4 * s, 4 * s);
+                    ctx.fillRect(cx - 18 * s * car.direction, cy + 2 * s, 4 * s, 4 * s);
+                    ctx.shadowBlur = 0;
+                }
+
+                ctx.fillStyle = '#AAE8FF';
+                ctx.shadowColor = '#AAE8FF';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(cx + 16 * s * car.direction, cy - 6 * s, 5 * s, 4 * s);
+                ctx.fillRect(cx + 16 * s * car.direction, cy + 2 * s, 5 * s, 4 * s);
+                ctx.shadowBlur = 0;
+
+                ctx.fillStyle = '#0a0a15';
+                ctx.fillRect(cx - 14 * s, cy - 11 * s, 4 * s, 6 * s);
+                ctx.fillRect(cx + 10 * s, cy - 11 * s, 4 * s, 6 * s);
+                ctx.fillRect(cx - 14 * s, cy + 5 * s, 4 * s, 6 * s);
+                ctx.fillRect(cx + 10 * s, cy + 5 * s, 4 * s, 6 * s);
+            });
+        }
+
+        // ---- NPC ----
+        npcs.forEach((npc, idx) => {
+            if (npc.x < viewLeft - 100 || npc.x > viewRight + 100) return;
+
+            npc.x += npc.speed * Math.sin(timestamp / 2000 + idx * 1.5);
+            if (npc.x > npc.homeX + npc.walkRange) npc.x = npc.homeX + npc.walkRange;
+            if (npc.x < npc.homeX - npc.walkRange) npc.x = npc.homeX - npc.walkRange;
+
+            const nx = npc.x;
+            const ny = npc.y;
+            const bob = Math.sin(timestamp / 1500 + idx * 2) * 1.2;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(nx, ny + 16, 12, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#1a3a5a';
+            ctx.fillRect(nx - 8, ny - 20 + bob, 16, 26);
+            ctx.fillStyle = '#C8B8A8';
+            ctx.fillRect(nx - 5, ny - 30 + bob, 10, 11);
+            ctx.fillStyle = '#0a2a4a';
+            ctx.fillRect(nx - 6, ny - 34 + bob, 12, 6);
+
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(npc.emotion, nx, ny - 34 + bob);
+
+            const dist = Math.hypot(nx - player.x, ny - player.y);
+            if (dist < 70) {
+                ctx.fillStyle = '#DAA520';
+                ctx.font = '14px sans-serif';
+                ctx.shadowColor = '#DAA520';
+                ctx.shadowBlur = 10;
+                ctx.fillText('💬', nx, ny - 50 + bob);
+                ctx.shadowBlur = 0;
+            }
+
+            npc.hitbox = { x: nx - 16, y: ny - 40 + bob, w: 32, h: 46 };
+        });
+
+        // ---- СЛЕДЫ ИГРОКА ----
+        player.trail.forEach((t, i) => {
+            const alpha = (i / player.trail.length) * 0.4;
+            ctx.fillStyle = `rgba(150, 220, 255, ${alpha})`;
+            ctx.beginPath();
+            ctx.ellipse(t.x, t.y, 3, 1.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // ---- СУГРОБЫ (декор на тротуарах) ----
+        for (let i = Math.floor(viewLeft / 100); i < Math.ceil(viewRight / 100); i++) {
+            if (i % 3 !== 0) continue;
+            const sx = i * 100 + 30;
+            const sy = SIDEWALK_TOP_Y + SIDEWALK_TOP_H - 3;
+            ctx.fillStyle = 'rgba(200, 230, 255, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(sx, sy, 25, 5, 0, 0, Math.PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(sx + 60, SIDEWALK_BOTTOM_Y + 3, 20, 4, 0, Math.PI, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // ---- КРИСТАЛЛЫ НА ТРОТУАРАХ ----
+        for (let i = Math.floor(viewLeft / 200); i < Math.ceil(viewRight / 200); i++) {
+            const cx = i * 200 + ((i * 67) % 80);
+            const cy = (i % 2 === 0) ? SIDEWALK_TOP_Y + 12 : SIDEWALK_BOTTOM_Y + 14;
+            const gl = 0.3 + 0.2 * Math.sin(timestamp / 1000 + i * 2);
+            ctx.shadowColor = '#00BFFF';
+            ctx.shadowBlur = 12 * gl;
+            ctx.fillStyle = `rgba(100, 200, 255, ${0.2 + gl * 0.3})`;
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('⬡', cx, cy);
+            ctx.shadowBlur = 0;
+        }
+
+        // ---- СНЕГ ----
+        if (snowEnabled) {
+            snowflakes.forEach(s => {
+                s.x += s.drift + Math.sin(timestamp / 2000 + s.x) * 0.1;
+                s.y += s.speed;
+                if (s.y > WORLD_HEIGHT) { s.y = -5; s.x = camera.x + (Math.random() - 0.5) * 1800; }
+                // Циклическая замена относительно камеры
+                if (s.x < camera.x - 1000) s.x += 2000;
+                if (s.x > camera.x + 1000) s.x -= 2000;
+
+                if (s.x < viewLeft || s.x > viewRight) return;
+
+                ctx.globalAlpha = s.opacity;
+                ctx.fillStyle = '#CCEEFF';
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // ---- ИГРОК ----
+        drawPlayer(timestamp);
+
+        ctx.restore();
+
+        // ---- ВИНЬЕТКА ----
+        const fogGrad = ctx.createRadialGradient(W / 2, H / 2, 100, W / 2, H / 2, 600);
+        fogGrad.addColorStop(0, 'rgba(0, 191, 255, 0)');
+        fogGrad.addColorStop(0.75, 'rgba(0, 191, 255, 0)');
+        fogGrad.addColorStop(1, `rgba(0, 10, 30, ${nightMode ? 0.5 : 0.15})`);
+        ctx.fillStyle = fogGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // ---- КОМПАС ----
+        drawCompass();
+
+        // ---- МИНИ-КАРТА ----
+        drawMinimap();
+
+        // ---- РАЙОН ----
+        const dist = getDistrictAt(player.x);
+        if (dist && dist.name !== currentDistrict) {
+            currentDistrict = dist.name;
+            showDistrictBanner(dist.name, dist.color);
+        }
+
+        // ---- ВРЕМЯ ----
+        const hours = 22 + Math.floor((timestamp / 60000) % 6);
+        const mins = 16 + Math.floor((timestamp / 3000) % 60);
+        document.getElementById('clockDisplay').textContent =
+            `${String(hours % 24).padStart(2, '0')}:${String(mins % 60).padStart(2, '0')}`;
+        document.getElementById('playerPos').textContent =
+            `${Math.floor(player.x)},${Math.floor(player.y)}`;
+        document.getElementById('tempDisplay').textContent =
+            `${-10 - Math.floor(player.x / 5000) * 2}°C`;
+    }
+
+    // ============================================================
+    //   📍  РАЙОНЫ
+    // ============================================================
+    function getDistrictAt(x) {
+        for (const d of districts) {
+            if (x >= d.start && x < d.end) return d;
+        }
+        return districts[districts.length - 1];
+    }
+
+    function showDistrictBanner(name, color) {
+        const banner = document.getElementById('districtBanner');
+        banner.textContent = name;
+        banner.style.color = color;
+        banner.style.textShadow = `0 0 30px ${color}, 0 0 60px ${color}`;
+        banner.classList.add('show');
+        clearTimeout(districtBannerTimer);
+        districtBannerTimer = setTimeout(() => {
+            banner.classList.remove('show');
+        }, 2500);
+    }
+
+    // ============================================================
+    //   🚦  СВЕТОФОР
+    // ============================================================
+    function drawTrafficLight(tl, timestamp) {
+        tl.timer += 16;
+        const cycle = tl.cycle[tl.index];
+        if (tl.timer > cycle) {
+            tl.timer = 0;
+            tl.index = (tl.index + 1) % tl.cycle.length;
+            const states = ['red', 'yellow', 'green', 'yellow'];
+            tl.state = states[tl.index];
+        }
+
+        const tx = tl.x;
+        const ty = SIDEWALK_TOP_Y - 55;
+
+        ctx.fillStyle = '#0a1a2a';
+        ctx.fillRect(tx - 2, ty, 4, 60);
+        ctx.fillStyle = '#0a1520';
+        ctx.fillRect(tx - 10, ty - 10, 20, 38);
+        ctx.strokeStyle = '#1a3a5a';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(tx - 10, ty - 10, 20, 38);
+
+        ctx.fillStyle = tl.state === 'red' ? '#FF0000' : '#3a0a0a';
+        if (tl.state === 'red') { ctx.shadowColor = '#FF0000'; ctx.shadowBlur = 18; }
+        ctx.beginPath(); ctx.arc(tx, ty - 1, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = tl.state === 'yellow' ? '#FFFF00' : '#3a3a0a';
+        if (tl.state === 'yellow') { ctx.shadowColor = '#FFFF00'; ctx.shadowBlur = 18; }
+        ctx.beginPath(); ctx.arc(tx, ty + 9, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = tl.state === 'green' ? '#00FF00' : '#0a3a0a';
+        if (tl.state === 'green') { ctx.shadowColor = '#00FF00'; ctx.shadowBlur = 18; }
+        ctx.beginPath(); ctx.arc(tx, ty + 19, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
+
+        const py = SIDEWALK_TOP_Y + 5;
+        ctx.fillStyle = '#0a1520';
+        ctx.fillRect(tx + 14, py, 12, 20);
+        const pedState = (tl.state === 'red') ? 'walk' : 'stop';
+        ctx.fillStyle = pedState === 'walk' ? '#00FF00' : '#FF0000';
+        ctx.shadowColor = pedState === 'walk' ? '#00FF00' : '#FF0000';
+        ctx.shadowBlur = 12;
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(pedState === 'walk' ? '🚶' : '✋', tx + 20, py + 15);
+        ctx.shadowBlur = 0;
+    }
+
+    // ============================================================
+    //   🚶  ИГРОК
+    // ============================================================
+    function drawPlayer(timestamp) {
+        const nx = player.x;
+        const ny = player.y;
+        const bob = Math.sin(timestamp / 180) * 2 * (player.isRunning ? 2 : 1);
+
+        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        ctx.beginPath();
+        ctx.ellipse(nx, ny + 18, 14, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Аура (голубо-фиолетовая — ледяная)
+        const aura = ctx.createRadialGradient(nx, ny, 5, nx, ny, 70);
+        aura.addColorStop(0, 'rgba(150, 100, 255, 0.4)');
+        aura.addColorStop(0.5, 'rgba(100, 150, 255, 0.15)');
+        aura.addColorStop(1, 'rgba(100, 200, 255, 0)');
+        ctx.fillStyle = aura;
+        ctx.beginPath();
+        ctx.arc(nx, ny, 70, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Пульсирующее кольцо
+        const ringPulse = 1 + Math.sin(timestamp / 400) * 0.2;
+        ctx.strokeStyle = 'rgba(150, 200, 255, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(nx, ny + 18, 20 * ringPulse, 6 * ringPulse, 0, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Плащ
+        ctx.fillStyle = '#8844AA';
+        ctx.fillRect(nx - 10, ny - 24 + bob, 20, 30);
+        const wave = Math.sin(timestamp / 300) * 2;
+        ctx.fillStyle = '#6622AA';
+        ctx.beginPath();
+        ctx.moveTo(nx - 12, ny - 14 + bob);
+        ctx.quadraticCurveTo(nx - 16 + wave, ny + 6, nx - 12, ny + 8 + bob);
+        ctx.lineTo(nx + 12, ny + 8 + bob);
+        ctx.quadraticCurveTo(nx + 16 + wave, ny + 6, nx + 12, ny - 14 + bob);
+        ctx.closePath();
+        ctx.fill();
+
+        // Голова
+        ctx.fillStyle = '#E8D8C8';
+        ctx.fillRect(nx - 6, ny - 34 + bob, 12, 12);
+        ctx.fillStyle = '#000';
+        const eyeOffset = player.direction > 0 ? 2 : -2;
+        ctx.fillRect(nx - 2 + eyeOffset, ny - 30 + bob, 2, 3);
+        ctx.fillRect(nx + 3 + eyeOffset, ny - 30 + bob, 2, 3);
+        ctx.fillStyle = '#AA6666';
+        ctx.fillRect(nx - 2 + eyeOffset, ny - 25 + bob, 5, 1);
+
+        // Капюшон
+        ctx.fillStyle = '#4422AA';
+        ctx.fillRect(nx - 8, ny - 40 + bob, 16, 8);
+        ctx.fillRect(nx - 10, ny - 36 + bob, 3, 12);
+        ctx.fillRect(nx + 7, ny - 36 + bob, 3, 12);
+
+        // Корона
+        ctx.fillStyle = '#FFD700';
+        ctx.shadowColor = '#FFD700';
+        ctx.shadowBlur = 15;
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('★', nx, ny - 46 + bob);
+        ctx.shadowBlur = 0;
+
+        if (!player.isRunning) {
+            const arrowBob = Math.sin(timestamp / 300) * 3;
+            ctx.fillStyle = '#FF88FF';
+            ctx.shadowColor = '#FF88FF';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(nx, ny - 54 + arrowBob);
+            ctx.lineTo(nx - 6, ny - 62 + arrowBob);
+            ctx.lineTo(nx + 6, ny - 62 + arrowBob);
+            ctx.closePath();
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.font = 'bold 9px monospace';
+        ctx.fillStyle = '#FF88FF';
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.textAlign = 'center';
+        ctx.fillText(player.name, nx, ny - 68 + bob);
+        ctx.shadowBlur = 0;
+    }
+
+    // ============================================================
+    //   🧭  КОМПАС
+    // ============================================================
+    function drawCompass() {
+        const cx = W - 45;
+        const cy = 45;
+        const r = 24;
+
+        ctx.fillStyle = 'rgba(5, 10, 20, 0.85)';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#0a2a4a';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        const angle = -camera.angle - Math.PI / 2;
+        ctx.fillStyle = '#00BFFF';
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(angle) * r * 0.7, cy + Math.sin(angle) * r * 0.7);
+        ctx.lineTo(cx + Math.cos(angle + 2.5) * r * 0.4, cy + Math.sin(angle + 2.5) * r * 0.4);
+        ctx.lineTo(cx + Math.cos(angle - 2.5) * r * 0.4, cy + Math.sin(angle - 2.5) * r * 0.4);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#DAA520';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('N', cx, cy - r - 3);
+    }
+
+    // ============================================================
+    //   🗺️  МИНИ-КАРТА
+    // ============================================================
+    function drawMinimap() {
+        const mw = minimapCanvas.width;
+        const mh = minimapCanvas.height;
+        mctx.clearRect(0, 0, mw, mh);
+        mctx.fillStyle = '#040810';
+        mctx.fillRect(0, 0, mw, mh);
+
+        // Фон по районам
+        const scaleX = mw / WORLD_WIDTH;
+        districts.forEach(d => {
+            mctx.fillStyle = d.color + '30'; // прозрачный
+            mctx.fillRect(d.start * scaleX, 0, (d.end - d.start) * scaleX, mh);
+        });
+
+        const scaleY = mh / WORLD_HEIGHT;
+
+        // Дороги
+        mctx.fillStyle = '#0a1a2a';
+        mctx.fillRect(0, SIDEWALK_TOP_Y * scaleY, mw, SIDEWALK_TOP_H * scaleY);
+        mctx.fillRect(0, SIDEWALK_BOTTOM_Y * scaleY, mw, SIDEWALK_BOTTOM_H * scaleY);
+        mctx.fillStyle = '#1a2a4a';
+        mctx.fillRect(0, LANE1_Y * scaleY, mw, LANE1_H * scaleY);
+        mctx.fillRect(0, LANE2_Y * scaleY, mw, LANE2_H * scaleY);
+
+        // Светофоры
+        mctx.fillStyle = '#FF4444';
+        trafficLights.forEach(tl => {
+            mctx.fillRect(tl.x * scaleX - 1, SIDEWALK_TOP_Y * scaleY, 2, mh);
+        });
+
+        // NPC (синие точки)
+        mctx.fillStyle = '#44FF88';
+        npcs.forEach(n => mctx.fillRect(n.x * scaleX - 0.5, n.y * scaleY - 1, 1, 2));
+
+        // Машины (красные точки)
+        mctx.fillStyle = '#FF8888';
+        cars.forEach(c => mctx.fillRect(c.x * scaleX - 0.5, c.y * scaleY - 1, 1, 2));
+
+        // Игрок
+        mctx.fillStyle = '#FF88FF';
+        mctx.shadowColor = '#FF88FF';
+        mctx.shadowBlur = 5;
+        mctx.beginPath();
+        mctx.arc(player.x * scaleX, player.y * scaleY, 4, 0, Math.PI * 2);
+        mctx.fill();
+        mctx.shadowBlur = 0;
+    }
+
+    // ============================================================
+    //   🔊  ЗВУКИ
+    // ============================================================
+    let audioCtx = null;
+    function getAudioCtx() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        return audioCtx;
+    }
+    function playStep() {
+        if (!soundEnabled) return;
+        try {
+            const ac = getAudioCtx();
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200, ac.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(90, ac.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.05, ac.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.1);
+            osc.connect(gain); gain.connect(ac.destination);
+            osc.start(); osc.stop(ac.currentTime + 0.1);
+        } catch(e) {}
+    }
+    function playHonk() {
+        if (!soundEnabled) return;
+        try {
+            const ac = getAudioCtx();
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(240, ac.currentTime);
+            gain.gain.setValueAtTime(0.03, ac.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
+            osc.connect(gain); gain.connect(ac.destination);
+            osc.start(); osc.stop(ac.currentTime + 0.25);
+        } catch(e) {}
+    }
+
+    // ============================================================
+    //   🎮  УПРАВЛЕНИЕ
+    // ============================================================
+    function updatePlayer() {
+        const moveSpeed = keys['shift'] ? player.runSpeed : player.speed;
+        player.isRunning = !!keys['shift'];
+
+        let dx = 0, dy = 0;
+
+        const cos = Math.cos(-camera.angle);
+        const sin = Math.sin(-camera.angle);
+
+        if (keys['w']) dy -= 1;
+        if (keys['s']) dy += 1;
+        if (keys['a']) dx -= 1;
+        if (keys['d']) dx += 1;
+
+        const len = Math.hypot(dx, dy);
+        if (len > 0) {
+            dx /= len; dy /= len;
+            const rdx = dx * cos - dy * sin;
+            const rdy = dx * sin + dy * cos;
+            player.x += rdx * moveSpeed;
+            player.y += rdy * moveSpeed;
+            player.direction = rdx >= 0 ? 1 : -1;
+
+            player.stepCooldown -= 16;
+            if (player.stepCooldown <= 0) {
+                playStep();
+                player.stepCooldown = player.isRunning ? 180 : 280;
+            }
+
+            // Следы на снегу
+            if (Math.random() < 0.3) {
+                player.trail.push({ x: player.x, y: player.y + 16, life: 100 });
+                if (player.trail.length > 40) player.trail.shift();
+            }
+        }
+
+        player.x = Math.max(30, Math.min(WORLD_WIDTH - 30, player.x));
+        player.y = Math.max(170, Math.min(WORLD_HEIGHT - 30, player.y));
+
+        if (keys['q']) camera.targetAngle -= 0.02;
+        if (keys['r']) camera.targetAngle += 0.02;
+        camera.targetAngle = Math.max(-0.6, Math.min(0.6, camera.targetAngle));
+    }
+
+    function tryInteract() {
+        let closest = null;
+        let minDist = 70;
+        npcs.forEach(npc => {
+            const d = Math.hypot(npc.x - player.x, npc.y - player.y);
+            if (d < minDist) { minDist = d; closest = npc; }
+        });
+        if (closest) showDialog(closest.name, closest.dialog);
+    }
+    function showDialog(name, text) {
+        const popup = document.getElementById('dialogPopup');
+        document.getElementById('dialogName').textContent = name;
+        document.getElementById('dialogText').textContent = text;
+        popup.classList.add('show');
+    }
+    document.getElementById('dialogClose').addEventListener('click', () => {
+        document.getElementById('dialogPopup').classList.remove('show');
+    });
+
+    // ---------- МЫШЬ ----------
+    let isDragging = false, lastMouseX = 0;
+    canvas.addEventListener('mousedown', e => { isDragging = true; lastMouseX = e.clientX; });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', e => {
+        if (isDragging) {
+            const dx = e.clientX - lastMouseX;
+            camera.targetAngle += dx * 0.005;
+            camera.targetAngle = Math.max(-0.6, Math.min(0.6, camera.targetAngle));
+            lastMouseX = e.clientX;
+        }
+    });
+
+    // ---------- Кнопки ----------
+    document.getElementById('toggleSnow').addEventListener('click', function() {
+        snowEnabled = !snowEnabled;
+        this.classList.toggle('active');
+        this.textContent = snowEnabled ? '❄️ Снег' : '❄️ Выкл';
+    });
+    document.getElementById('toggleTraffic').addEventListener('click', function() {
+        trafficEnabled = !trafficEnabled;
+        this.classList.toggle('active');
+        this.textContent = trafficEnabled ? '🛷 Сани' : '🛷 Выкл';
+    });
+    document.getElementById('toggleNight').addEventListener('click', function() {
+        nightMode = !nightMode;
+        this.classList.toggle('active');
+        this.textContent = nightMode ? '🌙 Ночь' : '🌅 Рассвет';
+    });
+    document.getElementById('toggleSound').addEventListener('click', function() {
+        soundEnabled = !soundEnabled;
+        this.classList.toggle('active');
+        this.textContent = soundEnabled ? '🔊 Звук' : '🔇 Выкл';
+    });
+
+    function animate(timestamp) {
+        updatePlayer();
+        drawCity(timestamp);
+        requestAnimationFrame(animate);
+    }
+    animate(0);
+</script>
+</body>
+</html>
