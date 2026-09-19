@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Химическая лаборатория</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #1a1a2e;
+    color: #eee;
+    padding: 20px;
+    max-width: 900px;
+    margin: auto;
+  }
+  h1 { color: #4ade80; text-align: center; }
+  .lab {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #16213e;
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+  }
+  select {
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 8px;
+    background: #0f3460;
+    color: #fff;
+    border: 2px solid #4ade80;
+    min-width: 180px;
+  }
+  .plus {
+    font-size: 32px;
+    color: #4ade80;
+    margin: 0 15px;
+  }
+  button {
+    display: block;
+    margin: 0 auto 20px;
+    padding: 12px 40px;
+    font-size: 18px;
+    background: #4ade80;
+    color: #1a1a2e;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  button:hover { background: #22c55e; }
+  #result {
+    background: #16213e;
+    padding: 20px;
+    border-radius: 12px;
+    min-height: 80px;
+    border-left: 5px solid #4ade80;
+    font-size: 18px;
+    line-height: 1.6;
+  }
+  .error { color: #f87171; }
+  .success { color: #4ade80; }
+  .formula { font-size: 24px; color: #facc15; font-weight: bold; }
+</style>
+</head>
+<body>
+
+<h1>🧪 Химическая лаборатория</h1>
+
+<div class="lab">
+  <select id="reagent1"></select>
+  <div class="plus">+</div>
+  <select id="reagent2"></select>
+</div>
+
+<button onclick="mix()">Смешать!</button>
+
+<div id="result">Выбери два вещества и нажми «Смешать»</div>
+
+<script>
+// База веществ: название → {формула, тип}
+const substances = {
+  "Na":   {formula: "Na",   type: "metal"},
+  "K":    {formula: "K",    type: "metal"},
+  "Ca":   {formula: "Ca",   type: "metal"},
+  "Al":   {formula: "Al",   type: "metal"},
+  "Zn":   {formula: "Zn",   type: "metal"},
+  "Fe":   {formula: "Fe",   type: "metal"},
+  "O2":   {formula: "O₂",   type: "nonmetal"},
+  "Cl2":  {formula: "Cl₂",  type: "nonmetal"},
+  "H2":   {formula: "H₂",   type: "nonmetal"},
+  "S":    {formula: "S",    type: "nonmetal"},
+  "HCl":  {formula: "HCl",  type: "acid"},
+  "H2SO4":{formula: "H₂SO₄",type: "acid"},
+  "NaOH": {formula: "NaOH", type: "base"},
+  "H2O":  {formula: "H₂O",  type: "water"}
+};
+
+// Таблица реакций: "реагент1+реагент2" → {product, name, type}
+// Ключ всегда сортируем по алфавиту, чтобы порядок выбора не влиял
+const reactions = {
+  // Металл + кислород → оксид
+  "metal+O2":   {product: "MO",   name: "оксид металла", type: "соединение"},
+  // Металл + хлор → соль
+  "metal+Cl2":  {product: "MCl",  name: "хлорид металла", type: "соединение"},
+  // Металл + кислота → соль + водород
+  "metal+acid": {product: "MCl + H₂", name: "соль + водород", type: "замещение"},
+  // Металл + вода → гидроксид + водород (для активных)
+  "metal+water":{product: "MOH + H₂", name: "гидроксид + водород", type: "замещение"},
+  // Неметалл + кислород → кислотный оксид
+  "nonmetal+O2":{product: "кислотный оксид", name: "оксид неметалла", type: "соединение"},
+  // Неметалл + водород → летучее водородное соединение
+  "nonmetal+H2":{product: "HX", name: "летучее водородное соединение", type: "соединение"},
+  // Кислота + основание → соль + вода
+  "acid+base":  {product: "соль + H₂O", name: "реакция нейтрализации", type: "обмен"},
+  // Кислота + металл (уже есть выше)
+  // Оксид + вода → гидроксид/кислота
+  "O2+H2O":     {product: "—", name: "не реагируют напрямую", type: "нет реакции"},
+  // Щёлочь + кислотный оксид → соль + вода
+  "base+nonmetal": {product: "соль + H₂O", name: "щёлочь + кислотный оксид", type: "обмен"}
+};
+
+function fillSelect(id) {
+  const sel = document.getElementById(id);
+  sel.innerHTML = "";
+  for (let key in substances) {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = key + " (" + substances[key].formula + ")";
+    sel.appendChild(opt);
+  }
+}
+
+function getReactionType(a, b) {
+  const ta = substances[a].type;
+  const tb = substances[b].type;
+  const pair = [ta, tb].sort().join("+");
+
+  // Прямые совпадения
+  if (pair === "metal+O2") return reactions["metal+O2"];
+  if (pair === "Cl2+metal") return reactions["metal+Cl2"];
+  if (pair === "acid+metal") return reactions["metal+acid"];
+  if (pair === "metal+water") return reactions["metal+water"];
+  if (pair === "O2+nonmetal") return reactions["nonmetal+O2"];
+  if (pair === "H2+nonmetal") return reactions["nonmetal+H2"];
+  if (pair === "acid+base") return reactions["acid+base"];
+  if (pair === "nonmetal+base") return reactions["base+nonmetal"];
+  if (pair === "O2+water") return reactions["O2+H2O"];
+
+  // Особые случаи
+  if ((a === "H2" && b === "O2") || (a === "O2" && b === "H2")) {
+    return {product: "H₂O", name: "вода", type: "соединение"};
+  }
+  if ((a === "Na" && b === "Cl2") || (a === "Cl2" && b === "Na")) {
+    return {product: "NaCl", name: "хлорид натрия (поваренная соль)", type: "соединение"};
+  }
+
+  return null;
+}
+
+function mix() {
+  const a = document.getElementById("reagent1").value;
+  const b = document.getElementById("reagent2").value;
+  const result = document.getElementById("result");
+
+  if (a === b) {
+    result.innerHTML = '<span class="error">Нельзя смешать вещество само с собой 😄</span>';
+    return;
+  }
+
+  const r = getReactionType(a, b);
+
+  if (!r) {
+    result.innerHTML = `
+      <span class="error">❌ Реакция не найдена в базе</span><br>
+      <small>Попробуй другую пару или добавь реакцию в код.</small>
+    `;
+    return;
+  }
+
+  const fa = substances[a].formula;
+  const fb = substances[b].formula;
+
+  result.innerHTML = `
+    <div class="success">✅ Реакция идёт!</div>
+    <div class="formula">${fa} + ${fb} → ${r.product}</div>
+    <div>Тип: <b>${r.name}</b></div>
+    <div>Класс реакции: <b>${r.type}</b></div>
+  `;
+}
+
+// Инициализация
+fillSelect("reagent1");
+fillSelect("reagent2");
+document.getElementById("reagent1").value = "Na";
+document.getElementById("reagent2").value = "Cl2";
+</script>
+
+</body>
+</html>
