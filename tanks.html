@@ -33,6 +33,7 @@
   .user-badge { background: #1a1d24; border: 2px solid #2a2f3a; border-radius: 10px; padding: 12px; text-align: center; margin-bottom: 12px; }
   .user-badge .name { font-weight: bold; color: #ffd166; font-size: 17px; }
   .user-badge .coins { color: #ffd166; margin-top: 4px; font-size: 14px; }
+  .user-badge .skill { color: #4dabf7; margin-top: 4px; font-size: 12px; }
 
   #screen-auth, #screen-menu, #screen-hangar, #screen-profile, #screen-mode {
     max-width: 440px; margin: 0 auto; width: 100%; padding: 14px; gap: 8px;
@@ -43,6 +44,7 @@
   .mode-card:hover { border-color: #ffd166; }
   .mode-card .mode-title { font-weight: bold; font-size: 15px; color: #ffd166; }
   .mode-card .mode-desc { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .mode-card .mode-info { font-size: 11px; color: #4dabf7; margin-top: 6px; }
 
   .nation-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
   .nation-btn { padding: 10px 4px; border-radius: 8px; border: 2px solid #2a2f3a; background: #1a1d24; font-size: 22px; cursor: pointer; text-align: center; }
@@ -106,6 +108,7 @@
   }
   .minimap.p1 { left: 6px; border-color: #e94560; }
   .minimap.p2 { right: 6px; border-color: #4dabf7; }
+  .minimap canvas { display: block; width: 100%; height: 100%; }
 
   /* Нижние панели управления */
   #controls {
@@ -140,7 +143,6 @@
   }
   .p2 .joystick-knob { background: #4dabf7; box-shadow: 0 0 10px rgba(77,171,247,0.6); }
 
-  /* Правые кнопки игрока */
   .right-controls {
     display: flex; flex-direction: column; gap: 6px; align-items: center;
   }
@@ -168,7 +170,7 @@
   .p2 .shoot-btn { background: #4dabf7; border-color: #8ec5ff; box-shadow: 0 0 12px rgba(77,171,247,0.5); }
   .shoot-btn:active { transform: scale(0.92); }
 
-  /* Меню выбора снаряда */
+  /* Меню снарядов */
   .ammo-menu {
     position: absolute; bottom: 200px;
     background: #1a1d24; border: 2px solid #ffd166;
@@ -183,10 +185,7 @@
     display: flex; align-items: center; gap: 8px;
     padding: 8px 12px; border-radius: 8px;
     background: #252a34; cursor: pointer; min-width: 160px;
-    transition: 0.15s;
   }
-  .ammo-item:hover { background: #2f3644; border-left: 3px solid #ffd166; }
-  .ammo-item.active { border-left: 3px solid #ffd166; background: #2f3644; }
   .ammo-icon {
     width: 32px; height: 32px; border-radius: 50%;
     display: flex; align-items: center; justify-content: center;
@@ -198,14 +197,12 @@
   .ammo-name { font-size: 13px; font-weight: bold; }
   .ammo-desc { font-size: 10px; color: #aaa; }
 
-  /* Кнопка открытия меню снарядов */
   .ammo-btn {
     width: 44px; height: 44px; border-radius: 10px;
     background: rgba(255,255,255,0.08);
     border: 2px solid #ffd166; color: #fff;
     font-size: 22px; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; touch-action: manipulation;
-    position: relative;
+    cursor: pointer; position: relative;
   }
   .ammo-btn:active { background: rgba(255,209,102,0.3); }
   .ammo-btn .current-ammo {
@@ -215,7 +212,6 @@
     border: 2px solid #0f1116;
   }
 
-  /* Кнопка паузы */
   #pause-btn {
     position: absolute; top: 50%; left: 50%;
     transform: translate(-50%, -50%);
@@ -227,7 +223,6 @@
   }
   #pause-btn:active { background: rgba(255,209,102,0.3); }
 
-  /* Оверлей паузы */
   #pause-overlay {
     position: absolute; inset: 0;
     background: rgba(0,0,0,0.85);
@@ -243,12 +238,19 @@
   .result-title { font-size: 28px; font-weight: bold; color: #ffd166; }
   .result-coins { font-size: 20px; color: #ffd166; }
   .result-stats { font-size: 14px; color: #aaa; }
+  .result-skill { font-size: 14px; color: #4dabf7; margin-top: 4px; }
+
+  /* Профиль */
+  .stat-row { background: #1a1d24; border: 2px solid #2a2f3a; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 14px; }
+  .stat-row span:last-child { color: #ffd166; font-weight: bold; }
+  .skill-bar { width: 100%; height: 20px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; margin: 8px 0; }
+  .skill-fill { height: 100%; background: linear-gradient(90deg, #4dd07d, #ffd166, #e94560); transition: width 0.4s; }
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- ====== ВХОД ====== -->
+  <!-- ВХОД -->
   <div id="screen-auth" class="screen active">
     <div class="logo">🎮</div>
     <div class="title">ТАНКОВАЯ ДУЭЛЬ</div>
@@ -261,11 +263,12 @@
     <button class="btn" id="btn-guest">Играть без сохранения</button>
   </div>
 
-  <!-- ====== МЕНЮ ====== -->
+  <!-- МЕНЮ -->
   <div id="screen-menu" class="screen">
     <div class="user-badge">
       <div class="name" id="menu-username">—</div>
       <div class="coins">💰 <span id="menu-coins">0</span> ¢</div>
+      <div class="skill">⚡ Скилл: <span id="menu-skill">0</span> / 100</div>
     </div>
     <button class="btn primary" id="btn-play">⚔️ Играть</button>
     <button class="btn" id="btn-hangar">🚜 Ангар</button>
@@ -273,7 +276,7 @@
     <button class="btn danger" id="btn-logout">Выйти</button>
   </div>
 
-  <!-- ====== АНГАР ====== -->
+  <!-- АНГАР -->
   <div id="screen-hangar" class="screen">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <button class="btn" style="width:auto;padding:8px 14px;font-size:13px" id="btn-hangar-back">← Назад</button>
@@ -285,7 +288,7 @@
     <div class="tank-list" id="tank-list"></div>
   </div>
 
-  <!-- ====== ВЫБОР РЕЖИМА ====== -->
+  <!-- ВЫБОР РЕЖИМА -->
   <div id="screen-mode" class="screen">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <button class="btn" style="width:auto;padding:8px 14px;font-size:13px" id="btn-mode-back">← Назад</button>
@@ -293,18 +296,19 @@
     </div>
     <div class="title" style="font-size:18px">ВЫБОР РЕЖИМА</div>
     <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="mode-card" data-mode="bot">
+        <div class="mode-title">🤖 1×1 — Против бота</div>
+        <div class="mode-desc">ИИ-соперник по твоему скиллу</div>
+        <div class="mode-info" id="mode-bot-info">Твой скилл: 0 · Соперник: 🟢 Любитель</div>
+      </div>
       <div class="mode-card" data-mode="pvp">
         <div class="mode-title">⚔️ 1×1 — Дуэль</div>
         <div class="mode-desc">Два игрока на одном устройстве</div>
       </div>
-      <div class="mode-card" data-mode="bot">
-        <div class="mode-title">🤖 1×1 — Против бота</div>
-        <div class="mode-desc">Скоро!</div>
-      </div>
     </div>
   </div>
 
-  <!-- ====== БОЙ ====== -->
+  <!-- БОЙ -->
   <div id="screen-battle" class="screen">
     <canvas id="battle-canvas"></canvas>
 
@@ -314,7 +318,7 @@
           <div class="hp-fill" id="p1-hp-fill" style="width:100%"></div>
           <div class="hp-text" id="p1-hp-text">100 / 100</div>
         </div>
-        <div class="label">🔴 Игрок 1</div>
+        <div class="label" id="p1-name">🔴 Игрок 1</div>
         <div class="base-bar"><div id="p1-base-bar" style="width:100%"></div></div>
         <div class="label">База: <span id="p1-base">10000</span></div>
         <div id="p1-detected" class="detected" style="display:none">💡 Обнаружен!</div>
@@ -324,30 +328,25 @@
           <div class="hp-fill" id="p2-hp-fill" style="width:100%"></div>
           <div class="hp-text" id="p2-hp-text">100 / 100</div>
         </div>
-        <div class="label">Игрок 2 🔵</div>
+        <div class="label" id="p2-name">Игрок 2 🔵</div>
         <div class="base-bar"><div id="p2-base-bar" style="width:100%"></div></div>
         <div class="label">База: <span id="p2-base">10000</span></div>
         <div id="p2-detected" class="detected" style="display:none">💡 Обнаружен!</div>
       </div>
     </div>
 
-    <!-- Мини-карты -->
-    <div class="minimap p1" id="minimap1"></div>
-    <div class="minimap p2" id="minimap2"></div>
+    <div class="minimap p1" id="minimap1"><canvas></canvas></div>
+    <div class="minimap p2" id="minimap2"><canvas></canvas></div>
 
-    <!-- Кнопка паузы -->
     <div id="pause-btn">⏸</div>
 
-    <!-- Оверлей паузы -->
     <div id="pause-overlay">
       <h2>ПАУЗА</h2>
       <button class="btn primary" style="max-width:240px" id="btn-resume">▶ Продолжить</button>
       <button class="btn danger" style="max-width:240px" id="btn-quit">← Выйти в меню</button>
     </div>
 
-    <!-- Управление -->
     <div id="controls">
-      <!-- Игрок 1 (слева) -->
       <div class="control-block p1">
         <div class="joystick" id="joy1">
           <div class="joystick-knob" id="joy1-knob"></div>
@@ -364,27 +363,8 @@
           </div>
         </div>
       </div>
-
-      <!-- Игрок 2 (справа) -->
-      <div class="control-block p2">
-        <div class="joystick" id="joy2">
-          <div class="joystick-knob" id="joy2-knob"></div>
-        </div>
-        <div class="right-controls">
-          <div class="turret-row">
-            <div class="mini-btn" data-k=",">↺</div>
-            <div class="mini-btn" data-k=".">↻</div>
-          </div>
-          <div class="shoot-btn" data-k="enter">🔵</div>
-          <div class="ammo-btn" id="ammo-btn-2">
-            🥊
-            <div class="current-ammo" id="ammo-indicator-2" style="background:#7a7a7a">●</div>
-          </div>
-        </div>
-      </div>
     </div>
 
-    <!-- Меню выбора снаряда игрока 1 -->
     <div class="ammo-menu p1" id="ammo-menu-1">
       <div class="ammo-item" data-ammo="normal">
         <div class="ammo-icon normal">●</div>
@@ -400,34 +380,19 @@
       </div>
     </div>
 
-    <!-- Меню выбора снаряда игрока 2 -->
-    <div class="ammo-menu p2" id="ammo-menu-2">
-      <div class="ammo-item" data-ammo="normal">
-        <div class="ammo-icon normal">●</div>
-        <div><div class="ammo-name">Обычный</div><div class="ammo-desc">Базовый урон и скорость</div></div>
-      </div>
-      <div class="ammo-item" data-ammo="he">
-        <div class="ammo-icon he">◉</div>
-        <div><div class="ammo-name">Фугас</div><div class="ammo-desc">Урон ×1.5, слаб против брони</div></div>
-      </div>
-      <div class="ammo-item" data-ammo="ap">
-        <div class="ammo-icon ap">◆</div>
-        <div><div class="ammo-name">Подкалиберный</div><div class="ammo-desc">Игнорирует 50% брони</div></div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- ====== ИТОГИ ====== -->
+  <!-- ИТОГИ -->
   <div id="screen-result" class="screen">
     <div class="result-title" id="result-title">Победа!</div>
     <div class="result-coins" id="result-coins">+0 ¢</div>
     <div class="result-stats" id="result-stats"></div>
+    <div class="result-skill" id="result-skill"></div>
     <button class="btn primary" id="btn-result-menu" style="max-width:300px">В меню</button>
     <button class="btn" id="btn-result-again" style="max-width:300px">Играть снова</button>
   </div>
 
-  <!-- ====== ПРОФИЛЬ ====== -->
+  <!-- ПРОФИЛЬ -->
   <div id="screen-profile" class="screen">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <button class="btn" style="width:auto;padding:8px 14px;font-size:13px" id="btn-profile-back">← Назад</button>
@@ -482,6 +447,57 @@ const NATION_COLORS = {
   cz:{body:'#6b4a7a', dark:'#4a2a5a', accent:'#8b6a9a'},
 };
 
+// ===== БАЗА ИМЁН БОТОВ =====
+const BOT_NAMES = [
+  // Простые человеческие
+  'Генри','Ганс','Клаус','Дитер','Штефан','Вернер','Курт','Фриц','Отто','Карл',
+  'Иван','Дмитрий','Алексей','Сергей','Максим','Андрей','Никита','Владимир','Павел','Роман',
+  'John','Mike','David','James','Robert','William','Thomas','Daniel','Matthew','Joseph',
+  'Pierre','Louis','Jean','Claude','Marcel','Antoine','Jacques','Henri','Philippe','Étienne',
+  'Hiro','Kenji','Takeshi','Yuki','Akira','Satoshi','Ryu','Haruto','Sora','Yuto',
+  'Jack','Tom','Chris','Tyler','Brandon','Austin','Hunter','Logan','Mason','Ethan',
+  'Wei','Ming','Chen','Li','Zhang','Wang','Liu','Yang','Huang','Zhao',
+  'Lukáš','Tomáš','Jakub','Jan','Petr','Martin','Vojtěch','Adam','Filip','Ondřej',
+  'Luca','Marco','Matteo','Alessandro','Lorenzo','Andrea','Giovanni','Francesco','Riccardo','Davide',
+  'Oliver','Harry','Jack','George','Noah','Charlie','Jacob','Alfie','Freddie','Oscar',
+  // Ники игроков
+  'xX_Shadow_Xx','TankMaster2000','Sniper_King','Dark_Wolf','ProGamer_777','Random_Dude',
+  'NoScope360','KillerBee','IronFist','SteelHunter','GhostRider','BlackPanther',
+  'SilentDeath','RushB_Cyber','HeadshotPro','Lone_Wolf','RedBaron','WhiteTiger',
+  'StormTrooper','DeathBringer','SkyWalker','NightHawk','ThunderBolt','FireStorm',
+  'IceMan_99','MadMax','FuryRoad','CobraStrike','Raptor_One','ViperaX','BlackMamba',
+  'xX_Dragon_Xx','PhantomLord','ShadowNinja','SilentKill','FatalShot','ChaosMaker',
+  'ProTanker','EliteSniper','BattleKing','WarMachine','IronEagle','GhostSniper',
+  // Национальные имена
+  'Александр','Михаил','Николай','Егор','Артём','Кирилл','Денис','Игорь','Олег','Юрий',
+  'Hans','Peter','Michael','Andreas','Wolfgang','Jürgen','Manfred','Helmut','Frank','Stefan',
+  'Charles','Henry','Edward','Richard','George','Arthur','Albert','Frederick','Alfred','Ernest',
+  'Hiroshi','Takashi','Yamamoto','Tanaka','Nakamura','Sato','Suzuki','Takahashi','Watanabe','Ito',
+];
+function randomBotName() {
+  return BOT_NAMES[Math.floor(Math.random() * BOT_NAMES.length)];
+}
+
+// ===== УРОВНИ БОТОВ =====
+const BOT_LEVELS = [
+  { id:1, name:'Новичок', color:'🟢', aimTolerance:0.30, reaction:0.4, dodgeChance:0.05, hideChance:0.05, ammoChangeChance:0.05, idleChance:0.25, baseRushChance:0.2 },
+  { id:2, name:'Любитель', color:'🟢', aimTolerance:0.22, reaction:0.6, dodgeChance:0.15, hideChance:0.20, ammoChangeChance:0.15, idleChance:0.15, baseRushChance:0.3 },
+  { id:3, name:'Опытный', color:'🟡', aimTolerance:0.15, reaction:0.8, dodgeChance:0.40, hideChance:0.45, ammoChangeChance:0.40, idleChance:0.08, baseRushChance:0.4 },
+  { id:4, name:'Про',     color:'🔴', aimTolerance:0.10, reaction:0.95, dodgeChance:0.65, hideChance:0.60, ammoChangeChance:0.65, idleChance:0.04, baseRushChance:0.5 },
+  { id:5, name:'Эксперт', color:'🔴', aimTolerance:0.06, reaction:1.0, dodgeChance:0.85, hideChance:0.75, ammoChangeChance:0.80, idleChance:0.02, baseRushChance:0.6 },
+];
+
+function getBotLevelBySkill(skill) {
+  if (skill <= 20) return BOT_LEVELS[0];
+  if (skill <= 40) return BOT_LEVELS[1];
+  if (skill <= 60) return BOT_LEVELS[2];
+  if (skill <= 80) return BOT_LEVELS[3];
+  return BOT_LEVELS[4];
+}
+
+/* ============================================================
+   ТАНКИ
+   ============================================================ */
 function createTank(nation, type, level) {
   const base = TYPE_STATS[type];
   const mult = 1 + (level - 1) * 0.4;
@@ -529,6 +545,7 @@ function updateMenuUI() {
   if (!currentUser) return;
   document.getElementById('menu-username').textContent = currentUser.name;
   document.getElementById('menu-coins').textContent = currentUser.coins;
+  document.getElementById('menu-skill').textContent = (currentUser.skill || 0);
 }
 function saveCurrentUser() {
   if (!currentUser || currentUser.isGuest) return;
@@ -537,6 +554,10 @@ function saveCurrentUser() {
   accounts[currentUser.name].coins = currentUser.coins;
   accounts[currentUser.name].battles = currentUser.battles || 0;
   accounts[currentUser.name].wins = currentUser.wins || 0;
+  accounts[currentUser.name].losses = currentUser.losses || 0;
+  accounts[currentUser.name].winStreak = currentUser.winStreak || 0;
+  accounts[currentUser.name].lossStreak = currentUser.lossStreak || 0;
+  accounts[currentUser.name].skill = currentUser.skill || 0;
   accounts[currentUser.name].ownedTanks = currentUser.ownedTanks;
   accounts[currentUser.name].selectedTankId = currentUser.selectedTankId;
   saveAccounts(accounts);
@@ -556,11 +577,12 @@ document.getElementById('btn-register').onclick = () => {
   if (accounts[name]) return authError.textContent = 'Такое имя уже занято';
   const starter = createTank('de', 'lt', 1);
   accounts[name] = {
-    passHash: hashPass(pass), coins: 1000, battles: 0, wins: 0,
+    passHash: hashPass(pass), coins: 1000, battles: 0, wins: 0, losses: 0,
+    winStreak: 0, lossStreak: 0, skill: 0,
     ownedTanks: [starter.id], selectedTankId: starter.id, createdAt: Date.now(),
   };
   saveAccounts(accounts);
-  currentUser = { name, coins: 1000, battles: 0, wins: 0, ownedTanks: [starter.id], selectedTankId: starter.id };
+  currentUser = { name, coins: 1000, battles: 0, wins: 0, losses: 0, winStreak: 0, lossStreak: 0, skill: 0, ownedTanks: [starter.id], selectedTankId: starter.id };
   updateMenuUI(); showScreen('screen-menu');
 };
 document.getElementById('btn-login').onclick = () => {
@@ -571,12 +593,16 @@ document.getElementById('btn-login').onclick = () => {
   if (!accounts[name]) return authError.textContent = 'Аккаунт не найден';
   if (accounts[name].passHash !== hashPass(pass)) return authError.textContent = 'Неверный пароль';
   const a = accounts[name];
-  currentUser = { name, coins: a.coins, battles: a.battles || 0, wins: a.wins || 0, ownedTanks: a.ownedTanks, selectedTankId: a.selectedTankId };
+  currentUser = {
+    name, coins: a.coins, battles: a.battles || 0, wins: a.wins || 0, losses: a.losses || 0,
+    winStreak: a.winStreak || 0, lossStreak: a.lossStreak || 0, skill: a.skill || 0,
+    ownedTanks: a.ownedTanks, selectedTankId: a.selectedTankId,
+  };
   updateMenuUI(); showScreen('screen-menu');
 };
 document.getElementById('btn-guest').onclick = () => {
   const starter = createTank('de', 'lt', 1);
-  currentUser = { name: 'Гость', coins: 1000, battles: 0, wins: 0, ownedTanks: [starter.id], selectedTankId: starter.id, isGuest: true };
+  currentUser = { name: 'Гость', coins: 1000, battles: 0, wins: 0, losses: 0, winStreak: 0, lossStreak: 0, skill: 0, ownedTanks: [starter.id], selectedTankId: starter.id, isGuest: true };
   updateMenuUI(); showScreen('screen-menu');
 };
 document.getElementById('btn-logout').onclick = () => {
@@ -587,23 +613,31 @@ document.getElementById('btn-logout').onclick = () => {
 /* ============================================================
    МЕНЮ
    ============================================================ */
-document.getElementById('btn-play').onclick = () => showScreen('screen-mode');
+document.getElementById('btn-play').onclick = () => {
+  updateModeInfo();
+  showScreen('screen-mode');
+};
 document.getElementById('btn-hangar').onclick = () => { hangarState.nation = 'de'; hangarState.type = 'lt'; renderHangar(); showScreen('screen-hangar'); };
 document.getElementById('btn-profile').onclick = () => { renderProfile(); showScreen('screen-profile'); };
 document.getElementById('btn-hangar-back').onclick = () => { updateMenuUI(); showScreen('screen-menu'); };
 document.getElementById('btn-profile-back').onclick = () => showScreen('screen-menu');
 document.getElementById('btn-mode-back').onclick = () => showScreen('screen-menu');
 
+function updateModeInfo() {
+  const skill = currentUser.skill || 0;
+  const lvl = getBotLevelBySkill(skill);
+  document.getElementById('mode-bot-info').textContent = `Твой скилл: ${skill} · Соперник: ${lvl.color} ${lvl.name}`;
+}
+
 document.querySelectorAll('.mode-card').forEach(card => {
   card.onclick = () => {
     const mode = card.dataset.mode;
-    if (mode === 'bot') { alert('🤖 Бот будет позже!'); return; }
-    startBattle();
+    startBattle(mode);
   };
 });
 
 /* ============================================================
-   АНГАР (без изменений)
+   АНГАР
    ============================================================ */
 function renderHangar() {
   document.getElementById('hangar-coins').textContent = currentUser.coins;
@@ -713,21 +747,34 @@ function renderProfile() {
     const f = getTanksForNation(n.id).find(t => t.id === currentUser.selectedTankId);
     if (f) { currentName = f.name; break; }
   }
-  const row = (label, val) => `<div style="background:#1a1d24;border:2px solid #2a2f3a;border-radius:8px;padding:10px;margin-bottom:8px;display:flex;justify-content:space-between;font-size:14px"><span>${label}</span><span style="color:#ffd166;font-weight:bold">${val}</span></div>`;
-  el.innerHTML = row('Имя', currentUser.name) + row('Монеты', currentUser.coins + ' ¢')
-    + row('Боёв', currentUser.battles||0) + row('Побед', currentUser.wins||0)
-    + row('Танков', currentUser.ownedTanks.length) + row('Текущий', currentName);
+  const skill = currentUser.skill || 0;
+  const lvl = getBotLevelBySkill(skill);
+  const battles = currentUser.battles || 0;
+  const wins = currentUser.wins || 0;
+  const wr = battles > 0 ? Math.round(wins / battles * 100) : 0;
+  const row = (label, val) => `<div class="stat-row"><span>${label}</span><span>${val}</span></div>`;
+  el.innerHTML =
+    row('Имя', currentUser.name) +
+    row('Монеты', currentUser.coins + ' ¢') +
+    row('Боёв', battles) +
+    row('Побед', wins) +
+    row('Поражений', currentUser.losses || 0) +
+    row('Winrate', wr + '%') +
+    row('Серия побед', (currentUser.winStreak || 0) + ' 🔥') +
+    row('Серия поражений', (currentUser.lossStreak || 0)) +
+    row('Танков', currentUser.ownedTanks.length) +
+    row('Текущий', currentName) +
+    `<div style="margin-top:16px;font-size:13px;color:#aaa">Скилл: <b style="color:#4dabf7">${skill}</b> / 100 — ${lvl.color} ${lvl.name}</div>` +
+    `<div class="skill-bar"><div class="skill-fill" style="width:${skill}%"></div></div>`;
 }
 
 /* ============================================================
    ===================  БОЙ  ==================================
    ============================================================ */
-
 const MAP_SIZE = 6000;
 const MERGE_DISTANCE = 1400;
 const TANK_SIZE = 22;
-const VISION_RANGE = 900;          // радиус обзора танка
-const CAMERA_ZOOM = 1.35;          // меньше — видно больше
+const VISION_RANGE = 900;
 
 const AMMO_TYPES = {
   normal: { name: 'Обычный',        color: '#7a7a7a', icon: '●', damageMult: 1.0, armorIgnore: 0,    speed: 9,  color2:'#aaaaaa' },
@@ -738,18 +785,39 @@ const AMMO_TYPES = {
 let battle = null;
 let battleRunning = false;
 let battlePaused = false;
+let battleMode = 'pvp'; // 'pvp' or 'bot'
 
-function startBattle() {
+function startBattle(mode) {
+  battleMode = mode || 'pvp';
   showScreen('screen-battle');
 
   const t1 = findTankById(currentUser.selectedTankId);
   const t2 = { ...t1 };
 
+  // === Бот ===
+  let botInfo = null;
+  if (battleMode === 'bot') {
+    const skill = currentUser.skill || 0;
+    const lvl = getBotLevelBySkill(skill);
+    botInfo = { level: lvl, name: randomBotName() };
+  }
+
   battle = {
     tanks: [
-      makeBattleTank(t1, 600, MAP_SIZE/2, 0, '🔴', '#e94560', 0),
-      makeBattleTank(t2, MAP_SIZE-600, MAP_SIZE/2, Math.PI, '🔵', '#4dabf7', 1),
+      makeBattleTank(t1, 600, MAP_SIZE/2, 0, '🔴', '#e94560', 0, currentUser.name, false),
+      makeBattleTank(t2, MAP_SIZE-600, MAP_SIZE/2, Math.PI, '🔵', '#4dabf7', 1,
+        battleMode === 'bot' ? botInfo.name : 'Игрок 2',
+        battleMode === 'bot'),
     ],
+    bot: battleMode === 'bot' ? {
+      level: botInfo.level,
+      thinkTimer: 0,
+      idleTimer: 0,
+      targetIsBase: false,
+      dodgeTarget: null,
+      lastAmmoChange: 0,
+      aiTick: 0,
+    } : null,
     bases: [
       { x: 300, y: MAP_SIZE/2, hp: 10000, maxHp: 10000, owner: 0, captureProgress: 0 },
       { x: MAP_SIZE-300, y: MAP_SIZE/2, hp: 10000, maxHp: 10000, owner: 1, captureProgress: 0 },
@@ -763,6 +831,10 @@ function startBattle() {
     time: 0,
   };
 
+  // Ник в HUD
+  document.getElementById('p1-name').textContent = '🔴 ' + currentUser.name;
+  document.getElementById('p2-name').textContent = (battleMode === 'bot' ? botInfo.name : 'Игрок 2') + ' 🔵';
+
   battlePaused = false;
   document.getElementById('pause-overlay').classList.remove('active');
 
@@ -773,10 +845,10 @@ function startBattle() {
   });
 }
 
-function makeBattleTank(data, x, y, angle, emoji, color, playerIdx) {
+function makeBattleTank(data, x, y, angle, emoji, color, playerIdx, displayName, isBot) {
   return {
     x, y, angle, turretAngle: angle,
-    color, emoji, playerIdx,
+    color, emoji, playerIdx, displayName, isBot: !!isBot,
     hp: data.hp, maxHp: data.hp,
     damage: data.damage, armor: data.armor,
     speed: data.speed * 0.55,
@@ -789,7 +861,7 @@ function makeBattleTank(data, x, y, angle, emoji, color, playerIdx) {
     inBush: false,
     revealTimer: 0,
     ammo: 'normal',
-    detectedBy: [false, false],   // [игрок 0 видит этого, игрок 1 видит этого]
+    detectedBy: [false, false],
     data,
     nation: data.nation,
   };
@@ -805,14 +877,12 @@ function generateObstacles() {
 }
 function generateBushes() {
   const bushes = [];
-  // Фиксированные для симметрии
   const fixed = [
     [900, 900], [5100, 900], [900, 5100], [5100, 5100],
     [3000, 700], [3000, 5300], [700, 3000], [5300, 3000],
     [2400, 1200], [3600, 4800], [1200, 2400], [4800, 3600],
   ];
   fixed.forEach(([x, y]) => bushes.push({ x, y, r: 85 }));
-  // Случайные
   for (let i = 0; i < 22; i++) {
     bushes.push({
       x: 500 + Math.random() * (MAP_SIZE - 1000),
@@ -851,19 +921,15 @@ function resizeBattleCanvas() {
 window.addEventListener('resize', () => { if (battleRunning) resizeBattleCanvas(); });
 
 /* ============================================================
-   УПРАВЛЕНИЕ — ДЖОЙСТИКИ
+   УПРАВЛЕНИЕ — POINTER EVENTS (работает в iframe)
    ============================================================ */
-const joystickState = [
-  { dx: 0, dy: 0, active: false },
-  { dx: 0, dy: 0, active: false },
-];
+const joystickState = { dx: 0, dy: 0, active: false };
 
-function setupJoystick(joyEl, knobEl, idx) {
-  const rect = () => joyEl.getBoundingClientRect();
-  let touchId = null;
+function setupJoystick(joyEl, knobEl) {
+  let activePointer = null;
 
   function update(clientX, clientY) {
-    const r = rect();
+    const r = joyEl.getBoundingClientRect();
     const cx = r.left + r.width / 2;
     const cy = r.top + r.height / 2;
     let dx = clientX - cx;
@@ -875,48 +941,50 @@ function setupJoystick(joyEl, knobEl, idx) {
       dy = (dy / dist) * maxDist;
     }
     knobEl.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-    joystickState[idx].dx = dx / maxDist;
-    joystickState[idx].dy = dy / maxDist;
-    joystickState[idx].active = true;
+    joystickState.dx = dx / maxDist;
+    joystickState.dy = dy / maxDist;
+    joystickState.active = true;
   }
   function reset() {
     knobEl.style.transform = 'translate(-50%, -50%)';
-    joystickState[idx].dx = 0;
-    joystickState[idx].dy = 0;
-    joystickState[idx].active = false;
-    touchId = null;
+    joystickState.dx = 0;
+    joystickState.dy = 0;
+    joystickState.active = false;
+    activePointer = null;
   }
 
-  joyEl.addEventListener('touchstart', e => {
+  joyEl.addEventListener('pointerdown', e => {
     e.preventDefault();
-    const t = e.changedTouches[0];
-    touchId = t.identifier;
-    update(t.clientX, t.clientY);
-  }, {passive: false});
-
-  joyEl.addEventListener('touchmove', e => {
-    e.preventDefault();
-    for (const t of e.changedTouches) {
-      if (t.identifier === touchId) update(t.clientX, t.clientY);
-    }
-  }, {passive: false});
-
-  joyEl.addEventListener('touchend', e => {
-    for (const t of e.changedTouches) if (t.identifier === touchId) reset();
+    e.stopPropagation();
+    activePointer = e.pointerId;
+    joyEl.setPointerCapture(e.pointerId);
+    update(e.clientX, e.clientY);
   });
-  joyEl.addEventListener('touchcancel', reset);
-
-  // Мышь для теста на ПК
-  joyEl.addEventListener('mousedown', e => { e.preventDefault(); update(e.clientX, e.clientY); });
-  document.addEventListener('mousemove', e => { if (joystickState[idx].active) update(e.clientX, e.clientY); });
-  document.addEventListener('mouseup', () => { if (joystickState[idx].active) reset(); });
+  joyEl.addEventListener('pointermove', e => {
+    if (e.pointerId !== activePointer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    update(e.clientX, e.clientY);
+  });
+  joyEl.addEventListener('pointerup', e => {
+    if (e.pointerId !== activePointer) return;
+    e.preventDefault();
+    e.stopPropagation();
+    reset();
+  });
+  joyEl.addEventListener('pointercancel', e => {
+    if (e.pointerId !== activePointer) return;
+    reset();
+  });
+  joyEl.addEventListener('pointerleave', e => {
+    // не сбрасываем при уходе, если pointerCapture работает — не сработает
+  });
 }
 
-setupJoystick(document.getElementById('joy1'), document.getElementById('joy1-knob'), 0);
-setupJoystick(document.getElementById('joy2'), document.getElementById('joy2-knob'), 1);
+setupJoystick(document.getElementById('joy1'), document.getElementById('joy1-knob'));
 
 /* ============================================================
-   КЛАВИШИ
+   КЛАВИШИ + КНОПКИ
    ============================================================ */
 const keys = {};
 document.addEventListener('keydown', e => {
@@ -925,17 +993,14 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 
-// Кнопки поворота башни / выстрела
 document.querySelectorAll('.mini-btn, .shoot-btn').forEach(btn => {
   const k = btn.dataset.k;
-  const press = e => { e.preventDefault(); keys[k] = true; };
-  const release = e => { e.preventDefault(); keys[k] = false; };
-  btn.addEventListener('touchstart', press, {passive:false});
-  btn.addEventListener('touchend', release, {passive:false});
-  btn.addEventListener('touchcancel', release, {passive:false});
-  btn.addEventListener('mousedown', press);
-  btn.addEventListener('mouseup', release);
-  btn.addEventListener('mouseleave', release);
+  const press = e => { e.preventDefault(); e.stopPropagation(); keys[k] = true; };
+  const release = e => { e.preventDefault(); e.stopPropagation(); keys[k] = false; };
+  btn.addEventListener('pointerdown', press);
+  btn.addEventListener('pointerup', release);
+  btn.addEventListener('pointercancel', release);
+  btn.addEventListener('pointerleave', release);
 });
 
 /* ============================================================
@@ -944,18 +1009,18 @@ document.querySelectorAll('.mini-btn, .shoot-btn').forEach(btn => {
 function setupAmmoMenu(btnId, menuId, indicatorId, playerIdx) {
   const btn = document.getElementById(btnId);
   const menu = document.getElementById(menuId);
-  const indicator = document.getElementById(indicatorId);
 
-  btn.addEventListener('click', e => {
+  btn.addEventListener('pointerdown', e => {
     e.stopPropagation();
-    // закрыть другое меню
+    e.preventDefault();
     document.querySelectorAll('.ammo-menu').forEach(m => { if (m !== menu) m.classList.remove('open'); });
     menu.classList.toggle('open');
   });
 
   menu.querySelectorAll('.ammo-item').forEach(item => {
-    item.addEventListener('click', e => {
+    item.addEventListener('pointerdown', e => {
       e.stopPropagation();
+      e.preventDefault();
       const ammo = item.dataset.ammo;
       if (battle) {
         battle.tanks[playerIdx].ammo = ammo;
@@ -965,8 +1030,7 @@ function setupAmmoMenu(btnId, menuId, indicatorId, playerIdx) {
     });
   });
 
-  // Закрыть при клике вне
-  document.addEventListener('click', () => menu.classList.remove('open'));
+  document.addEventListener('pointerdown', () => menu.classList.remove('open'));
 }
 
 function updateAmmoIndicator(playerIdx) {
@@ -976,14 +1040,13 @@ function updateAmmoIndicator(playerIdx) {
   ind.style.background = at.color;
   ind.textContent = at.icon;
 }
-
 setupAmmoMenu('ammo-btn-1', 'ammo-menu-1', 'ammo-indicator-1', 0);
-setupAmmoMenu('ammo-btn-2', 'ammo-menu-2', 'ammo-indicator-2', 1);
 
 /* ============================================================
    ПАУЗА
    ============================================================ */
-document.getElementById('pause-btn').addEventListener('click', () => {
+document.getElementById('pause-btn').addEventListener('pointerdown', e => {
+  e.preventDefault();
   battlePaused = true;
   document.getElementById('pause-overlay').classList.add('active');
 });
@@ -1000,60 +1063,30 @@ document.getElementById('btn-quit').addEventListener('click', () => {
   showScreen('screen-menu');
 });
 
-/* ============================================================
-   УТИЛИТЫ
-   ============================================================ */
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 
 /* ============================================================
-   ОБНОВЛЕНИЕ ТАНКА
+   ОБНОВЛЕНИЕ ТАНКА ИГРОКА
    ============================================================ */
-function updateTank(tank, idx) {
+function updatePlayerTank(tank) {
   if (tank.lives <= 0) return;
   if (tank.respawnTimer > 0) { tank.respawnTimer--; return; }
 
-  // === Движение через джойстик ===
-  const js = joystickState[idx];
+  const js = joystickState;
   if (js.active && (Math.abs(js.dx) > 0.15 || Math.abs(js.dy) > 0.15)) {
     const mag = Math.min(1, Math.sqrt(js.dx*js.dx + js.dy*js.dy));
     tank.x += js.dx * tank.speed * mag;
     tank.y += js.dy * tank.speed * mag;
-    // Поворот корпуса в сторону движения (для красоты)
-    // tank.angle — оставим турель независимой
   }
+  if (keys['w']) tank.y -= tank.speed;
+  if (keys['s']) tank.y += tank.speed;
+  if (keys['a']) tank.x -= tank.speed;
+  if (keys['d']) tank.x += tank.speed;
 
-  // === Клавиатура для теста на ПК ===
-  const k = idx === 0 ? {up:'w',down:'s',left:'a',right:'d',rotL:'q',rotR:'e',shoot:' '}
-                     : {up:'arrowup',down:'arrowdown',left:'arrowleft',right:'arrowright',rotL:',',rotR:'.',shoot:'enter'};
-  if (keys[k.up])    tank.y -= tank.speed;
-  if (keys[k.down])  tank.y += tank.speed;
-  if (keys[k.left])  tank.x -= tank.speed;
-  if (keys[k.right]) tank.x += tank.speed;
-  if (keys[k.rotL]) tank.turretAngle -= tank.turretSpeed;
-  if (keys[k.rotR]) tank.turretAngle += tank.turretSpeed;
+  if (keys['q']) tank.turretAngle -= tank.turretSpeed;
+  if (keys['e']) tank.turretAngle += tank.turretSpeed;
 
-  tank.x = clamp(tank.x, tank.size, MAP_SIZE - tank.size);
-  tank.y = clamp(tank.y, tank.size, MAP_SIZE - tank.size);
-
-  // Коллизия с ящиками
-  for (const o of battle.obstacles) {
-    if (o.hp <= 0) continue;
-    if (Math.abs(tank.x - o.x) < o.w/2 + tank.size &&
-        Math.abs(tank.y - o.y) < o.h/2 + tank.size) {
-      const ox = tank.x - o.x, oy = tank.y - o.y;
-      if (Math.abs(ox) > Math.abs(oy)) tank.x = o.x + Math.sign(ox || 1) * (o.w/2 + tank.size);
-      else tank.y = o.y + Math.sign(oy || 1) * (o.h/2 + tank.size);
-    }
-  }
-  // Холмы
-  for (const h of battle.hills) {
-    const dx = tank.x - h.x, dy = tank.y - h.y;
-    const d = Math.sqrt(dx*dx + dy*dy) || 1;
-    if (d < h.r + tank.size) {
-      tank.x = h.x + (dx/d) * (h.r + tank.size);
-      tank.y = h.y + (dy/d) * (h.r + tank.size);
-    }
-  }
+  resolveCollisions(tank);
 
   // Кусты
   tank.inBush = false;
@@ -1065,12 +1098,204 @@ function updateTank(tank, idx) {
   if (tank.cooldown > 0) tank.cooldown--;
   if (tank.revealTimer > 0) tank.revealTimer--;
 
-  // Выстрел
-  if (keys[k.shoot] && tank.cooldown === 0) {
-    fireBullet(tank, idx);
+  if (keys[' '] && tank.cooldown === 0) fireBullet(tank, 0);
+}
+
+function resolveCollisions(tank) {
+  tank.x = clamp(tank.x, tank.size, MAP_SIZE - tank.size);
+  tank.y = clamp(tank.y, tank.size, MAP_SIZE - tank.size);
+
+  for (const o of battle.obstacles) {
+    if (o.hp <= 0) continue;
+    if (Math.abs(tank.x - o.x) < o.w/2 + tank.size &&
+        Math.abs(tank.y - o.y) < o.h/2 + tank.size) {
+      const ox = tank.x - o.x, oy = tank.y - o.y;
+      if (Math.abs(ox) > Math.abs(oy)) tank.x = o.x + Math.sign(ox || 1) * (o.w/2 + tank.size);
+      else tank.y = o.y + Math.sign(oy || 1) * (o.h/2 + tank.size);
+    }
+  }
+  for (const h of battle.hills) {
+    const dx = tank.x - h.x, dy = tank.y - h.y;
+    const d = Math.sqrt(dx*dx + dy*dy) || 1;
+    if (d < h.r + tank.size) {
+      tank.x = h.x + (dx/d) * (h.r + tank.size);
+      tank.y = h.y + (dy/d) * (h.r + tank.size);
+    }
   }
 }
 
+/* ============================================================
+   БОТ — ИИ
+   ============================================================ */
+function updateBot() {
+  const bot = battle.tanks[1];
+  const player = battle.tanks[0];
+  if (bot.lives <= 0) return;
+  if (bot.respawnTimer > 0) { bot.respawnTimer--; return; }
+
+  const ai = battle.bot;
+  const lvl = ai.level;
+  ai.aiTick++;
+
+  // Снижение кулдауна
+  if (bot.cooldown > 0) bot.cooldown--;
+  if (bot.revealTimer > 0) bot.revealTimer--;
+
+  // Кусты
+  bot.inBush = false;
+  for (const b of battle.bushes) {
+    const dx = bot.x - b.x, dy = bot.y - b.y;
+    if (dx*dx + dy*dy < b.r * b.r) { bot.inBush = true; break; }
+  }
+
+  // === "Человеческие" паузы ===
+  if (ai.idleTimer > 0) {
+    ai.idleTimer--;
+    return;
+  }
+  if (Math.random() < lvl.idleChance * 0.01) {
+    ai.idleTimer = 15 + Math.floor(Math.random() * 30);
+    return;
+  }
+
+  // === Выбор цели: игрок или база игрока ===
+  // Раз в 2 сек пересматриваем
+  if (ai.aiTick % 120 === 0) {
+    const distToPlayer = Math.hypot(player.x - bot.x, player.y - bot.y);
+    const distToBase = Math.hypot(battle.bases[0].x - bot.x, battle.bases[0].y - bot.y);
+    // Если игрок далеко и база ближе — может пойти на базу
+    if (distToPlayer > 2000 && Math.random() < lvl.baseRushChance) {
+      ai.targetIsBase = true;
+    } else if (distToPlayer < 800) {
+      ai.targetIsBase = false;
+    }
+  }
+
+  // Если игрок мёртв — идём на базу
+  if (player.lives <= 0) ai.targetIsBase = true;
+
+  const target = ai.targetIsBase ? battle.bases[0] : (player.lives > 0 ? player : battle.bases[0]);
+  const dx = target.x - bot.x;
+  const dy = target.y - bot.y;
+  const dist = Math.hypot(dx, dy);
+
+  // === Поворот башни к цели ===
+  const targetAngle = Math.atan2(dy, dx);
+  let angleDiff = targetAngle - bot.turretAngle;
+  while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+  while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+  const turretStep = bot.turretSpeed * (0.6 + lvl.reaction * 0.6);
+  if (Math.abs(angleDiff) > turretStep) {
+    bot.turretAngle += Math.sign(angleDiff) * turretStep;
+  } else {
+    bot.turretAngle = targetAngle;
+  }
+
+  // === Движение ===
+  let moveX = 0, moveY = 0;
+  const aimError = Math.abs(angleDiff);
+
+  // Уклонение от пуль
+  let dodging = false;
+  if (Math.random() < lvl.dodgeChance * 0.05) {
+    for (const b of battle.bullets) {
+      if (b.owner === 1) continue;
+      const bdx = bot.x - b.x, bdy = bot.y - b.y;
+      const bdist = Math.hypot(bdx, bdy);
+      if (bdist < 400) {
+        // Уклоняемся перпендикулярно пуле
+        moveX = -Math.sin(b.angle) * 1.5;
+        moveY = Math.cos(b.angle) * 1.5;
+        dodging = true;
+        break;
+      }
+    }
+  }
+
+  // Убегаем при низком HP
+  const hpRatio = bot.hp / bot.maxHp;
+  if (!dodging && hpRatio < 0.3 && lvl.id > 1) {
+    // Отступаем к своей базе
+    const myBase = battle.bases[1];
+    const bx = myBase.x - bot.x, by = myBase.y - bot.y;
+    const bd = Math.hypot(bx, by) || 1;
+    moveX = bx / bd;
+    moveY = by / bd;
+    dodging = true;
+  }
+
+  // Прятки в кустах (при низком HP)
+  if (!dodging && hpRatio < 0.5 && Math.random() < lvl.hideChance * 0.03) {
+    // Ищем ближайший куст
+    let nearestBush = null, nearestDist = 800;
+    for (const b of battle.bushes) {
+      const bd = Math.hypot(b.x - bot.x, b.y - bot.y);
+      if (bd < nearestDist) { nearestDist = bd; nearestBush = b; }
+    }
+    if (nearestBush) {
+      const bx = nearestBush.x - bot.x, by = nearestBush.y - bot.y;
+      const bd = Math.hypot(bx, by) || 1;
+      moveX = bx / bd;
+      moveY = by / bd;
+      dodging = true;
+    }
+  }
+
+  // Обычное движение к цели
+  if (!dodging) {
+    if (dist > 400) {
+      moveX = dx / dist;
+      moveY = dy / dist;
+    } else if (dist < 200) {
+      // Слишком близко — отъезжаем
+      moveX = -dx / dist * 0.7;
+      moveY = -dy / dist * 0.7;
+    } else {
+      // Стоим и стреляем
+      moveX = 0;
+      moveY = 0;
+    }
+  }
+
+  // Применяем
+  bot.x += moveX * bot.speed;
+  bot.y += moveY * bot.speed;
+  resolveCollisions(bot);
+
+  // === Смена снаряда ===
+  if (Math.random() < lvl.ammoChangeChance * 0.02) {
+    const roll = Math.random();
+    let newAmmo = 'normal';
+    if (roll < 0.4) newAmmo = 'he';
+    else if (roll < 0.8) newAmmo = 'ap';
+    if (newAmmo !== bot.ammo) bot.ammo = newAmmo;
+  }
+
+  // === Стрельба ===
+  const aimThreshold = lvl.aimTolerance;
+  if (aimError < aimThreshold && bot.cooldown === 0) {
+    // Не стреляем в стену
+    const checkDist = 100;
+    const cx = bot.x + Math.cos(bot.turretAngle) * checkDist;
+    const cy = bot.y + Math.sin(bot.turretAngle) * checkDist;
+    let blocked = false;
+    for (const o of battle.obstacles) {
+      if (o.hp <= 0) continue;
+      if (Math.abs(cx - o.x) < o.w/2 + 10 && Math.abs(cy - o.y) < o.h/2 + 10) { blocked = true; break; }
+    }
+    if (!blocked) {
+      // Небольшая неточность
+      const missChance = 1 - lvl.reaction;
+      const missAngle = (Math.random() - 0.5) * missChance * 0.4;
+      bot.turretAngle += missAngle;
+      fireBullet(bot, 1);
+    }
+  }
+}
+
+/* ============================================================
+   ВЫСТРЕЛ
+   ============================================================ */
 function fireBullet(tank, idx) {
   const at = AMMO_TYPES[tank.ammo];
   const bx = tank.x + Math.cos(tank.turretAngle) * (tank.size + 4);
@@ -1104,7 +1329,6 @@ function updateBullets() {
     }
 
     let hit = false;
-    // Ящики
     for (const o of battle.obstacles) {
       if (o.hp <= 0) continue;
       if (Math.abs(b.x - o.x) < o.w/2 && Math.abs(b.y - o.y) < o.h/2) {
@@ -1112,14 +1336,12 @@ function updateBullets() {
       }
     }
     if (hit) continue;
-    // Холмы
     for (const h of battle.hills) {
       const dx = b.x - h.x, dy = b.y - h.y;
       if (dx*dx + dy*dy < h.r*h.r) { battle.bullets.splice(i, 1); hit = true; break; }
     }
     if (hit) continue;
 
-    // Танк
     const target = battle.tanks[1 - b.owner];
     if (target.lives > 0 && target.respawnTimer === 0) {
       const dx = b.x - target.x, dy = b.y - target.y;
@@ -1146,7 +1368,6 @@ function updateBullets() {
       }
     }
 
-    // Базы
     for (const base of battle.bases) {
       if (base.owner === b.owner) continue;
       if (Math.abs(b.x - base.x) < 90 && Math.abs(b.y - base.y) < 90) {
@@ -1163,7 +1384,7 @@ function updateBullets() {
    БАЗЫ
    ============================================================ */
 function updateBases() {
-  battle.bases.forEach((base, bi) => {
+  battle.bases.forEach((base) => {
     const enemyIdx = 1 - base.owner;
     const enemy = battle.tanks[enemyIdx];
     if (enemy.lives <= 0 || enemy.respawnTimer > 0) { base.captureProgress = 0; return; }
@@ -1190,58 +1411,48 @@ function updateBases() {
 }
 
 /* ============================================================
-   ОБНАРУЖЕНИЕ (туман войны)
+   ОБНАРУЖЕНИЕ
    ============================================================ */
 function isVisibleTo(observer, target) {
   if (target.lives <= 0 || target.respawnTimer > 0) return false;
-  // Если враг в кустах и не выстрелил — невидим
   if (target.inBush && target.revealTimer === 0) return false;
   const dx = observer.x - target.x, dy = observer.y - target.y;
-  const dist = Math.sqrt(dx*dx + dy*dy);
-  return dist < VISION_RANGE;
+  return Math.sqrt(dx*dx + dy*dy) < VISION_RANGE;
 }
-
 function updateDetection() {
-  battle.tanks.forEach((tank, i) => {
-    // tank.detectedBy[observer] — видит ли observer этого tank
+  battle.tanks.forEach((tank) => {
     tank.detectedBy[0] = isVisibleTo(battle.tanks[0], tank);
     tank.detectedBy[1] = isVisibleTo(battle.tanks[1], tank);
   });
-  // Индикаторы "Обнаружен!" — показываются игроку, если ЕГО видит враг
   const t0 = battle.tanks[0], t1 = battle.tanks[1];
   document.getElementById('p1-detected').style.display = t0.detectedBy[1] ? 'inline-flex' : 'none';
   document.getElementById('p2-detected').style.display = t1.detectedBy[0] ? 'inline-flex' : 'none';
 }
 
 /* ============================================================
-   ОТРИСОВКА ТАНКА (новый вид)
+   ОТРИСОВКА ТАНКА
    ============================================================ */
 function drawTankShape(ctx, tank, alpha) {
   const col = NATION_COLORS[tank.nation] || NATION_COLORS.de;
   ctx.globalAlpha = alpha;
 
-  // Тень
   ctx.fillStyle = 'rgba(0,0,0,0.4)';
   ctx.beginPath();
   ctx.ellipse(3, 5, tank.size * 1.2, tank.size * 0.9, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Поворачиваем по направлению башни
   ctx.save();
   ctx.rotate(tank.turretAngle);
 
-  // Гусеницы
   ctx.fillStyle = '#1a1a1a';
   ctx.fillRect(-tank.size * 1.2, -tank.size * 0.95, tank.size * 2.4, tank.size * 0.35);
   ctx.fillRect(-tank.size * 1.2, tank.size * 0.6, tank.size * 2.4, tank.size * 0.35);
-  // Траки (полоски)
   ctx.fillStyle = '#3a3a3a';
   for (let i = -tank.size * 1.2; i < tank.size * 1.2; i += 5) {
     ctx.fillRect(i, -tank.size * 0.95, 2, tank.size * 0.35);
     ctx.fillRect(i, tank.size * 0.6, 2, tank.size * 0.35);
   }
 
-  // Корпус (трапеция)
   ctx.fillStyle = col.body;
   ctx.beginPath();
   ctx.moveTo(-tank.size * 0.95, -tank.size * 0.6);
@@ -1254,12 +1465,10 @@ function drawTankShape(ctx, tank, alpha) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Детали корпуса
   ctx.fillStyle = col.accent;
   ctx.fillRect(-tank.size * 0.6, -tank.size * 0.4, tank.size * 0.3, tank.size * 0.8);
   ctx.fillRect(tank.size * 0.3, -tank.size * 0.4, tank.size * 0.3, tank.size * 0.8);
 
-  // Башня (круг)
   ctx.fillStyle = col.body;
   ctx.beginPath();
   ctx.arc(0, 0, tank.size * 0.7, 0, Math.PI * 2);
@@ -1268,13 +1477,11 @@ function drawTankShape(ctx, tank, alpha) {
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // Внутренний круг башни
   ctx.fillStyle = col.accent;
   ctx.beginPath();
   ctx.arc(0, 0, tank.size * 0.4, 0, Math.PI * 2);
   ctx.fill();
 
-  // Ствол
   ctx.fillStyle = '#2a2a2a';
   ctx.fillRect(tank.size * 0.5, -2.5, tank.size * 1.3, 5);
   ctx.fillStyle = '#111';
@@ -1285,7 +1492,7 @@ function drawTankShape(ctx, tank, alpha) {
 }
 
 /* ============================================================
-   ОТРИСОВКА МИРА
+   МИР
    ============================================================ */
 function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
   bctx.save();
@@ -1297,11 +1504,9 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
   const left = viewX, right = viewX + viewW;
   const top = viewY, bottom = viewY + viewH;
 
-  // Фон — трава
   bctx.fillStyle = '#1e3a1e';
   bctx.fillRect(left, top, viewW, viewH);
 
-  // Сетка (лёгкая)
   bctx.strokeStyle = 'rgba(255,255,255,0.05)';
   bctx.lineWidth = 1;
   const gridStep = 500;
@@ -1312,12 +1517,11 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.beginPath(); bctx.moveTo(left, y); bctx.lineTo(right, y); bctx.stroke();
   }
 
-  // Границы карты
   bctx.strokeStyle = '#ffd166';
   bctx.lineWidth = 6;
   bctx.strokeRect(0, 0, MAP_SIZE, MAP_SIZE);
 
-  // === Базы ===
+  // Базы
   battle.bases.forEach((base, i) => {
     const c = i === 0 ? '#e94560' : '#4dabf7';
     bctx.fillStyle = c + '33';
@@ -1326,7 +1530,6 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.lineWidth = 3;
     bctx.strokeRect(base.x - 90, base.y - 90, 180, 180);
 
-    // Флаг
     bctx.fillStyle = c;
     bctx.beginPath();
     bctx.arc(base.x, base.y, 14, 0, Math.PI * 2);
@@ -1338,7 +1541,6 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.fillText(i === 0 ? '🔴' : '🔵', base.x, base.y);
     bctx.textBaseline = 'alphabetic';
 
-    // HP-бар базы
     bctx.fillStyle = 'rgba(0,0,0,0.7)';
     bctx.fillRect(base.x - 70, base.y - 115, 140, 12);
     bctx.fillStyle = c;
@@ -1351,7 +1553,6 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.textAlign = 'center';
     bctx.fillText(Math.max(0, Math.round(base.hp)) + ' HP', base.x, base.y - 106);
 
-    // Прогресс захвата
     if (base.captureProgress > 0) {
       const p = Math.min(1, base.captureProgress / 3600);
       bctx.fillStyle = 'rgba(255,209,102,0.4)';
@@ -1365,7 +1566,7 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     }
   });
 
-  // === Кусты ===
+  // Кусты
   battle.bushes.forEach(b => {
     if (b.x + b.r < left || b.x - b.r > right || b.y + b.r < top || b.y - b.r > bottom) return;
     bctx.fillStyle = 'rgba(35,80,35,0.85)';
@@ -1376,20 +1577,17 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.beginPath(); bctx.arc(b.x + b.r*0.15, b.y + b.r*0.1, b.r * 0.4, 0, Math.PI*2); bctx.fill();
   });
 
-  // === Ящики ===
+  // Ящики
   battle.obstacles.forEach(o => {
     if (o.hp <= 0) return;
     if (o.x + o.w < left || o.x - o.w > right || o.y + o.h < top || o.y - o.h > bottom) return;
-    // Тень
     bctx.fillStyle = 'rgba(0,0,0,0.3)';
     bctx.fillRect(o.x - o.w/2 + 4, o.y - o.h/2 + 4, o.w, o.h);
-    // Ящик
     bctx.fillStyle = o.hp === o.maxHp ? '#8b5a2b' : o.hp === 2 ? '#7a4a1b' : '#5a3a0b';
     bctx.fillRect(o.x - o.w/2, o.y - o.h/2, o.w, o.h);
     bctx.strokeStyle = '#3a2a1b';
     bctx.lineWidth = 3;
     bctx.strokeRect(o.x - o.w/2, o.y - o.h/2, o.w, o.h);
-    // Крест
     bctx.beginPath();
     bctx.moveTo(o.x - o.w/2, o.y - o.h/2);
     bctx.lineTo(o.x + o.w/2, o.y + o.h/2);
@@ -1398,18 +1596,15 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.stroke();
   });
 
-  // === Холмы ===
+  // Холмы
   battle.hills.forEach(h => {
     if (h.x + h.r < left || h.x - h.r > right || h.y + h.r < top || h.y - h.r > bottom) return;
-    // Тень
     bctx.fillStyle = 'rgba(0,0,0,0.3)';
     bctx.beginPath(); bctx.arc(h.x + 5, h.y + 5, h.r, 0, Math.PI*2); bctx.fill();
-    // Тело
     bctx.fillStyle = '#5a4a2a';
     bctx.beginPath(); bctx.arc(h.x, h.y, h.r, 0, Math.PI*2); bctx.fill();
     bctx.strokeStyle = '#3a2a1a';
     bctx.lineWidth = 4; bctx.stroke();
-    // Полосы
     bctx.strokeStyle = '#7a6a4a';
     bctx.lineWidth = 2;
     for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
@@ -1420,7 +1615,7 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     }
   });
 
-  // === Пули ===
+  // Пули
   battle.bullets.forEach(b => {
     const at = AMMO_TYPES[b.ammo] || AMMO_TYPES.normal;
     bctx.fillStyle = at.color2 || '#ffff00';
@@ -1430,13 +1625,11 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     bctx.shadowBlur = 0;
   });
 
-  // === Танки ===
+  // Танки
   battle.tanks.forEach((t, i) => {
     if (t.lives <= 0 || t.respawnTimer > 0) return;
-
-    // Если это не "свой" для наблюдателя — проверяем видимость
     if (observerIdx !== -1 && i !== observerIdx) {
-      if (!t.detectedBy[observerIdx]) return; // невидим
+      if (!t.detectedBy[observerIdx]) return;
     }
 
     bctx.save();
@@ -1445,7 +1638,17 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
     drawTankShape(bctx, t, alpha);
     bctx.restore();
 
-    // HP-полоска над танком
+    // Ник над танком
+    bctx.fillStyle = 'rgba(0,0,0,0.7)';
+    bctx.font = 'bold 11px Arial';
+    bctx.textAlign = 'center';
+    const nameText = t.displayName;
+    const textW = bctx.measureText(nameText).width + 10;
+    bctx.fillRect(t.x - textW/2, t.y - t.size - 30, textW, 14);
+    bctx.fillStyle = i === 0 ? '#ff8fa3' : '#8ec5ff';
+    bctx.fillText(nameText, t.x, t.y - t.size - 20);
+
+    // HP
     const hpP = Math.max(0, t.hp / t.maxHp);
     bctx.fillStyle = 'rgba(0,0,0,0.7)';
     bctx.fillRect(t.x - t.size, t.y - t.size - 14, t.size*2, 5);
@@ -1460,24 +1663,21 @@ function drawWorld(viewX, viewY, viewW, viewH, observerIdx, offsetX) {
 }
 
 /* ============================================================
-   МИНИ-КАРТА (с туманом войны)
+   МИНИ-КАРТА
    ============================================================ */
-function drawMinimap(canvasEl, observerIdx) {
-  const c = canvasEl;
-  const oldSize = c.width;
+function drawMinimap(divEl, observerIdx) {
+  const canvas = divEl.querySelector('canvas');
   const w = 90, h = 90;
-  if (c.width !== w * 2) {
-    c.width = w * 2; c.height = h * 2;
-  }
-  const ctx = c.getContext('2d');
-  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, w, h);
 
-  // Фон
   ctx.fillStyle = 'rgba(20,30,20,0.9)';
   ctx.fillRect(0, 0, w, h);
 
-  // Сетка
   ctx.strokeStyle = 'rgba(255,255,255,0.1)';
   ctx.lineWidth = 0.5;
   for (let i = 1; i < 4; i++) {
@@ -1496,9 +1696,7 @@ function drawMinimap(canvasEl, observerIdx) {
     ctx.fillRect(base.x * sx - 3, base.y * sy - 3, 6, 6);
   });
 
-  // Мои кусты (видимые) — не рисуем, чтобы не загромождать
-
-  // Враг — только если виден
+  // Враг
   const enemy = battle.tanks[1 - observerIdx];
   if (enemy.lives > 0 && enemy.respawnTimer === 0 && enemy.detectedBy[observerIdx]) {
     ctx.fillStyle = observerIdx === 0 ? '#4dabf7' : '#e94560';
@@ -1508,14 +1706,13 @@ function drawMinimap(canvasEl, observerIdx) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1;
     ctx.stroke();
-    // Пульсация
     ctx.strokeStyle = observerIdx === 0 ? 'rgba(77,171,247,0.6)' : 'rgba(233,69,96,0.6)';
     ctx.beginPath();
     ctx.arc(enemy.x * sx, enemy.y * sy, 6 + Math.sin(Date.now() / 200) * 2, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  // Мой танк
+  // Свой
   if (me.lives > 0 && me.respawnTimer === 0) {
     ctx.fillStyle = observerIdx === 0 ? '#e94560' : '#4dabf7';
     ctx.beginPath();
@@ -1524,7 +1721,6 @@ function drawMinimap(canvasEl, observerIdx) {
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1;
     ctx.stroke();
-    // Направление
     ctx.strokeStyle = '#fff';
     ctx.beginPath();
     ctx.moveTo(me.x * sx, me.y * sy);
@@ -1532,7 +1728,6 @@ function drawMinimap(canvasEl, observerIdx) {
     ctx.stroke();
   }
 
-  // Рамка
   ctx.strokeStyle = observerIdx === 0 ? '#e94560' : '#4dabf7';
   ctx.lineWidth = 1.5;
   ctx.strokeRect(0, 0, w, h);
@@ -1550,8 +1745,8 @@ function render() {
   const dx = t1.x - t2.x, dy = t1.y - t2.y;
   battle.merged = Math.sqrt(dx*dx + dy*dy) < MERGE_DISTANCE;
 
+  // В режиме с ботом — всегда единый вид (или split? давай split, как раньше)
   if (battle.merged) {
-    // Единый вид
     const cx = (t1.x + t2.x) / 2 - bW/2;
     const cy = (t1.y + t2.y) / 2 - bH/2;
     drawWorld(cx, cy, bW, bH, -1, 0);
@@ -1565,7 +1760,6 @@ function render() {
     const c1y = t2.y - bH / 2;
     drawWorld(c1x, c1y, halfW, bH, 1, halfW);
 
-    // Разделитель
     bctx.strokeStyle = '#2a2f3a';
     bctx.lineWidth = 3;
     bctx.beginPath(); bctx.moveTo(halfW, 0); bctx.lineTo(halfW, bH); bctx.stroke();
@@ -1582,13 +1776,12 @@ function render() {
   document.getElementById('p1-base-bar').style.width = Math.max(0, battle.bases[0].hp / battle.bases[0].maxHp * 100) + '%';
   document.getElementById('p2-base-bar').style.width = Math.max(0, battle.bases[1].hp / battle.bases[1].maxHp * 100) + '%';
 
-  // Мини-карты
   drawMinimap(document.getElementById('minimap1'), 0);
   drawMinimap(document.getElementById('minimap2'), 1);
 }
 
 /* ============================================================
-   ЦИКЛ БОЯ
+   ЦИКЛ
    ============================================================ */
 function battleLoop() {
   if (!battleRunning || !battle) return;
@@ -1596,8 +1789,12 @@ function battleLoop() {
 
   if (!battlePaused) {
     battle.time++;
-    updateTank(battle.tanks[0], 0);
-    updateTank(battle.tanks[1], 1);
+    updatePlayerTank(battle.tanks[0]);
+    if (battleMode === 'bot') {
+      updateBot();
+    } else {
+      updatePlayerTank(battle.tanks[1]);
+    }
     updateBullets();
     updateBases();
     updateDetection();
@@ -1607,25 +1804,69 @@ function battleLoop() {
   requestAnimationFrame(battleLoop);
 }
 
+/* ============================================================
+   ИТОГИ + СКИЛЛ
+   ============================================================ */
 function finishBattle() {
   battleRunning = false;
   const { winner, reason } = battle.endState;
   const isPlayerWin = winner === 0;
+  const isBotBattle = battleMode === 'bot';
   const reward = reason === 'base' || reason === 'capture' ? 500 : 300;
 
-  if (currentUser) {
+  let skillDelta = 0;
+  let skillBefore = currentUser.skill || 0;
+
+  if (currentUser && !currentUser.isGuest) {
     currentUser.coins += isPlayerWin ? reward : 100;
     currentUser.battles = (currentUser.battles || 0) + 1;
-    if (isPlayerWin) currentUser.wins = (currentUser.wins || 0) + 1;
+
+    // === Скилл ===
+    if (isBotBattle) {
+      // Считаем дельту по базовым правилам
+      let baseDelta = isPlayerWin ? 6 : -6;
+      // Множитель за разницу уровней
+      const botLvl = battle.bot.level;
+      const playerLvl = getBotLevelBySkill(skillBefore);
+      if (botLvl.id > playerLvl.id) baseDelta = Math.round(baseDelta * 1.3);
+      else if (botLvl.id < playerLvl.id) baseDelta = Math.round(baseDelta * 0.7);
+      // Бонус серии
+      if (isPlayerWin && (currentUser.winStreak || 0) >= 2) baseDelta += 2;
+      if (!isPlayerWin && (currentUser.lossStreak || 0) >= 2) baseDelta -= 2;
+
+      skillDelta = baseDelta;
+      currentUser.skill = clamp(skillBefore + skillDelta, 0, 100);
+    }
+
+    // Серии
+    if (isPlayerWin) {
+      currentUser.wins = (currentUser.wins || 0) + 1;
+      currentUser.winStreak = (currentUser.winStreak || 0) + 1;
+      currentUser.lossStreak = 0;
+    } else {
+      currentUser.losses = (currentUser.losses || 0) + 1;
+      currentUser.lossStreak = (currentUser.lossStreak || 0) + 1;
+      currentUser.winStreak = 0;
+    }
+
     saveCurrentUser();
   }
 
   const reasons = { kill: 'Уничтожение', base: 'Разрушение базы', capture: 'Захват базы' };
+  const winnerName = winner === 0 ? currentUser.name : battle.tanks[1].displayName;
   document.getElementById('result-title').textContent =
-    winner === 0 ? '🔴 Победа игрока 1!' : '🔵 Победа игрока 2!';
+    winner === 0 ? `🔴 Победа ${currentUser.name}!` : `🔵 Победа ${battle.tanks[1].displayName}!`;
   document.getElementById('result-coins').textContent = `+${isPlayerWin ? reward : 100} ¢`;
   document.getElementById('result-stats').innerHTML =
-    `Причина: ${reasons[reason]}<br>Всего: ${currentUser.coins} ¢`;
+    `Соперник: <b>${battle.tanks[1].displayName}</b><br>Причина: ${reasons[reason]}`;
+  if (isBotBattle && !currentUser.isGuest) {
+    const sign = skillDelta >= 0 ? '+' : '';
+    document.getElementById('result-skill').innerHTML =
+      `Скилл: ${skillBefore} → ${currentUser.skill} (${sign}${skillDelta})`;
+  } else {
+    document.getElementById('result-skill').textContent = '';
+  }
+
   showScreen('screen-result');
 }
 
@@ -1633,7 +1874,8 @@ document.getElementById('btn-result-menu').onclick = () => {
   battle = null; updateMenuUI(); showScreen('screen-menu');
 };
 document.getElementById('btn-result-again').onclick = () => {
-  battle = null; startBattle();
+  const mode = battleMode;
+  battle = null; startBattle(mode);
 };
 
 /* ============================================================
@@ -1643,4 +1885,4 @@ showScreen('screen-auth');
 document.getElementById('login-name').focus();
 </script>
 </body>
-</html>
+ </html>
