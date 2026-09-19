@@ -2,43 +2,118 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Химическая лаборатория</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Химическая лаборатория v2</title>
 <style>
+  * { box-sizing: border-box; }
   body {
     font-family: Arial, sans-serif;
     background: #1a1a2e;
     color: #eee;
-    padding: 20px;
+    padding: 15px;
     max-width: 900px;
     margin: auto;
   }
-  h1 { color: #4ade80; text-align: center; }
-  .lab {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
+  h1 { color: #4ade80; text-align: center; font-size: 22px; }
+  h2 { color: #facc15; font-size: 16px; margin: 20px 0 10px; }
+
+  /* === ТАБЛИЦА МЕНДЕЛЕЕВА === */
+  .periodic {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 4px;
     background: #16213e;
-    padding: 20px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-  }
-  select {
     padding: 10px;
-    font-size: 16px;
-    border-radius: 8px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+  }
+  .el {
     background: #0f3460;
     color: #fff;
-    border: 2px solid #4ade80;
-    min-width: 180px;
+    border: 1px solid #4ade80;
+    border-radius: 6px;
+    padding: 6px 2px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: 0.2s;
   }
-  .plus {
-    font-size: 32px;
+  .el:hover { background: #4ade80; color: #1a1a2e; }
+  .el.selected { background: #facc15; color: #1a1a2e; }
+  .el.metal { border-color: #60a5fa; }
+  .el.nonmetal { border-color: #f87171; }
+  .el.empty { background: transparent; border: none; cursor: default; }
+
+  /* === КОЛБЫ === */
+  .flasks {
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-end;
+    background: #16213e;
+    padding: 20px 10px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    min-height: 180px;
+  }
+  .flask {
+    width: 90px;
+    height: 130px;
+    position: relative;
+    cursor: pointer;
+  }
+  .flask-body {
+    width: 90px;
+    height: 90px;
+    border: 3px solid #4ade80;
+    border-top: none;
+    border-radius: 0 0 45px 45px;
+    position: absolute;
+    bottom: 0;
+    overflow: hidden;
+    background: rgba(74, 222, 128, 0.05);
+  }
+  .flask-neck {
+    width: 30px;
+    height: 40px;
+    border: 3px solid #4ade80;
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(74, 222, 128, 0.05);
+  }
+  .liquid {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: #60a5fa;
+    transition: height 0.6s ease;
+  }
+  .flask-label {
+    position: absolute;
+    bottom: -25px;
+    width: 100%;
+    text-align: center;
+    font-size: 14px;
+    color: #facc15;
+    font-weight: bold;
+  }
+  .plus-sign {
+    font-size: 40px;
     color: #4ade80;
-    margin: 0 15px;
+    align-self: center;
+    margin-bottom: 40px;
   }
+
+  /* === КНОПКИ === */
   button {
     display: block;
-    margin: 0 auto 20px;
+    margin: 0 auto 15px;
     padding: 12px 40px;
     font-size: 18px;
     background: #4ade80;
@@ -47,153 +122,304 @@
     border-radius: 10px;
     cursor: pointer;
     font-weight: bold;
+    transition: 0.2s;
   }
   button:hover { background: #22c55e; }
+  button:disabled { background: #555; cursor: not-allowed; }
+  .reset-btn { background: #f87171; }
+  .reset-btn:hover { background: #ef4444; }
+
   #result {
     background: #16213e;
-    padding: 20px;
+    padding: 15px;
     border-radius: 12px;
     min-height: 80px;
     border-left: 5px solid #4ade80;
-    font-size: 18px;
-    line-height: 1.6;
+    font-size: 16px;
+    line-height: 1.5;
+    margin-bottom: 30px;
   }
   .error { color: #f87171; }
   .success { color: #4ade80; }
-  .formula { font-size: 24px; color: #facc15; font-weight: bold; }
+  .formula { font-size: 20px; color: #facc15; font-weight: bold; margin: 8px 0; }
+
+  /* === АНИМАЦИЯ ВЗРЫВА === */
+  @keyframes flash {
+    0% { background: #facc15; box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+    50% { background: #f87171; box-shadow: 0 0 40px 20px rgba(248, 113, 113, 0.6); }
+    100% { background: #16213e; box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
+  }
+  .flash-effect { animation: flash 0.8s ease; }
+
+  /* === ПОДСКАЗКА === */
+  .hint {
+    font-size: 12px;
+    color: #94a3b8;
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  .legend {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    font-size: 11px;
+    margin-bottom: 10px;
+    color: #94a3b8;
+  }
+  .legend span::before {
+    content: "■ ";
+  }
+  .legend .m::before { color: #60a5fa; }
+  .legend .n::before { color: #f87171; }
 </style>
 </head>
 <body>
 
 <h1>🧪 Химическая лаборатория</h1>
 
-<div class="lab">
-  <select id="reagent1"></select>
-  <div class="plus">+</div>
-  <select id="reagent2"></select>
+<h2>Таблица Менделеева (основные элементы)</h2>
+<div class="legend">
+  <span class="m">металлы</span>
+  <span class="n">неметаллы</span>
+</div>
+<div class="periodic" id="periodic"></div>
+<div class="hint">Нажми на элемент, чтобы «налить» его в колбу</div>
+
+<h2>Колбы</h2>
+<div class="flasks" id="flasks">
+  <div class="flask" onclick="selectFlask(1)">
+    <div class="flask-neck"></div>
+    <div class="flask-body">
+      <div class="liquid" id="liquid1"></div>
+    </div>
+    <div class="flask-label" id="label1">—</div>
+  </div>
+  <div class="plus-sign">+</div>
+  <div class="flask" onclick="selectFlask(2)">
+    <div class="flask-neck"></div>
+    <div class="flask-body">
+      <div class="liquid" id="liquid2"></div>
+    </div>
+    <div class="flask-label" id="label2">—</div>
+  </div>
 </div>
 
-<button onclick="mix()">Смешать!</button>
+<button onclick="mix()" id="mixBtn">Смешать!</button>
+<button class="reset-btn" onclick="reset()">Очистить колбы</button>
 
-<div id="result">Выбери два вещества и нажми «Смешать»</div>
+<div id="result">Выбери два элемента из таблицы — они попадут в колбы. Потом жми «Смешать».</div>
 
 <script>
-// База веществ: название → {формула, тип}
-const substances = {
-  "Na":   {formula: "Na",   type: "metal"},
-  "K":    {formula: "K",    type: "metal"},
-  "Ca":   {formula: "Ca",   type: "metal"},
-  "Al":   {formula: "Al",   type: "metal"},
-  "Zn":   {formula: "Zn",   type: "metal"},
-  "Fe":   {formula: "Fe",   type: "metal"},
-  "O2":   {formula: "O₂",   type: "nonmetal"},
-  "Cl2":  {formula: "Cl₂",  type: "nonmetal"},
-  "H2":   {formula: "H₂",   type: "nonmetal"},
-  "S":    {formula: "S",    type: "nonmetal"},
-  "HCl":  {formula: "HCl",  type: "acid"},
-  "H2SO4":{formula: "H₂SO₄",type: "acid"},
-  "NaOH": {formula: "NaOH", type: "base"},
-  "H2O":  {formula: "H₂O",  type: "water"}
+// === ЭЛЕМЕНТЫ ===
+// type: metal / nonmetal / gas
+// color: цвет жидкости в колбе
+const elements = {
+  "H":  {name: "Водород",   type: "nonmetal", color: "#e0e7ff", z: 1},
+  "Na": {name: "Натрий",    type: "metal",    color: "#facc15", z: 11},
+  "K":  {name: "Калий",     type: "metal",    color: "#fbbf24", z: 19},
+  "Ca": {name: "Кальций",   type: "metal",    color: "#a3e635", z: 20},
+  "Mg": {name: "Магний",    type: "metal",    color: "#d9f99d", z: 12},
+  "Al": {name: "Алюминий",  type: "metal",    color: "#bfdbfe", z: 13},
+  "Zn": {name: "Цинк",      type: "metal",    color: "#93c5fd", z: 30},
+  "Fe": {name: "Железо",    type: "metal",    color: "#9ca3af", z: 26},
+  "Cu": {name: "Медь",      type: "metal",    color: "#fb923c", z: 29},
+  "O":  {name: "Кислород",  type: "nonmetal", color: "#93c5fd", z: 8},
+  "Cl": {name: "Хлор",      type: "nonmetal", color: "#86efac", z: 17},
+  "S":  {name: "Сера",      type: "nonmetal", color: "#fde047", z: 16},
+  "C":  {name: "Углерод",   type: "nonmetal", color: "#4b5563", z: 6},
+  "N":  {name: "Азот",      type: "nonmetal", color: "#c7d2fe", z: 7},
+  "Br": {name: "Бром",      type: "nonmetal", color: "#b45309", z: 35},
+  "I":  {name: "Йод",       type: "nonmetal", color: "#7c3aed", z: 53}
 };
 
-// Таблица реакций: "реагент1+реагент2" → {product, name, type}
-// Ключ всегда сортируем по алфавиту, чтобы порядок выбора не влиял
+// === РЕАКЦИИ ===
+// Правила: "тип1+тип2" → продукт
+// Плюс особые случаи: "Na+Cl" → NaCl
 const reactions = {
-  // Металл + кислород → оксид
-  "metal+O2":   {product: "MO",   name: "оксид металла", type: "соединение"},
-  // Металл + хлор → соль
-  "metal+Cl2":  {product: "MCl",  name: "хлорид металла", type: "соединение"},
-  // Металл + кислота → соль + водород
-  "metal+acid": {product: "MCl + H₂", name: "соль + водород", type: "замещение"},
-  // Металл + вода → гидроксид + водород (для активных)
-  "metal+water":{product: "MOH + H₂", name: "гидроксид + водород", type: "замещение"},
-  // Неметалл + кислород → кислотный оксид
-  "nonmetal+O2":{product: "кислотный оксид", name: "оксид неметалла", type: "соединение"},
-  // Неметалл + водород → летучее водородное соединение
-  "nonmetal+H2":{product: "HX", name: "летучее водородное соединение", type: "соединение"},
-  // Кислота + основание → соль + вода
-  "acid+base":  {product: "соль + H₂O", name: "реакция нейтрализации", type: "обмен"},
-  // Кислота + металл (уже есть выше)
-  // Оксид + вода → гидроксид/кислота
-  "O2+H2O":     {product: "—", name: "не реагируют напрямую", type: "нет реакции"},
-  // Щёлочь + кислотный оксид → соль + вода
-  "base+nonmetal": {product: "соль + H₂O", name: "щёлочь + кислотный оксид", type: "обмен"}
+  // Металл + неметалл = соль
+  "metal+nonmetal": {product: "МС (соль)", name: "соединение металла и неметалла", type: "соединение"},
+  // Металл + металл = сплав
+  "metal+metal":    {product: "сплав", name: "сплав двух металлов", type: "физическое смешение"},
+  // Неметалл + неметалл
+  "nonmetal+nonmetal": {product: "МН (соединение)", name: "соединение неметаллов", type: "соединение"}
 };
 
-function fillSelect(id) {
-  const sel = document.getElementById(id);
-  sel.innerHTML = "";
-  for (let key in substances) {
-    const opt = document.createElement("option");
-    opt.value = key;
-    opt.textContent = key + " (" + substances[key].formula + ")";
-    sel.appendChild(opt);
+// Особые пары → точные продукты
+const specialPairs = {
+  "Cl+Na": {product: "NaCl", name: "хлорид натрия (поваренная соль)", type: "соединение"},
+  "Cl+K":  {product: "KCl",  name: "хлорид калия", type: "соединение"},
+  "Cl+Ca": {product: "CaCl₂",name: "хлорид кальция", type: "соединение"},
+  "Cl+Mg": {product: "MgCl₂",name: "хлорид магния", type: "соединение"},
+  "Cl+Fe": {product: "FeCl₃",name: "хлорид железа (III)", type: "соединение"},
+  "Cl+Cu": {product: "CuCl₂",name: "хлорид меди (II)", type: "соединение"},
+  "Cl+Al": {product: "AlCl₃",name: "хлорид алюминия", type: "соединение"},
+  "Cl+Zn": {product: "ZnCl₂",name: "хлорид цинка", type: "соединение"},
+  "O+Na":  {product: "Na₂O", name: "оксид натрия", type: "соединение"},
+  "O+K":   {product: "K₂O",  name: "оксид калия", type: "соединение"},
+  "O+Ca":  {product: "CaO",  name: "оксид кальция (негашёная известь)", type: "соединение"},
+  "O+Mg":  {product: "MgO",  name: "оксид магния", type: "соединение"},
+  "O+Al":  {product: "Al₂O₃",name: "оксид алюминия", type: "соединение"},
+  "O+Fe":  {product: "Fe₂O₃",name: "оксид железа (III) (ржавчина)", type: "соединение"},
+  "O+Cu":  {product: "CuO",  name: "оксид меди (II)", type: "соединение"},
+  "O+Zn":  {product: "ZnO",  name: "оксид цинка", type: "соединение"},
+  "H+Cl":  {product: "HCl",  name: "хлороводород (соляная кислота)", type: "соединение"},
+  "H+O":   {product: "H₂O",  name: "вода", type: "соединение"},
+  "H+S":   {product: "H₂S",  name: "сероводород", type: "соединение"},
+  "H+N":   {product: "NH₃",  name: "аммиак", type: "соединение"},
+  "H+C":   {product: "CH₄",  name: "метан", type: "соединение"},
+  "S+Fe":  {product: "FeS",  name: "сульфид железа (II)", type: "соединение"},
+  "S+Cu":  {product: "CuS",  name: "сульфид меди (II)", type: "соединение"},
+  "S+Zn":  {product: "ZnS",  name: "сульфид цинка", type: "соединение"},
+  "S+Ca":  {product: "CaS",  name: "сульфид кальция", type: "соединение"},
+  "C+O":   {product: "CO₂",  name: "углекислый газ", type: "соединение"},
+  "N+O":   {product: "NO",   name: "оксид азота (II)", type: "соединение"}
+};
+
+// === СОСТОЯНИЕ ===
+let flask1 = null; // выбранный элемент в колбе 1
+let flask2 = null; // в колбе 2
+let activeFlask = 1; // в какую колбу льём
+
+// === ОТРИСОВКА ТАБЛИЦЫ ===
+function renderPeriodic() {
+  const container = document.getElementById("periodic");
+  container.innerHTML = "";
+  // Порядок элементов в таблице (упрощённо, по группам/периодам)
+  const layout = [
+    "H", "empty", "empty", "empty", "empty", "empty", "empty", "empty", "He",
+    "Li", "Be", "B", "C", "N", "O", "F", "Ne",
+    "Na", "Mg", "Al", "Si", "P", "S", "Cl", "Ar",
+    "K", "Ca", "empty", "empty", "empty", "empty", "empty", "empty", "empty"
+  ];
+  // Заменяем на существующие у нас элементы, остальные — серые заглушки
+  const available = Object.keys(elements);
+  layout.forEach(sym => {
+    const div = document.createElement("div");
+    if (sym === "empty" || !available.includes(sym)) {
+      div.className = "el empty";
+      div.textContent = "";
+    } else {
+      const el = elements[sym];
+      div.className = "el " + el.type;
+      div.textContent = sym;
+      div.title = el.name;
+      div.onclick = () => pourIntoFlask(sym);
+      div.dataset.sym = sym;
+    }
+    container.appendChild(div);
+  });
+}
+
+// === ВЫБОР КОЛБЫ ===
+function selectFlask(num) {
+  activeFlask = num;
+  document.getElementById("result").innerHTML =
+    `Активная колба: <b>№${num}</b>. Нажми элемент в таблице, чтобы налить в неё.`;
+}
+
+// === НАЛИВАНИЕ В КОЛБУ ===
+function pourIntoFlask(sym) {
+  if (activeFlask === 1) {
+    flask1 = sym;
+    document.getElementById("label1").textContent = sym;
+    document.getElementById("liquid1").style.background = elements[sym].color;
+    document.getElementById("liquid1").style.height = "70%";
+  } else {
+    flask2 = sym;
+    document.getElementById("label2").textContent = sym;
+    document.getElementById("liquid2").style.background = elements[sym].color;
+    document.getElementById("liquid2").style.height = "70%";
+  }
+  // Подсвечиваем выбранный элемент в таблице
+  document.querySelectorAll(".el").forEach(e => e.classList.remove("selected"));
+  const el = document.querySelector(`.el[data-sym="${sym}"]`);
+  if (el) el.classList.add("selected");
+
+  updateResult();
+}
+
+function updateResult() {
+  const res = document.getElementById("result");
+  if (flask1 && flask2) {
+    res.innerHTML = `
+      Готово к реакции: <b>${flask1}</b> + <b>${flask2}</b><br>
+      <small>Жми «Смешать!»</small>
+    `;
+  } else if (flask1) {
+    res.innerHTML = `В колбе №1: <b>${flask1}</b>. Выбери элемент для колбы №2.`;
+  } else if (flask2) {
+    res.innerHTML = `В колбе №2: <b>${flask2}</b>. Выбери элемент для колбы №1.`;
   }
 }
 
-function getReactionType(a, b) {
-  const ta = substances[a].type;
-  const tb = substances[b].type;
-  const pair = [ta, tb].sort().join("+");
-
-  // Прямые совпадения
-  if (pair === "metal+O2") return reactions["metal+O2"];
-  if (pair === "Cl2+metal") return reactions["metal+Cl2"];
-  if (pair === "acid+metal") return reactions["metal+acid"];
-  if (pair === "metal+water") return reactions["metal+water"];
-  if (pair === "O2+nonmetal") return reactions["nonmetal+O2"];
-  if (pair === "H2+nonmetal") return reactions["nonmetal+H2"];
-  if (pair === "acid+base") return reactions["acid+base"];
-  if (pair === "nonmetal+base") return reactions["base+nonmetal"];
-  if (pair === "O2+water") return reactions["O2+H2O"];
-
-  // Особые случаи
-  if ((a === "H2" && b === "O2") || (a === "O2" && b === "H2")) {
-    return {product: "H₂O", name: "вода", type: "соединение"};
-  }
-  if ((a === "Na" && b === "Cl2") || (a === "Cl2" && b === "Na")) {
-    return {product: "NaCl", name: "хлорид натрия (поваренная соль)", type: "соединение"};
-  }
-
-  return null;
-}
-
+// === СМЕШИВАНИЕ ===
 function mix() {
-  const a = document.getElementById("reagent1").value;
-  const b = document.getElementById("reagent2").value;
-  const result = document.getElementById("result");
+  const res = document.getElementById("result");
 
-  if (a === b) {
-    result.innerHTML = '<span class="error">Нельзя смешать вещество само с собой 😄</span>';
+  if (!flask1 || !flask2) {
+    res.innerHTML = '<span class="error">Сначала налей элементы в обе колбы!</span>';
+    return;
+  }
+  if (flask1 === flask2) {
+    res.innerHTML = '<span class="error">Нельзя смешать элемент сам с собой 😄</span>';
     return;
   }
 
-  const r = getReactionType(a, b);
+  // Ищем особую пару
+  const key1 = flask1 + "+" + flask2;
+  const key2 = flask2 + "+" + flask1;
+  let r = specialPairs[key1] || specialPairs[key2];
 
   if (!r) {
-    result.innerHTML = `
-      <span class="error">❌ Реакция не найдена в базе</span><br>
-      <small>Попробуй другую пару или добавь реакцию в код.</small>
-    `;
+    // Общее правило по типам
+    const t1 = elements[flask1].type;
+    const t2 = elements[flask2].type;
+    const pair = [t1, t2].sort().join("+");
+    r = reactions[pair];
+  }
+
+  if (!r) {
+    res.innerHTML = `<span class="error">❌ Реакция не найдена в базе</span>`;
     return;
   }
 
-  const fa = substances[a].formula;
-  const fb = substances[b].formula;
+  // Анимация вспышки
+  const flasksDiv = document.getElementById("flasks");
+  flasksDiv.classList.add("flash-effect");
+  setTimeout(() => flasksDiv.classList.remove("flash-effect"), 800);
 
-  result.innerHTML = `
-    <div class="success">✅ Реакция идёт!</div>
-    <div class="formula">${fa} + ${fb} → ${r.product}</div>
-    <div>Тип: <b>${r.name}</b></div>
-    <div>Класс реакции: <b>${r.type}</b></div>
-  `;
+  // Меняем цвет жидкости на "продукт" (фиолетовый)
+  document.getElementById("liquid1").style.background = "#a855f7";
+  document.getElementById("liquid2").style.background = "#a855f7";
+
+  setTimeout(() => {
+    res.innerHTML = `
+      <div class="success">✅ Реакция идёт!</div>
+      <div class="formula">${flask1} + ${flask2} → ${r.product}</div>
+      <div>Продукт: <b>${r.name}</b></div>
+      <div>Тип: <b>${r.type}</b></div>
+    `;
+  }, 400);
 }
 
-// Инициализация
-fillSelect("reagent1");
-fillSelect("reagent2");
-document.getElementById("reagent1").value = "Na";
-document.getElementById("reagent2").value = "Cl2";
+// === СБРОС ===
+function reset() {
+  flask1 = null;
+  flask2 = null;
+  activeFlask = 1;
+  document.getElementById("label1").textContent = "—";
+  document.getElementById("label2").textContent = "—";
+  document.getElementById("liquid1").style.height = "0%";
+  document.getElementById("liquid2").style.height = "0%";
+  document.getElementById("liquid1").style.background = "#60a5fa";
+  document.getElementById("liquid2").style.background = "#60a5fa";
+  document.querySelectorAll(".el").forEach(e => e.classList.remove("selected"));
+  document.getElementById("result").innerHTML =
+    "Выбери два элемента из таблицы — они попадут в колбы. Потом жми «Смешать».";
+}
+
+// === СТАРТ ===
+renderPeriodic();
 </script>
 
 </body>
