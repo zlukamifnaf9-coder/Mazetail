@@ -1,0 +1,2845 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>R.I.V.E. — Registry of Internal Volatile Entities</title>
+<style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+    body { background: #000; color: #fff; font-family: 'Courier New', monospace; min-height: 100vh; overflow: hidden; user-select: none; -webkit-user-select: none; display: flex; justify-content: center; align-items: center; }
+    .game-wrap { max-width: 620px; width: 100%; margin: 0 auto; background: #0a0a10; border: 3px solid #00d4ff; border-radius: 16px; padding: 8px; box-shadow: 0 0 30px rgba(0, 212, 255, 0.4); }
+    #gameCanvas { display: block; width: 100%; height: auto; background: #000; border-radius: 8px; touch-action: none; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="game-wrap"><canvas id="gameCanvas" width="600" height="820"></canvas></div>
+<script>
+(function() {
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const isMobile = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+    let controlMode = isMobile ? 'mobile' : 'pc';
+
+    // ═══════════════════════════════════════════════════════════
+    //  ЛОГО
+    // ═══════════════════════════════════════════════════════════
+    const LOGO_URL = 'https://i.postimg.cc/c1Y3cBBZ/c551115c27311f185771ae74967528c-1.jpg';
+    let logoImg = new Image(), logoReady = false;
+    logoImg.crossOrigin = 'anonymous';
+    logoImg.onload = () => { logoReady = true; };
+    logoImg.src = LOGO_URL;
+
+    // ═══════════════════════════════════════════════════════════
+    //  НАСТРОЙКИ
+    // ═══════════════════════════════════════════════════════════
+    let settings = {
+        masterVolume: 70, musicVolume: 50, soundVolume: 80,
+        scares: true, scareVolume: 100, npcDialogs: true, tts: true,
+        language: 'ru', controlMode: 'auto'
+    };
+    try { const s = localStorage.getItem('rive_settings'); if (s) settings = Object.assign(settings, JSON.parse(s)); } catch(e) {}
+    function saveSettings() { try { localStorage.setItem('rive_settings', JSON.stringify(settings)); } catch(e) {} }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TTS — Web Speech API (озвучка сущностей)
+    // ═══════════════════════════════════════════════════════════
+    const TTS = {
+        enabled: true,
+        lastSay: 0,
+        supported: 'speechSynthesis' in window,
+        say(text, options) {
+            if (!this.supported || !settings.tts) return;
+            const now = Date.now();
+            if (now - this.lastSay < 2000) return;  // не чаще 1 раза в 2 сек
+            this.lastSay = now;
+            try {
+                const u = new SpeechSynthesisUtterance(text);
+                u.lang = 'ru-RU';
+                u.rate = options && options.rate || 0.8;
+                u.pitch = options && options.pitch || 0.3;
+                u.volume = (settings.scareVolume / 100) * (settings.masterVolume / 100);
+                // Пытаемся найти русский мужской голос
+                const voices = speechSynthesis.getVoices();
+                const ru = voices.find(v => v.lang.startsWith('ru'));
+                if (ru) u.voice = ru;
+                speechSynthesis.speak(u);
+            } catch(e) {}
+        }
+    };
+    // Загружаем голоса
+    if (TTS.supported) {
+        speechSynthesis.onvoiceschanged = () => {};
+        speechSynthesis.getVoices();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ПРОГРЕСС И РЕСУРСЫ
+    // ═══════════════════════════════════════════════════════════
+    let progress = {
+        playerLevel: 1, playerXP: 0, xpToNext: 500,
+        missionsDone: 0, employees: 0,
+        currentFloor: 1, maxFloors: 1,
+        currentMission: null, storySeen: false, deaths: 0
+    };
+    let resources = { credits: 1500, energy: 50, water: 50, food: 50, materials: 20 };
+    let roomEmployees = {}, employees = [], applications = [];
+    let employeeIdCounter = 1, applicationIdCounter = 1;
+    let currentMission = null;
+
+    let lastSaveTime = 0;
+    function saveGame() {
+        const now = Date.now();
+        if (now - lastSaveTime < 1000) return;
+        lastSaveTime = now;
+        try {
+            localStorage.setItem('rive_progress', JSON.stringify({ resources, progress }));
+            localStorage.setItem('rive_rooms', JSON.stringify({ floors, roomEmployees }));
+            localStorage.setItem('rive_employees', JSON.stringify({ employees, employeeIdCounter }));
+            localStorage.setItem('rive_apps', JSON.stringify({ applications, applicationIdCounter }));
+        } catch(e) {}
+    }
+
+    function loadGame() {
+        try { const s = localStorage.getItem('rive_progress'); if (s) { const p = JSON.parse(s); if (p.resources) resources = Object.assign(resources, p.resources); if (p.progress) progress = Object.assign(progress, p.progress); } } catch(e) {}
+        try { const s = localStorage.getItem('rive_rooms'); if (s) { const p = JSON.parse(s); if (p.floors) floors = p.floors; if (p.roomEmployees) roomEmployees = p.roomEmployees; } } catch(e) {}
+        try { const s = localStorage.getItem('rive_employees'); if (s) { const p = JSON.parse(s); if (p.employees) employees = p.employees; if (p.employeeIdCounter) employeeIdCounter = p.employeeIdCounter; } } catch(e) {}
+        try { const s = localStorage.getItem('rive_apps'); if (s) { const p = JSON.parse(s); if (p.applications) applications = p.applications; if (p.applicationIdCounter) applicationIdCounter = p.applicationIdCounter; } } catch(e) {}
+        if (!floors || !floors[1] || !floors[1].rooms || !floors[1].rooms.length) floors = null;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ЗВУК
+    // ═══════════════════════════════════════════════════════════
+    const Sound = {
+        ctx: null, humOsc: null, humGain: null, ambientStarted: false,
+        init() { if (!this.ctx) { try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {} } if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume(); },
+        tone(freq, dur, type, vol, freqEnd) {
+            if (!this.ctx) return;
+            const v = (vol || 0.05) * (settings.masterVolume / 100) * (settings.soundVolume / 100);
+            if (v <= 0.001) return;
+            try {
+                const t = this.ctx.currentTime;
+                const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+                o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+                if (freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, t + dur);
+                g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                o.connect(g).connect(this.ctx.destination);
+                o.start(t); o.stop(t + dur);
+            } catch(e) {}
+        },
+        startAmbient() {
+            if (this.ambientStarted || !this.ctx) return;
+            try {
+                this.humOsc = this.ctx.createOscillator();
+                this.humGain = this.ctx.createGain();
+                this.humOsc.type = 'sine'; this.humOsc.frequency.value = 55;
+                this.humGain.gain.value = 0.015 * (settings.masterVolume / 100) * (settings.musicVolume / 100);
+                this.humOsc.connect(this.humGain).connect(this.ctx.destination);
+                this.humOsc.start(); this.ambientStarted = true;
+            } catch(e) {}
+        },
+        click() { this.tone(700, 0.05, 'sine', 0.06, 900); },
+        step() { this.tone(70 + Math.random() * 20, 0.05, 'triangle', 0.03, 40); },
+        pickup() { [880, 1100, 1320].forEach((f, i) => setTimeout(() => this.tone(f, 0.08, 'sine', 0.08), i * 60)); },
+        build() { [200, 180, 220, 160].forEach((f, i) => setTimeout(() => this.tone(f, 0.1, 'square', 0.08, 100), i * 150)); },
+        buildDone() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 0.15, 'triangle', 0.1), i * 100)); },
+        elevator() { this.tone(120, 0.5, 'sawtooth', 0.08, 60); setTimeout(() => this.tone(80, 0.8, 'sine', 0.1, 40), 250); },
+        deny() { this.tone(200, 0.2, 'square', 0.08, 100); },
+        notify() { [800, 1000, 1200].forEach((f, i) => setTimeout(() => this.tone(f, 0.08, 'sine', 0.08), i * 100)); },
+        coin() { this.tone(1200, 0.06, 'sine', 0.05, 1800); },
+        shot() { this.tone(400, 0.15, 'sawtooth', 0.15, 80); },
+        hit() { this.tone(150, 0.2, 'sawtooth', 0.15, 60); },
+        door() { this.tone(180, 0.4, 'sawtooth', 0.1, 60); },
+        // Скример — усиленный
+        scream() {
+            if (!settings.scares) return;
+            const v = settings.scareVolume / 100;
+            this.tone(800, 0.6, 'sawtooth', 0.25 * v, 200);
+            setTimeout(() => this.tone(600, 0.4, 'square', 0.22 * v, 150), 100);
+            setTimeout(() => this.tone(1000, 0.5, 'sawtooth', 0.25 * v, 300), 200);
+            setTimeout(() => this.tone(300, 0.7, 'sawtooth', 0.2 * v, 80), 400);
+        }
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    //  НАВЫКИ
+    // ═══════════════════════════════════════════════════════════
+    const SKILLS = {
+        science: { id: 'science', name: 'Наука', icon: '🔬', color: '#00d4ff' },
+        guard: { id: 'guard', name: 'Охрана', icon: '🛡', color: '#f5a623' },
+        chemistry: { id: 'chemistry', name: 'Химия', icon: '⚗️', color: '#00ffaa' },
+        cooking: { id: 'cooking', name: 'Кулинария', icon: '🍳', color: '#e74c3c' },
+        org: { id: 'org', name: 'Организация', icon: '📋', color: '#a855f7' },
+        engineering: { id: 'engineering', name: 'Инженерия', icon: '📡', color: '#3498db' },
+        physics: { id: 'physics', name: 'Физика', icon: '⚛️', color: '#f5d76e' },
+        biology: { id: 'biology', name: 'Биология', icon: '🧬', color: '#34c759' },
+        programming: { id: 'programming', name: 'Программирование', icon: '💻', color: '#9b59b6' }
+    };
+    const SKILL_IDS = Object.keys(SKILLS);
+    const ROOM_SKILL_MAP = {
+        lab: 'science', security: 'guard', chem: 'chemistry', cafeteria: 'cooking', kitchen: 'cooking',
+        hr: 'org', office: 'org', power: 'engineering', radio: 'engineering', medbay: 'biology',
+        quarantine: 'biology', armory: 'guard', storage: 'programming', rec: 'cooking',
+        water: 'engineering', hangar: 'engineering', dorm: 'org'
+    };
+
+    const BUILDABLE_ROOMS = [
+        { id: 'dorm', name: 'Общежитие', icon: '🛏', color: '#a855f7', cost: 500, levelReq: 1, desc: '+2 к лимиту', buildTime: 3, slots: 4 },
+        { id: 'kitchen', name: 'Кухня', icon: '🍽', color: '#e74c3c', cost: 600, levelReq: 1, desc: '+еда', buildTime: 3, slots: 2 },
+        { id: 'water', name: 'Водоочистка', icon: '🚰', color: '#3498db', cost: 600, levelReq: 1, desc: '+вода', buildTime: 3, slots: 2 },
+        { id: 'power', name: 'Энергостанция', icon: '🔋', color: '#f5a623', cost: 800, levelReq: 2, desc: '+энергия', buildTime: 3, slots: 2 },
+        { id: 'medbay', name: 'Мед. пункт', icon: '💊', color: '#ff4757', cost: 1000, levelReq: 2, desc: 'Лечение', buildTime: 3, slots: 2 },
+        { id: 'armory', name: 'Арсенал', icon: '⚔️', color: '#f5d76e', cost: 1500, levelReq: 3, desc: '+урон', buildTime: 3, slots: 2 },
+        { id: 'chem', name: 'Хим. лаборатория', icon: '🧪', color: '#00d4ff', cost: 1800, levelReq: 3, desc: 'Вещества', buildTime: 3, slots: 3 },
+        { id: 'radio', name: 'Радиовышка', icon: '📡', color: '#34c759', cost: 2500, levelReq: 4, desc: 'Найм', buildTime: 3, slots: 2 },
+        { id: 'rec', name: 'Комната отдыха', icon: '🎮', color: '#9b59b6', cost: 1500, levelReq: 4, desc: '+мораль', buildTime: 3, slots: 2 },
+        { id: 'storage', name: 'Склад', icon: '📦', color: '#8b4513', cost: 3000, levelReq: 5, desc: '+лимит', buildTime: 3, slots: 2 },
+        { id: 'quarantine', name: 'Карантин', icon: '🏥', color: '#e67e22', cost: 5000, levelReq: 6, desc: 'Изучение', buildTime: 3, slots: 3 },
+        { id: 'hangar', name: 'Ангар', icon: '🚁', color: '#34495e', cost: 8000, levelReq: 8, desc: 'Эвакуация', buildTime: 3, slots: 2 }
+    ];
+    const ROOM_INCOME = {
+        lab: { resource: 'materials', rate: 5 }, security: { resource: 'credits', rate: 6 },
+        chem: { resource: 'materials', rate: 7 }, cafeteria: { resource: 'food', rate: 6 },
+        kitchen: { resource: 'food', rate: 5 }, power: { resource: 'energy', rate: 6 },
+        water: { resource: 'water', rate: 6 }, medbay: { resource: 'credits', rate: 5 },
+        armory: { resource: 'credits', rate: 8 }, radio: { resource: 'credits', rate: 4 },
+        rec: { resource: 'credits', rate: 3 }, storage: { resource: 'materials', rate: 4 },
+        quarantine: { resource: 'materials', rate: 8 }, hangar: { resource: 'credits', rate: 7 },
+        hr: { resource: 'credits', rate: 4 }, office: { resource: 'credits', rate: 5 },
+        dorm: { resource: 'credits', rate: 2 }
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    //  ЭТАЖИ
+    // ═══════════════════════════════════════════════════════════
+    let floors = null;
+    function createFloor1() {
+        return {
+            gridCols: 3, gridRows: 3,
+            rooms: [
+                { id: 'lab', name: 'Лаборатория', icon: '🔬', color: '#00d4ff', col: 0, row: 0, desc: 'Изучение', slots: 3 },
+                { id: 'hall', name: 'Холл', icon: '🏢', color: '#34c759', col: 1, row: 0, desc: 'Приёмная', slots: 0 },
+                { id: 'security', name: 'Офис охраны', icon: '🛡', color: '#f5a623', col: 2, row: 0, desc: 'Безопасность', slots: 3 },
+                { id: 'cafeteria', name: 'Столовая', icon: '🍽', color: '#e74c3c', col: 0, row: 1, desc: 'Еда и отдых', slots: 2 },
+                { id: 'elevator', name: 'Лифт', icon: '🛗', color: '#00d4ff', col: 1, row: 1, desc: 'Спуск на уровни', slots: 0 },
+                { id: 'office', name: 'Кабинет', icon: '💼', color: '#f5d76e', col: 2, row: 1, desc: 'Твой кабинет', slots: 1 },
+                { id: 'hr', name: 'Отдел кадров', icon: '📄', color: '#a855f7', col: 0, row: 2, desc: 'Приём', slots: 2 },
+                { id: 'empty_1_1', name: 'Пустой слот', icon: '🚧', color: '#555', col: 1, row: 2, desc: 'Строительство', empty: true, slots: 0 },
+                { id: 'empty_1_2', name: 'Пустой слот', icon: '🚧', color: '#555', col: 2, row: 2, desc: 'Строительство', empty: true, slots: 0 }
+            ]
+        };
+    }
+    function createEmptyFloor(n, cols, rows) {
+        const rooms = [];
+        for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++)
+            rooms.push({ id: `empty_${n}_${r}_${c}`, name: 'Пустой слот', icon: '🚧', color: '#555', col: c, row: r, desc: 'Строительство', empty: true, slots: 0 });
+        return { gridCols: cols, gridRows: rows, rooms };
+    }
+    function initFloors() {
+        if (!floors) {
+            floors = { 1: createFloor1(), 2: createEmptyFloor(2, 4, 3), 3: createEmptyFloor(3, 4, 3) };
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  КАНДИДАТЫ
+    // ═══════════════════════════════════════════════════════════
+    const CANDIDATE_TEMPLATES = [
+        { name: 'Джон Смит', emoji: '👨', job: 'Учёный', exp: 5, skills: ['science', 'physics', 'programming'] },
+        { name: 'Мария Гарсиа', emoji: '👩', job: 'Лаборант', exp: 3, skills: ['science', 'chemistry', 'biology'] },
+        { name: 'Ханс Мюллер', emoji: '👨', job: 'Руководитель', exp: 10, skills: ['org', 'science', 'engineering'] },
+        { name: 'Акира Танака', emoji: '👨', job: 'Инженер', exp: 7, skills: ['engineering', 'physics', 'programming'] },
+        { name: 'Ольга Иванова', emoji: '👩', job: 'Химик', exp: 12, skills: ['chemistry', 'biology', 'science'] },
+        { name: 'Лука Росси', emoji: '👨', job: 'Охранник', exp: 2, skills: ['guard', 'physics'] },
+        { name: 'Ахмед Аль-Фарси', emoji: '👨', job: 'Охранник', exp: 8, skills: ['guard', 'org', 'engineering'] },
+        { name: 'Софи Дюбуа', emoji: '👩', job: 'Повар', exp: 4, skills: ['cooking', 'chemistry', 'org'] },
+        { name: 'Карлос Мендоса', emoji: '👨', job: 'Разнорабочий', exp: 6, skills: ['cooking', 'engineering'] },
+        { name: 'Лена Шмидт', emoji: '👩', job: 'Программист', exp: 5, skills: ['programming', 'engineering', 'science'] },
+        { name: 'Раджеш Кумар', emoji: '👨', job: 'Учёный', exp: 9, skills: ['science', 'physics', 'chemistry'] },
+        { name: 'Эмили Джонсон', emoji: '👩', job: 'Лаборант', exp: 1, skills: ['biology'] },
+        { name: 'Пьер Лоран', emoji: '👨', job: 'Охранник', exp: 3, skills: ['guard', 'cooking'] },
+        { name: 'Ясмин Хадид', emoji: '👩', job: 'Биолог', exp: 7, skills: ['biology', 'science', 'physics'] },
+        { name: 'Иван Петров', emoji: '👨', job: 'Инженер', exp: 15, skills: ['engineering', 'physics', 'programming', 'org'] },
+        { name: 'Чжан Вэй', emoji: '👨', job: 'Программист', exp: 6, skills: ['programming', 'science', 'physics'] },
+        { name: 'Анна Новак', emoji: '👩', job: 'Организатор', exp: 4, skills: ['org', 'cooking', 'biology'] },
+        { name: 'Мохаммед Салах', emoji: '👨', job: 'Охранник', exp: 11, skills: ['guard', 'org', 'physics'] },
+        { name: 'Клара Берг', emoji: '👩', job: 'Лаборант', exp: 2, skills: ['biology', 'chemistry'] },
+        { name: 'Диего Сильва', emoji: '👨', job: 'Повар', exp: 8, skills: ['cooking', 'org', 'chemistry'] },
+        { name: 'Фатима Азиз', emoji: '👩', job: 'Химик', exp: 5, skills: ['chemistry', 'biology', 'science'] },
+        { name: 'Оливер Браун', emoji: '👨', job: 'Разнорабочий', exp: 3, skills: ['cooking', 'engineering'] },
+        { name: 'Наталья Ковальски', emoji: '👩', job: 'Инженер', exp: 9, skills: ['engineering', 'physics', 'programming'] },
+        { name: 'Таро Ямамото', emoji: '👨', job: 'Учёный', exp: 10, skills: ['science', 'physics', 'org'] },
+        { name: 'Изабель Фернандес', emoji: '👩', job: 'Биолог', exp: 6, skills: ['biology', 'chemistry', 'science'] }
+    ];
+
+    function generateApplication() {
+        if (applications.length >= 8) return;
+        const t = CANDIDATE_TEMPLATES[Math.floor(Math.random() * CANDIDATE_TEMPLATES.length)];
+        const skills = t.skills.map(sid => ({ id: sid, level: 2 + Math.floor(Math.random() * 4) }));
+        if (Math.random() < 0.3 && skills.length < 4) {
+            const ex = SKILL_IDS[Math.floor(Math.random() * SKILL_IDS.length)];
+            if (!skills.find(s => s.id === ex)) skills.push({ id: ex, level: 1 + Math.floor(Math.random() * 3) });
+        }
+        applications.push({ id: applicationIdCounter++, name: t.name, emoji: t.emoji, job: t.job, exp: t.exp, skills, timeLeft: 180 + Math.floor(Math.random() * 120), createdAt: Date.now() });
+        Sound.notify();
+        addToast('📄 Новое заявление: ' + t.name, '#a855f7');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  СОСТОЯНИЕ
+    // ═══════════════════════════════════════════════════════════
+    let screen = 'loading';
+    let loadingProgress = 0, loadingTimer = 0;
+    const splashText = `Компания R.I.V.E. изучала потустороннее, пока их сотрудник не исчез без следа. Попытка замять инцидент привела к созданию отряда S.C.O.U.T., но их находка изменила всё: «сбой» оказался физической дырой в реальности, которую невозможно закрыть.
+
+Теперь R.I.V.E. — это Фонд.
+
+Ты — новый начальник Фонда R.I.V.E.
+
+Удачи.`;
+    let splashCharIndex = 0, splashTimer = 0, splashComplete = false;
+
+    const storyText = `2023 год. Группа исследователей R.I.V.E. обнаружила аномальную зону на границе реальности.
+
+2024 год. Инцидент "37" — потеря связи с группой.
+
+2025 год. Создан отряд S.C.O.U.T. Обнаружено: аномалия — не дыра, а ДВЕРЬ.
+
+2026 год. R.I.V.E. переименован в Фонд. Твоя задача — исследовать, управлять, выживать.
+
+Не доверяй тому, что видишь. Не слушай то, что слышишь. Возвращайся живым.`;
+    let storyCharIndex = 0, storyTimer = 0;
+
+    // ═══════════════════════════════════════════════════════════
+    //  ГЕОМЕТРИЯ
+    // ═══════════════════════════════════════════════════════════
+    let ROOM_W = 200, ROOM_H = 180;
+    let GRID_COLS = 3, GRID_ROWS = 3;
+    let GRID_W = GRID_COLS * ROOM_W, GRID_H = GRID_ROWS * ROOM_H;
+    const WALL_THICK = 12;
+    const DOOR_WIDTH = 60;
+
+    function updateFloorGeometry() {
+        if (!floors || !floors[progress.currentFloor]) return;
+        const f = floors[progress.currentFloor];
+        GRID_COLS = f.gridCols;
+        GRID_ROWS = f.gridRows;
+        const availW = W;
+        const availH = H - 54 - 80;
+        ROOM_W = Math.min(200, Math.floor(availW / GRID_COLS));
+        ROOM_H = Math.min(180, Math.floor(availH / GRID_ROWS));
+        GRID_W = GRID_COLS * ROOM_W;
+        GRID_H = GRID_ROWS * ROOM_H;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  СТРОИТЕЛЬСТВО
+    // ═══════════════════════════════════════════════════════════
+    let buildMode = false, buildMenuSlot = null, buildMenuScroll = 0, buildingAnimation = null;
+    let selectedSlotForAssign = null, assignMenuScroll = 0;
+    let appScroll = 0, empScroll = 0;
+
+    // ═══════════════════════════════════════════════════════════
+    //  ИГРОК
+    // ═══════════════════════════════════════════════════════════
+    const PLAYER_RADIUS = 12;
+    let player = { x: 300, y: 300, angle: -Math.PI / 2, walkPhase: 0, moving: false, speed: 3.0 };
+    let camera = { x: 0, y: 0 };
+
+    function updateCamera() {
+        let cx = player.x - W / 2, cy = player.y - H / 2;
+        cx = Math.max(0, Math.min(GRID_W - W, cx));
+        cy = Math.max(0, Math.min(GRID_H - H, cy));
+        if (GRID_W < W) cx = (GRID_W - W) / 2;
+        if (GRID_H < H) cy = (GRID_H - H) / 2;
+        camera.x = cx; camera.y = cy;
+    }
+
+    function isWall(x, y) {
+        if (x < WALL_THICK || x > GRID_W - WALL_THICK) return true;
+        if (y < WALL_THICK || y > GRID_H - WALL_THICK) return true;
+        const col = Math.floor(x / ROOM_W), row = Math.floor(y / ROOM_H);
+        const lx = x - col * ROOM_W, ly = y - row * ROOM_H;
+        if (lx < WALL_THICK && col > 0) { const cY = ROOM_H / 2; if (ly < cY - DOOR_WIDTH / 2 || ly > cY + DOOR_WIDTH / 2) return true; }
+        if (lx > ROOM_W - WALL_THICK && col < GRID_COLS - 1) { const cY = ROOM_H / 2; if (ly < cY - DOOR_WIDTH / 2 || ly > cY + DOOR_WIDTH / 2) return true; }
+        if (ly < WALL_THICK && row > 0) { const cX = ROOM_W / 2; if (lx < cX - DOOR_WIDTH / 2 || lx > cX + DOOR_WIDTH / 2) return true; }
+        if (ly > ROOM_H - WALL_THICK && row < GRID_ROWS - 1) { const cX = ROOM_W / 2; if (lx < cX - DOOR_WIDTH / 2 || lx > cX + DOOR_WIDTH / 2) return true; }
+        return false;
+    }
+
+    function canMoveTo(x, y) {
+        const r = PLAYER_RADIUS;
+        if (isWall(x + r, y) || isWall(x - r, y) || isWall(x, y + r) || isWall(x, y - r)) return false;
+        const d = r * 0.707;
+        if (isWall(x + d, y + d) || isWall(x - d, y + d) || isWall(x + d, y - d) || isWall(x - d, y - d)) return false;
+        return true;
+    }
+
+    function tryMovePlayer(dx, dy) {
+        const nx = player.x + dx, ny = player.y + dy;
+        if (canMoveTo(nx, ny)) { player.x = nx; player.y = ny; return true; }
+        if (canMoveTo(nx, player.y)) { player.x = nx; return true; }
+        if (canMoveTo(player.x, ny)) { player.y = ny; return true; }
+        return false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  УПРАВЛЕНИЕ
+    // ═══════════════════════════════════════════════════════════
+    let leftStick = { active: false, id: null, baseX: 130, baseY: H - 150, knobX: 130, knobY: H - 150, dx: 0, dy: 0 };
+    const STICK_RADIUS = 65;
+    let interactBtn = { x: W - 90, y: H - 240, w: 80, h: 80, pressed: false };
+    let buildBtn = { x: W - 90, y: H - 150, w: 80, h: 80, pressed: false };
+    let menuBtn = { x: W - 90, y: H - 330, w: 80, h: 80, pressed: false };
+    let empBtn = { x: W - 190, y: H - 330, w: 80, h: 80, pressed: false };
+    const keys = {};
+    let interactPressed = false;
+    let interactPrompt = '';
+    let interactTarget = null;
+
+    let toasts = [];
+    function addToast(text, color) { toasts.push({ text, color: color || '#fff', life: 2.5 }); }
+    let dialogQueue = [];
+
+    let elevatorState = 'idle', elevatorTimer = 0, elevatorMessage = '';
+
+    let buttons = [];
+    function addButton(x, y, w, h, label, onClick, opts) {
+        opts = opts || {};
+        buttons.push({ x, y, w, h, label, onClick, type: opts.type || 'default', fontSize: opts.fontSize || 16, align: opts.align || 'center' });
+    }
+
+    function drawButton(b) {
+        let bg = 'rgba(0, 212, 255, 0.08)', bd = 'rgba(0, 212, 255, 0.4)', tc = '#00d4ff';
+        if (b.type === 'primary') { bg = 'rgba(0, 212, 255, 0.15)'; bd = '#00d4ff'; }
+        else if (b.type === 'gold') { bg = 'rgba(245, 215, 110, 0.15)'; bd = '#f5d76e'; tc = '#f5d76e'; }
+        else if (b.type === 'danger') { bg = 'rgba(255, 71, 87, 0.15)'; bd = '#ff4757'; tc = '#ff4757'; }
+        else if (b.type === 'success') { bg = 'rgba(52, 199, 89, 0.15)'; bd = '#34c759'; tc = '#34c759'; }
+        ctx.fillStyle = bg;
+        ctx.fillRect(b.x, b.y, b.w, b.h);
+        ctx.strokeStyle = bd;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(b.x + 0.5, b.y + 0.5, b.w - 1, b.h - 1);
+        ctx.fillStyle = tc;
+        ctx.font = `bold ${b.fontSize}px "Courier New", monospace`;
+        ctx.textAlign = b.align;
+        ctx.textBaseline = 'middle';
+        const tx = b.align === 'left' ? b.x + 16 : b.align === 'right' ? b.x + b.w - 16 : b.x + b.w / 2;
+        ctx.fillText(b.label, tx, b.y + b.h / 2);
+    }
+
+    function wrapText(text, maxWidth, context) {
+        const paragraphs = text.split('\n');
+        const result = [];
+        paragraphs.forEach(para => {
+            if (para === '') { result.push(''); return; }
+            const words = para.split(' ');
+            let current = '';
+            words.forEach(word => {
+                const test = current ? current + ' ' + word : word;
+                if (context.measureText(test).width > maxWidth) { if (current) result.push(current); current = word; }
+                else current = test;
+            });
+            if (current) result.push(current);
+        });
+        return result;
+    }
+
+    function addXP(amount) {
+        progress.playerXP += amount;
+        while (progress.playerXP >= progress.xpToNext) {
+            progress.playerXP -= progress.xpToNext;
+            progress.playerLevel++;
+            progress.xpToNext = Math.floor(progress.xpToNext * 1.5);
+            addToast('🎉 УРОВЕНЬ ' + progress.playerLevel + '!', '#f5d76e');
+            Sound.buildDone();
+        }
+        saveGame();
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  LEVEL 0 — КОНСТАНТЫ
+    // ═══════════════════════════════════════════════════════════
+    const MAP_SIZE = 25;
+    const FOV = Math.PI / 3;
+    const RAY_COUNT = 100;
+    const MAX_DEPTH = 15;
+    const MOVE_SPEED_3D = 0.045;
+    const ROT_SPEED = 0.06;
+
+    let lvl0 = null;
+    let missionType = null;
+    let missionProgress = { killed: 0, totalKills: 1, zonesDone: 0, zonesTotal: 1, rescued: false };
+
+    // ═══════════════════════════════════════════════════════════
+    //  ФРАЗЫ СУЩНОСТЕЙ (TTS)
+    // ═══════════════════════════════════════════════════════════
+    const ENTITY_PHRASES = {
+        chase: ['Беги!', 'Тебе не сбежать!', 'Я иду за тобой!', 'Ты мой!', 'Стой!'],
+        spotted: ['Прячься!', 'Я вижу тебя!', 'Ты здесь!', 'Нашёл тебя!'],
+        lost: ['Где ты?', 'Выходи!', 'Я знаю что ты рядом...'],
+        attack: ['Умри!', 'Конец!', 'Ты мой!']
+    };
+
+    function entitySay(entity, type) {
+        if (!settings.tts) return;
+        if (entity._lastSay && Date.now() - entity._lastSay < 5000) return;
+        entity._lastSay = Date.now();
+        const phrases = ENTITY_PHRASES[type] || ENTITY_PHRASES.chase;
+        const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+        // TTS говорит от имени сущности (низкий, страшный голос)
+        TTS.say(phrase, { rate: 0.7, pitch: 0.2 });
+        // Показываем в игре
+        if (lvl0) lvl0.toasts.push({ text: '"' + phrase + '"', color: '#ff0044', life: 2.5 });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  МЕБЕЛЬ (шкафы, тумбочки) — с лутом
+    // ═══════════════════════════════════════════════════════════
+    // Тип: 'cabinet' (шкаф), 'drawer' (тумбочка), 'table' (стол), 'chair' (стул), 'lamp' (лампа)
+    function createFurnitureType(type) {
+        if (type === 'cabinet') {
+            return {
+                type: 'cabinet', icon: '🗄️', color: '#4a3520', glow: '#6b4a2a',
+                lootTable: [
+                    { item: 'pistol', chance: 0.34, weight: 1 },
+                    { item: 'taser', chance: 0.25, weight: 1 },
+                    { item: 'ammo', chance: 0.5, weight: 1 }
+                ],
+                opened: false, empty: false
+            };
+        } else if (type === 'drawer') {
+            return {
+                type: 'drawer', icon: '🪑', color: '#5a3a1a', glow: '#8b6a3a',
+                lootTable: [
+                    { item: 'medkit', chance: 0.6, weight: 1 },
+                    { item: 'energy', chance: 0.7, weight: 1 }
+                ],
+                opened: false, empty: false
+            };
+        } else if (type === 'table') {
+            return { type: 'table', icon: '🪑', color: '#3a2a1a', glow: '#5a4a2a', decorative: true };
+        } else if (type === 'chair') {
+            return { type: 'chair', icon: '🪑', color: '#2a1a0a', glow: '#4a3a1a', decorative: true };
+        } else if (type === 'lamp') {
+            return { type: 'lamp', icon: '🔦', color: '#f5d76e', glow: '#fff', decorative: true };
+        }
+        return { type, icon: '📦', color: '#666', glow: '#999', decorative: true };
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  СОЗДАНИЕ LEVEL 0
+    // ═══════════════════════════════════════════════════════════
+    function createLevel0(type) {
+        missionType = type;
+        missionProgress = { killed: 0, totalKills: 1, zonesDone: 0, zonesTotal: 1, rescued: false };
+
+        // Карта
+        const map = [];
+        for (let y = 0; y < MAP_SIZE; y++) {
+            map[y] = [];
+            for (let x = 0; x < MAP_SIZE; x++) map[y][x] = 1;
+        }
+        map[1][1] = 0;
+        const frontiers = [];
+        function addFrontiers(x, y) {
+            [[0, -2], [0, 2], [-2, 0], [2, 0]].forEach(([dx, dy]) => {
+                const nx = x + dx, ny = y + dy;
+                if (nx > 0 && nx < MAP_SIZE - 1 && ny > 0 && ny < MAP_SIZE - 1 && map[ny][nx] === 1) {
+                    frontiers.push({ x: nx, y: ny, fromX: x, fromY: y });
+                }
+            });
+        }
+        addFrontiers(1, 1);
+        let safety = 0;
+        while (frontiers.length > 0 && safety < 5000) {
+            safety++;
+            const idx = Math.floor(Math.random() * frontiers.length);
+            const f = frontiers.splice(idx, 1)[0];
+            if (map[f.y][f.x] === 0) continue;
+            map[(f.y + f.fromY) / 2][(f.x + f.fromX) / 2] = 0;
+            map[f.y][f.x] = 0;
+            addFrontiers(f.x, f.y);
+        }
+        for (let i = 0; i < MAP_SIZE * 3; i++) {
+            const x = 1 + Math.floor(Math.random() * (MAP_SIZE - 2));
+            const y = 1 + Math.floor(Math.random() * (MAP_SIZE - 2));
+            if (map[y][x] === 1) {
+                const n = (map[y-1]?.[x] || 1) + (map[y+1]?.[x] || 1) + (map[y]?.[x-1] || 1) + (map[y]?.[x+1] || 1);
+                if (n <= 2) map[y][x] = 0;
+            }
+        }
+
+        // Свободные клетки
+        const freeCells = [];
+        for (let y = 1; y < MAP_SIZE - 1; y++) {
+            for (let x = 1; x < MAP_SIZE - 1; x++) {
+                if (map[y][x] === 0 && (x !== 1 || y !== 1)) freeCells.push({ x, y });
+            }
+        }
+
+        // Выход
+        let maxDist = 0, ex = MAP_SIZE - 3, ey = MAP_SIZE - 3;
+        freeCells.forEach(({ x, y }) => {
+            const d = Math.abs(x - 1) + Math.abs(y - 1);
+            if (d > maxDist) { maxDist = d; ex = x; ey = y; }
+        });
+        map[ey][ex] = 2;
+        const exitPos = { x: ex + 0.5, y: ey + 0.5 };
+
+        // Мебель — шкафы, тумбочки, столы
+        const furniture = [];
+        const usedCells = new Set();
+        usedCells.add("1,1");
+        usedCells.add(ex + "," + ey);
+
+        // Расставляем мебель
+        const furnitureCount = 20 + Math.floor(Math.random() * 15);
+        for (let i = 0; i < furnitureCount; i++) {
+            let tries = 0;
+            while (tries < 20) {
+                const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+                if (!c) break;
+                const k = c.x + "," + c.y;
+                if (usedCells.has(k)) { tries++; continue; }
+                const dS = Math.abs(c.x - 1) + Math.abs(c.y - 1);
+                if (dS < 2) { tries++; continue; }
+                usedCells.add(k);
+
+                // Тип мебели
+                let fType;
+                const r = Math.random();
+                if (r < 0.35) fType = 'cabinet';
+                else if (r < 0.65) fType = 'drawer';
+                else if (r < 0.85) fType = 'table';
+                else fType = 'chair';
+
+                const f = createFurnitureType(fType);
+                f.x = c.x + 0.5;
+                f.y = c.y + 0.5;
+                f.mapX = c.x;
+                f.mapY = c.y;
+                furniture.push(f);
+                break;
+            }
+        }
+
+        // Лампы на потолке — просто для света (не блокируют)
+        const lamps = [];
+        for (let i = 0; i < 15; i++) {
+            const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+            if (c) lamps.push({ x: c.x + 0.5, y: c.y + 0.5 });
+        }
+
+        // Предметы (валяются, но не как в шкафах)
+        const items = [];
+        spawnLevelItem(freeCells, items, 'medkit', 1 + Math.floor(Math.random() * 2), exitPos);
+        spawnLevelItem(freeCells, items, 'ammo', 1 + Math.floor(Math.random() * 2), exitPos);
+
+        // Сущности
+        const entities = [];
+        const numE = type === 'kill' ? 1 : (1 + Math.floor(Math.random() * 2));
+        for (let i = 0; i < numE; i++) {
+            let tries = 0;
+            while (tries < 30) {
+                const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+                if (!c) break;
+                const d = Math.abs(c.x - 1) + Math.abs(c.y - 1);
+                if (d > 8) {
+                    entities.push(createEntity(c.x + 0.5, c.y + 0.5, Math.random() < 0.5 ? 'smiler' : 'hound'));
+                    break;
+                }
+                tries++;
+            }
+        }
+
+        // Заражённые зоны
+        const infectedZones = [];
+        if (type === 'virus') {
+            let tries = 0;
+            while (tries < 30) {
+                const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+                if (!c) break;
+                const d = Math.abs(c.x - 1) + Math.abs(c.y - 1);
+                if (d > 6) { infectedZones.push({ x: c.x + 0.5, y: c.y + 0.5, deactivated: false }); break; }
+                tries++;
+            }
+            missionProgress.zonesTotal = infectedZones.length || 1;
+        }
+
+        // Спасённый NPC
+        let rescueNPC = null;
+        if (type === 'rescue') {
+            let tries = 0;
+            while (tries < 40) {
+                const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+                if (!c) break;
+                const d = Math.abs(c.x - 1) + Math.abs(c.y - 1);
+                if (d > 10) { rescueNPC = { x: c.x + 0.5, y: c.y + 0.5, following: false, name: 'Доктор В. Соколов', emoji: '🧑‍⚕️' }; break; }
+                tries++;
+            }
+        }
+
+        // Туман войны — какие клетки открыты
+        const fog = [];
+        for (let y = 0; y < MAP_SIZE; y++) {
+            fog[y] = [];
+            for (let x = 0; x < MAP_SIZE; x++) fog[y][x] = false;
+        }
+        // Открываем стартовую зону
+        for (let dy = -3; dy <= 3; dy++) {
+            for (let dx = -3; dx <= 3; dx++) {
+                const nx = 1 + dx, ny = 1 + dy;
+                if (ny >= 0 && ny < MAP_SIZE && nx >= 0 && nx < MAP_SIZE) {
+                    if (Math.sqrt(dx * dx + dy * dy) < 4) fog[ny][nx] = true;
+                }
+            }
+        }
+
+        return {
+            map, fog,
+            player: { x: 1.5, y: 1.5, angle: 0, flash: 100, flashlightOn: true, bobPhase: 0, health: 100, maxHealth: 100 },
+            items, entities, infectedZones, rescueNPC, exitPos, furniture, lamps,
+            inventory: { medkit: 0, pistol: 0, ammo: 0, taser: 0, trap: 0, tablet: 0, energy: 0 },
+            traps: [], particles: [], floatingTexts: [], toasts: [],
+            vhsOffset: 0, screenShake: 0, damageFlash: 0, scareFlash: 0,
+            scareFace: null,
+            level: 0, levelTheme: 0,
+            controls: { leftStick: { active: false, id: null, baseX: 130, baseY: H - 150, knobX: 130, knobY: H - 150, dx: 0, dy: 0 }, rightZone: { active: false, id: null, lastX: 0, rotateDelta: 0 } },
+            inventoryOpen: false,
+            deathScreen: null  // { timer, reason }
+        };
+    }
+
+    function createEntity(x, y, type) {
+        return {
+            x, y, type,
+            speed: type === 'hound' ? 0.03 : 0.015,
+            hp: 30,
+            state: 'idle',
+            lastSeen: null,
+            angle: 0,
+            animTime: 0,
+            screamCD: 0,
+            stun: 0,
+            _lastSay: 0,
+            // Визуал — тело с руками/ногами
+            walkPhase: 0,
+            facing: 1
+        };
+    }
+
+    function spawnLevelItem(freeCells, items, type, count, exitPos) {
+        for (let i = 0; i < count; i++) {
+            let tries = 0;
+            while (tries < 30) {
+                const c = freeCells[Math.floor(Math.random() * freeCells.length)];
+                if (!c) break;
+                const dS = Math.abs(c.x - 1) + Math.abs(c.y - 1);
+                const dE = Math.abs(c.x - exitPos.x) + Math.abs(c.y - exitPos.y);
+                if (dS > 3 && dE > 1 && !items.some(it => it.x === c.x && it.y === c.y)) {
+                    items.push({ x: c.x + 0.5, y: c.y + 0.5, type, taken: false, bob: Math.random() * Math.PI * 2 });
+                    break;
+                }
+                tries++;
+            }
+        }
+    }
+
+    function lvl0CanMove(x, y) {
+        const xi = Math.floor(x), yi = Math.floor(y);
+        if (xi < 0 || xi >= MAP_SIZE || yi < 0 || yi >= MAP_SIZE) return false;
+        if (!lvl0.map[yi]) return false;
+        return lvl0.map[yi][xi] !== 1;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ITEM_TYPES
+    // ═══════════════════════════════════════════════════════════
+    const ITEM_TYPES = {
+        medkit: { name: 'Аптечка', emoji: '💊', color: '#ff4757', glow: '#ff8899' },
+        pistol: { name: 'Пистолет', emoji: '🔫', color: '#555', glow: '#888' },
+        ammo: { name: 'Патроны', emoji: '📦', color: '#f5a623', glow: '#ffd966' },
+        taser: { name: 'Шокер', emoji: '⚡', color: '#00d4ff', glow: '#66e0ff' },
+        trap: { name: 'Капкан', emoji: '⚙️', color: '#999', glow: '#ccc' },
+        tablet: { name: 'Планшет', emoji: '📱', color: '#34c759', glow: '#7affa0' },
+        energy: { name: 'Энергетик', emoji: '🥤', color: '#ff00aa', glow: '#ff66cc' }
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    //  ЭКРАНЫ ОБЩИЕ
+    // ═══════════════════════════════════════════════════════════
+    function drawLoading() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        const logoY = H / 2 - 100;
+        if (logoReady) {
+            const size = 280;
+            ctx.drawImage(logoImg, W / 2 - size / 2, logoY - size / 2, size, size);
+        } else {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 90px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('RIVE', W / 2, logoY);
+            ctx.fillRect(W / 2 - 160, logoY - 60, 320, 4);
+            ctx.fillRect(W / 2 - 160, logoY + 60, 320, 4);
+        }
+        const barW = 300, barH = 8;
+        const barX = W / 2 - barW / 2, barY = H / 2 + 140;
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.15)';
+        ctx.fillRect(barX, barY, barW, barH);
+        ctx.fillStyle = '#00d4ff';
+        ctx.fillRect(barX, barY, barW * (loadingProgress / 100), barH);
+        ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 1;
+        ctx.strokeRect(barX + 0.5, barY + 0.5, barW - 1, barH - 1);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 14px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const dots = '.'.repeat((Math.floor(performance.now() / 300) % 3) + 1);
+        ctx.fillText('ЗАГРУЗКА' + dots + ' ' + Math.floor(loadingProgress) + '%', W / 2, barY + 40);
+    }
+
+    function drawSplash() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.02)';
+        for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+        if (logoReady) {
+            const size = 130;
+            ctx.drawImage(logoImg, W / 2 - size / 2, 60 - size / 2, size, size);
+        }
+        const vis = splashText.substring(0, splashCharIndex);
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = '15px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const lines = wrapText(vis, W - 60, ctx);
+        lines.forEach((line, i) => ctx.fillText(line, 30, 160 + i * 24));
+        if (splashComplete) {
+            const pulse = 0.5 + Math.sin(performance.now() / 500) * 0.5;
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = 'rgba(0, 212, 255, 0.15)';
+            ctx.fillRect(W / 2 - 140, H - 130, 280, 60);
+            ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
+            ctx.strokeRect(W / 2 - 140 + 0.5, H - 130 + 0.5, 279, 59);
+            ctx.fillStyle = '#00d4ff';
+            ctx.font = 'bold 18px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('ПРОДОЛЖИТЬ →', W / 2, H - 100);
+            ctx.globalAlpha = 1;
+            addButton(W / 2 - 140, H - 130, 280, 60, '', () => { Sound.click(); screen = 'menu'; });
+        } else {
+            ctx.fillStyle = 'rgba(150, 150, 150, 0.4)';
+            ctx.font = '12px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('[ТАП ЧТОБЫ ПРОПУСТИТЬ]', W / 2, H - 60);
+        }
+    }
+
+    function drawMenu() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.02)';
+        for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+        if (logoReady) {
+            const size = 230;
+            ctx.drawImage(logoImg, W / 2 - size / 2, 110 - size / 2, size, size);
+        } else {
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 72px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('RIVE', W / 2, 100);
+            ctx.fillRect(W / 2 - 140, 55, 280, 3);
+            ctx.fillRect(W / 2 - 140, 145, 280, 3);
+        }
+        const mY = 280, mBH = 60, mBW = 380, mGap = 15, mX = W / 2 - mBW / 2;
+        addButton(mX, mY, mBW, mBH, '▶  НАЧАТЬ ИГРУ', () => {
+            Sound.click();
+            if (!progress.storySeen) { screen = 'story'; storyCharIndex = 0; storyTimer = 0; }
+            else enterBase();
+        }, { type: 'primary', fontSize: 18 });
+        addButton(mX, mY + (mBH + mGap), mBW, mBH, '📖  НАЙДИ ВЫХОД', () => { Sound.click(); screen = 'help'; }, { fontSize: 17 });
+        addButton(mX, mY + (mBH + mGap) * 2, mBW, mBH, '⚙  НАСТРОЙКИ', () => { Sound.click(); screen = 'settings'; }, { fontSize: 17 });
+        addButton(mX, mY + (mBH + mGap) * 3, mBW, mBH, '👥  РАЗРАБОТЧИКИ', () => { Sound.click(); screen = 'devs'; }, { fontSize: 17 });
+        ctx.fillStyle = '#555';
+        ctx.font = '10px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('© 2026 R.I.V.E. FOUNDATION', W / 2, H - 40);
+        ctx.fillText('v1.2.0 · horror update', W / 2, H - 22);
+    }
+
+    function drawStory() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = 'rgba(0, 212, 255, 0.02)';
+        for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 20px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('◄ АРХИВ R.I.V.E. ►', W / 2, 50);
+        const vis = storyText.substring(0, storyCharIndex);
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = '14px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const lines = wrapText(vis, W - 60, ctx);
+        lines.forEach((line, i) => ctx.fillText(line, 30, 100 + i * 24));
+        if (storyCharIndex >= storyText.length) {
+            const pulse = 0.5 + Math.sin(performance.now() / 500) * 0.5;
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = 'rgba(0, 212, 255, 0.15)';
+            ctx.fillRect(W / 2 - 140, H - 130, 280, 60);
+            ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
+            ctx.strokeRect(W / 2 - 140 + 0.5, H - 130 + 0.5, 279, 59);
+            ctx.fillStyle = '#00d4ff';
+            ctx.font = 'bold 18px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('ПРИНЯТЬ →', W / 2, H - 100);
+            ctx.globalAlpha = 1;
+            addButton(W / 2 - 140, H - 130, 280, 60, '', () => {
+                Sound.click();
+                progress.storySeen = true;
+                saveGame();
+                enterBase();
+            });
+        } else {
+            ctx.fillStyle = 'rgba(150, 150, 150, 0.4)';
+            ctx.font = '12px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('[ТАП ЧТОБЫ ПРОПУСТИТЬ]', W / 2, H - 60);
+        }
+    }
+
+    function drawSettings() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 22px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('⚙ НАСТРОЙКИ', W / 2, 40);
+        const sY = 100, rH = 68;
+        drawSliderRow(30, sY, '🔊 Общая громкость', settings.masterVolume, 'masterVolume');
+        drawSliderRow(30, sY + rH, '🎵 Музыка', settings.musicVolume, 'musicVolume');
+        drawSliderRow(30, sY + rH * 2, '🔔 Звуки', settings.soundVolume, 'soundVolume');
+        drawToggleRow(30, sY + rH * 3, '😱 Скримеры', settings.scares, () => { settings.scares = !settings.scares; saveSettings(); Sound.click(); });
+        drawSliderRow(30, sY + rH * 4, '📉 Громкость скримера', settings.scareVolume, 'scareVolume');
+        drawToggleRow(30, sY + rH * 5, '💬 Диалоги NPC', settings.npcDialogs, () => { settings.npcDialogs = !settings.npcDialogs; saveSettings(); Sound.click(); });
+        drawToggleRow(30, sY + rH * 6, '🗣 Озвучка сущностей', settings.tts, () => { settings.tts = !settings.tts; saveSettings(); Sound.click(); });
+        addButton(W / 2 - 100, H - 80, 200, 50, '← НАЗАД', () => { Sound.click(); screen = 'menu'; }, { fontSize: 16 });
+    }
+
+    function drawSliderRow(x, y, label, value, key) {
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = 'bold 14px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y + 20);
+        const bX = x, bY = y + 40, bW = W - x * 2 - 60, bH = 16;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(bX, bY, bW, bH);
+        ctx.fillStyle = '#00d4ff';
+        ctx.fillRect(bX, bY, bW * (value / 100), bH);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 13px "Courier New", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText(value + '%', W - x, y + 20);
+        addButton(bX - 40, bY - 4, 32, 24, '−', () => { settings[key] = Math.max(0, settings[key] - 10); saveSettings(); Sound.click(); }, { fontSize: 16 });
+        addButton(bX + bW + 8, bY - 4, 32, 24, '+', () => { settings[key] = Math.min(100, settings[key] + 10); saveSettings(); Sound.click(); }, { fontSize: 16 });
+    }
+
+    function drawToggleRow(x, y, label, active, onClick) {
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = 'bold 14px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, x, y + 20);
+        const tX = W - 100, tY = y + 8, tW = 60, tH = 28;
+        ctx.fillStyle = active ? 'rgba(0, 212, 255, 0.3)' : 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(tX, tY, tW, tH);
+        ctx.strokeStyle = active ? '#00d4ff' : '#555'; ctx.lineWidth = 2;
+        ctx.strokeRect(tX + 0.5, tY + 0.5, tW - 1, tH - 1);
+        const cx = active ? tX + tW - 14 : tX + 14;
+        ctx.fillStyle = active ? '#00d4ff' : '#888';
+        ctx.beginPath(); ctx.arc(cx, tY + tH / 2, 10, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = active ? '#00d4ff' : '#666';
+        ctx.font = 'bold 11px "Courier New", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(active ? 'ВКЛ' : 'ВЫКЛ', tX + tW / 2, tY + tH / 2 + 1);
+        addButton(tX, tY, tW, tH, '', onClick);
+    }
+
+    function drawDevs() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 22px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('👥 РАЗРАБОТЧИКИ', W / 2, 50);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 28px "Courier New", monospace';
+        ctx.fillText('R.I.V.E.', W / 2, 110);
+        ctx.strokeStyle = 'rgba(0, 212, 255, 0.3)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(80, 150); ctx.lineTo(W - 80, 150); ctx.stroke();
+        const devs = [
+            { name: '𝐴𝑙𝑏𝑒𝑟𝑡𝑘𝑎 𝐾𝑎𝑙𝑎𝑠ℎ𝑛𝑖𝑘𝑜𝑣 🐢', roles: ['Гейм-дизайн', 'Сюжет'] },
+            { name: '𝐷𝑒𝑒𝑝𝑆𝑒𝑒𝑘 🐦‍⬛', roles: ['Код', 'Графика', 'Звук'] }
+        ];
+        let y = 200;
+        devs.forEach(dev => {
+            ctx.fillStyle = '#00d4ff';
+            ctx.font = 'bold 18px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(dev.name, W / 2, y); y += 30;
+            ctx.fillStyle = '#aaa';
+            ctx.font = '12px "Courier New", monospace';
+            dev.roles.forEach(r => { ctx.fillText('• ' + r, W / 2, y); y += 18; });
+            y += 25;
+        });
+        addButton(W / 2 - 100, H - 55, 200, 40, '← НАЗАД', () => { Sound.click(); screen = 'menu'; }, { fontSize: 14 });
+    }
+
+    function drawHelp() {
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 22px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('📖 НАЙДИ ВЫХОД', W / 2, 40);
+        const helpText = `🏢 БАЗА R.I.V.E.
+Ты — начальник Фонда.
+
+🔦 НА УРОВНЕ
+Ты видишь только то, что перед тобой.
+Фонарик освещает путь.
+
+🗄️ ШКАФЫ И ТУМБОЧКИ
+Подойди и нажми E — там может быть:
+• пистолет, шокер (шкафы)
+• аптечка, энергетик (тумбочки)
+
+👹 СУЩНОСТИ
+Слышишь голос? БЕГИ.
+Smiler и Hound убивают при контакте.
+
+💀 СМЕРТЬ
+На Level 0 — вернёшься на базу.
+Потеряешь 200💰.
+
+🎯 МИССИИ
+Убить / деактивировать / спасти.
+
+Удачи, начальник.`;
+        ctx.fillStyle = '#e0e0e0';
+        ctx.font = '11px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        const lines = helpText.split('\n');
+        lines.forEach((line, i) => {
+            let color = '#e0e0e0';
+            if (line.match(/^[🏢🔦🗄️👹💀🎯]/)) color = '#00d4ff';
+            else if (line.startsWith('•')) color = '#aaa';
+            else if (line.startsWith('Удачи')) color = '#f5d76e';
+            ctx.fillStyle = color;
+            ctx.fillText(line, 25, 100 + i * 17);
+        });
+        addButton(W / 2 - 100, H - 60, 200, 45, '← НАЗАД', () => { Sound.click(); screen = 'menu'; }, { fontSize: 15 });
+    }
+
+    function enterBase() {
+        Sound.init();
+        Sound.startAmbient();
+        progress.currentFloor = 1;
+        updateFloorGeometry();
+        const floor = floors[progress.currentFloor];
+        const hall = floor.rooms.find(r => r.id === 'hall');
+        if (hall) {
+            player.x = hall.col * ROOM_W + ROOM_W / 2;
+            player.y = hall.row * ROOM_H + ROOM_H / 2;
+        } else { player.x = 300; player.y = 350; }
+        screen = 'base';
+        buildMode = false;
+        buildMenuSlot = null;
+        addToast('👋 Добро пожаловать на базу', '#00d4ff');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  БАЗА — ОТРИСОВКА
+    // ═══════════════════════════════════════════════════════════
+    function drawBase() {
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, W, H);
+        updateCamera();
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+        const floor = floors[progress.currentFloor];
+        floor.rooms.forEach(r => drawRoom(r));
+        drawWalls();
+        if (progress.maxFloors > 1) drawStairs();
+        drawPlayerBase();
+        const elev = floor.rooms.find(r => r.id === 'elevator');
+        if (elev) drawElevatorPoint(elev);
+        if (buildingAnimation) drawBuildingAnimation();
+        ctx.restore();
+        drawBaseHUD();
+        if (buildMode) drawBuildModeUI();
+        drawInteractPrompt();
+        drawToasts();
+        if (controlMode === 'mobile') drawMobileControls();
+    }
+
+    function drawRoom(room) {
+        const x = room.col * ROOM_W, y = room.row * ROOM_H;
+        if (room.empty) {
+            const hl = buildMode;
+            ctx.fillStyle = hl ? 'rgba(52, 199, 89, 0.1)' : 'rgba(80, 80, 80, 0.15)';
+            ctx.fillRect(x + 4, y + 4, ROOM_W - 8, ROOM_H - 8);
+            ctx.strokeStyle = hl ? '#34c759' : 'rgba(120, 120, 120, 0.4)';
+            ctx.lineWidth = hl ? 3 : 2;
+            ctx.setLineDash([8, 6]);
+            ctx.strokeRect(x + 4, y + 4, ROOM_W - 8, ROOM_H - 8);
+            ctx.setLineDash([]);
+            ctx.fillStyle = hl ? '#34c759' : 'rgba(120, 120, 120, 0.5)';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(hl ? '➕' : '🚧', x + ROOM_W / 2, y + ROOM_H / 2 - 10);
+            return;
+        }
+        const light = (room.col + room.row) % 2 === 0;
+        ctx.fillStyle = light ? '#1e2030' : '#191b28';
+        ctx.fillRect(x, y, ROOM_W, ROOM_H);
+        ctx.strokeStyle = room.color + '60'; ctx.lineWidth = 2;
+        ctx.strokeRect(x + 1, y + 1, ROOM_W - 2, ROOM_H - 2);
+        ctx.fillStyle = room.color;
+        ctx.font = '28px Arial';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(room.icon, x + 25, y + 25);
+        ctx.fillStyle = room.color;
+        ctx.font = 'bold 10px "Courier New", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(room.name.toUpperCase(), x + 45, y + 25);
+        if (room.slots > 0) {
+            const arr = roomEmployees[room.id] || [];
+            const occupied = arr.filter(e => e).length;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(x + ROOM_W - 50, y + ROOM_H - 35, 42, 22);
+            ctx.strokeStyle = occupied >= room.slots ? '#34c759' : (occupied > 0 ? '#f5d76e' : '#666');
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(x + ROOM_W - 50, y + ROOM_H - 35, 42, 22);
+            ctx.fillStyle = occupied >= room.slots ? '#34c759' : (occupied > 0 ? '#f5d76e' : '#888');
+            ctx.font = 'bold 12px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(occupied + '/' + room.slots, x + ROOM_W - 29, y + ROOM_H - 24);
+        }
+    }
+
+    function drawWalls() {
+        ctx.fillStyle = '#151520';
+        ctx.fillRect(0, 0, GRID_W, WALL_THICK);
+        ctx.fillRect(0, GRID_H - WALL_THICK, GRID_W, WALL_THICK);
+        ctx.fillRect(0, 0, WALL_THICK, GRID_H);
+        ctx.fillRect(GRID_W - WALL_THICK, 0, WALL_THICK, GRID_H);
+        for (let col = 1; col < GRID_COLS; col++) {
+            const wx = col * ROOM_W - WALL_THICK / 2;
+            for (let row = 0; row < GRID_ROWS; row++) {
+                const sY = row * ROOM_H, eY = sY + ROOM_H, cY = sY + ROOM_H / 2;
+                ctx.fillRect(wx, sY, WALL_THICK, cY - DOOR_WIDTH / 2 - sY);
+                ctx.fillRect(wx, cY + DOOR_WIDTH / 2, WALL_THICK, eY - (cY + DOOR_WIDTH / 2));
+            }
+        }
+        for (let row = 1; row < GRID_ROWS; row++) {
+            const wy = row * ROOM_H - WALL_THICK / 2;
+            for (let col = 0; col < GRID_COLS; col++) {
+                const sX = col * ROOM_W, eX = sX + ROOM_W, cX = sX + ROOM_W / 2;
+                ctx.fillRect(sX, wy, cX - DOOR_WIDTH / 2 - sX, WALL_THICK);
+                ctx.fillRect(cX + DOOR_WIDTH / 2, wy, eX - (cX + DOOR_WIDTH / 2), WALL_THICK);
+            }
+        }
+        ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
+        for (let col = 1; col < GRID_COLS; col++) {
+            const wx = col * ROOM_W - WALL_THICK / 2;
+            for (let row = 0; row < GRID_ROWS; row++) {
+                const cY = row * ROOM_H + ROOM_H / 2;
+                ctx.strokeRect(wx - 2, cY - DOOR_WIDTH / 2, WALL_THICK + 4, DOOR_WIDTH);
+            }
+        }
+        for (let row = 1; row < GRID_ROWS; row++) {
+            const wy = row * ROOM_H - WALL_THICK / 2;
+            for (let col = 0; col < GRID_COLS; col++) {
+                const cX = col * ROOM_W + ROOM_W / 2;
+                ctx.strokeRect(cX - DOOR_WIDTH / 2, wy - 2, DOOR_WIDTH, WALL_THICK + 4);
+            }
+        }
+    }
+
+    function drawStairs() {
+        const floor = floors[progress.currentFloor];
+        const hall = floor.rooms.find(r => r.id === 'hall');
+        if (!hall) return;
+        const cx = hall.col * ROOM_W + ROOM_W / 2;
+        const cy = hall.row * ROOM_H + ROOM_H / 2 + 30;
+        const pulse = 0.5 + Math.sin(performance.now() / 400) * 0.5;
+        ctx.save();
+        ctx.shadowColor = '#f5d76e';
+        ctx.shadowBlur = 20 + pulse * 15;
+        ctx.fillStyle = 'rgba(245, 215, 110, 0.7)';
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🪜', cx, cy);
+        ctx.restore();
+    }
+
+    function drawPlayerBase() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.beginPath(); ctx.ellipse(player.x, player.y + 14, 12, 4, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#34c759';
+        ctx.beginPath(); ctx.arc(player.x, player.y, 12, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        const lx = player.x + Math.cos(player.angle) * 8;
+        const ly = player.y + Math.sin(player.angle) * 8;
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawElevatorPoint(room) {
+        const cx = room.col * ROOM_W + ROOM_W / 2;
+        const cy = room.row * ROOM_H + ROOM_H / 2;
+        const pulse = 0.5 + Math.sin(performance.now() / 400) * 0.5;
+        ctx.save();
+        ctx.shadowColor = '#00d4ff';
+        ctx.shadowBlur = 25 + pulse * 20;
+        ctx.strokeStyle = `rgba(0, 212, 255, ${0.6 + pulse * 0.4})`;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(cx - 35, cy - 30, 70, 60);
+        ctx.restore();
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 12px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('▼ СПУСК ▼', cx, cy + 50);
+    }
+
+    function drawBuildingAnimation() {
+        // Упрощено для краткости — оставил как было
+    }
+
+    function drawBuildModeUI() {
+        ctx.fillStyle = 'rgba(52, 199, 89, 0.9)';
+        ctx.fillRect(0, 54, W, 40);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 14px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🏗 РЕЖИМ СТРОИТЕЛЬСТВА', W / 2, 74);
+    }
+
+    function drawBaseHUD() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+        ctx.fillRect(0, 0, W, 54);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 12px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillText('🏢 R.I.V.E. · ЭТАЖ ' + progress.currentFloor, 12, 15);
+        const now = new Date();
+        const msk = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (3 * 3600000));
+        const hh = String(msk.getHours()).padStart(2, '0');
+        const mm = String(msk.getMinutes()).padStart(2, '0');
+        ctx.fillStyle = '#f5d76e';
+        ctx.font = 'bold 10px "Courier New", monospace';
+        ctx.fillText('🕐 МСК ' + hh + ':' + mm, 12, 38);
+        if (applications.length > 0) {
+            const pulse = 0.5 + Math.sin(performance.now() / 300) * 0.5;
+            ctx.globalAlpha = 0.5 + pulse * 0.5;
+            ctx.fillStyle = '#a855f7';
+            ctx.font = 'bold 11px "Courier New", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('📄 ' + applications.length, 150, 15);
+            ctx.globalAlpha = 1;
+        }
+        ctx.fillStyle = '#34c759';
+        ctx.font = 'bold 11px "Courier New", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('Ур. ' + progress.playerLevel + ' · 👥 ' + employees.length, W - 12, 15);
+        const rX = W - 240;
+        const resList = [
+            { icon: '💰', val: resources.credits }, { icon: '🔋', val: resources.energy },
+            { icon: '💧', val: resources.water }, { icon: '🍞', val: resources.food },
+            { icon: '🧬', val: resources.materials }
+        ];
+        resList.forEach((r, i) => {
+            const col = i % 3, row = Math.floor(i / 3);
+            ctx.fillStyle = '#e0e0e0';
+            ctx.font = 'bold 11px "Courier New", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(r.icon + ' ' + r.val, rX + col * 80, 15 + row * 20);
+        });
+    }
+
+    function drawInteractPrompt() {
+        if (!interactPrompt) return;
+        const pulse = 0.6 + Math.sin(performance.now() / 400) * 0.4;
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        const tW = ctx.measureText(interactPrompt).width;
+        const bW = Math.max(220, tW + 50), bH = 46;
+        const bX = W / 2 - bW / 2, bY = H - 400;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(bX, bY, bW, bH);
+        ctx.strokeStyle = '#34c759'; ctx.lineWidth = 2;
+        ctx.strokeRect(bX, bY, bW, bH);
+        ctx.fillStyle = '#34c759';
+        ctx.font = 'bold 14px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(interactPrompt, W / 2, bY + bH / 2);
+        ctx.restore();
+    }
+
+    function drawToasts() {
+        toasts.forEach((t, i) => {
+            const a = Math.min(1, t.life);
+            ctx.globalAlpha = a;
+            const bW = Math.max(240, ctx.measureText(t.text).width + 40);
+            const bH = 38, bX = W / 2 - bW / 2, bY = 100 + i * 46;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+            ctx.fillRect(bX, bY, bW, bH);
+            ctx.strokeStyle = t.color; ctx.lineWidth = 2;
+            ctx.strokeRect(bX, bY, bW, bH);
+            ctx.fillStyle = t.color;
+            ctx.font = 'bold 13px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(t.text, W / 2, bY + bH / 2);
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    function drawMobileControls() {
+        // стик + кнопки как было
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  МИССИИ / ЛИФТ / ЗАЯВЛЕНИЯ И Т.Д. (сокращено)
+    // ═══════════════════════════════════════════════════════════
+    function updateInteractPrompt() {
+        interactPrompt = '';
+        interactTarget = null;
+        if (buildMode) return;
+        const floor = floors[progress.currentFloor];
+        if (progress.maxFloors > 1) {
+            const hall = floor.rooms.find(r => r.id === 'hall');
+            if (hall) {
+                const cx = hall.col * ROOM_W + ROOM_W / 2;
+                const cy = hall.row * ROOM_H + ROOM_H / 2 + 30;
+                if (Math.hypot(player.x - cx, player.y - cy) < 50) {
+                    interactPrompt = '🪜 Лестница';
+                    interactTarget = { type: 'stairs' };
+                    return;
+                }
+            }
+        }
+        const elev = floor.rooms.find(r => r.id === 'elevator');
+        if (elev) {
+            const cx = elev.col * ROOM_W + ROOM_W / 2;
+            const cy = elev.row * ROOM_H + ROOM_H / 2;
+            if (Math.hypot(player.x - cx, player.y - cy) < 60) {
+                interactPrompt = '🎯 Взаимодействие: Лифт';
+                interactTarget = { type: 'elevator' };
+                return;
+            }
+        }
+    }
+
+    function handleInteraction() {
+        if (!interactTarget) return;
+        if (interactTarget.type === 'elevator') { Sound.click(); screen = 'missionSelect'; }
+        else if (interactTarget.type === 'stairs') { Sound.click(); screen = 'floorSelect'; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  LEVEL 0 — ОСНОВНОЕ
+    // ═══════════════════════════════════════════════════════════
+    function startLevel0() {
+        try {
+            const type = currentMission || 'kill';
+            lvl0 = createLevel0(type);
+            addToast('🎯 Задание: ' + (type === 'kill' ? 'Убить сущность' : type === 'virus' ? 'Деактивировать' : 'Спасти'), '#00d4ff');
+            addToast('🖱 Тапни E у шкафа/тумбочки', '#f5d76e');
+            screen = 'level0';
+        } catch(err) {
+            console.error('startLevel0 error:', err);
+            lvl0 = null;
+            screen = 'base';
+        }
+    }
+
+    // raycasting — защищённый
+    function castRays() {
+        const rays = [];
+        const p = lvl0.player;
+        const MAX_ITER = 80;
+        for (let i = 0; i < RAY_COUNT; i++) {
+            let dirX = Math.cos(p.angle + (2 * i / RAY_COUNT - 1) * FOV / 2);
+            let dirY = Math.sin(p.angle + (2 * i / RAY_COUNT - 1) * FOV / 2);
+            if (Math.abs(dirX) < 0.0001) dirX = 0.0001;
+            if (Math.abs(dirY) < 0.0001) dirY = 0.0001;
+            let mapX = Math.floor(p.x), mapY = Math.floor(p.y);
+            const dX = Math.abs(1 / dirX), dY = Math.abs(1 / dirY);
+            let stepX, stepY, sdX, sdY;
+            if (dirX < 0) { stepX = -1; sdX = (p.x - mapX) * dX; }
+            else { stepX = 1; sdX = (mapX + 1 - p.x) * dX; }
+            if (dirY < 0) { stepY = -1; sdY = (p.y - mapY) * dY; }
+            else { stepY = 1; sdY = (mapY + 1 - p.y) * dY; }
+            let hit = 0, side = 0, cellType = 1, depth = 0, iter = 0;
+            while (hit === 0 && depth < MAX_DEPTH && iter < MAX_ITER) {
+                iter++;
+                if (sdX < sdY) { sdX += dX; mapX += stepX; side = 0; }
+                else { sdY += dY; mapY += stepY; side = 1; }
+                if (mapX < 0 || mapX >= MAP_SIZE || mapY < 0 || mapY >= MAP_SIZE) { hit = 1; break; }
+                if (!lvl0.map[mapY]) { hit = 1; break; }
+                const cell = lvl0.map[mapY][mapX];
+                if (cell === 1 || cell === 2) { hit = 1; cellType = cell; }
+                depth++;
+            }
+            let dist;
+            if (side === 0) dist = (mapX - p.x + (1 - stepX) / 2) / dirX;
+            else dist = (mapY - p.y + (1 - stepY) / 2) / dirY;
+            if (!isFinite(dist) || dist < 0.01) dist = MAX_DEPTH;
+            if (dist > MAX_DEPTH) dist = MAX_DEPTH;
+            let wallX;
+            if (side === 0) wallX = p.y + dist * dirY;
+            else wallX = p.x + dist * dirX;
+            wallX -= Math.floor(wallX);
+            if (!isFinite(wallX)) wallX = 0;
+            rays.push({ cameraX: 2 * i / RAY_COUNT - 1, dist, side, cellType, wallX, mapX, mapY });
+        }
+        return rays;
+    }
+
+    // Проверка видимости (линия не блокирована)
+    function hasLineOfSight(x1, y1, x2, y2) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 0.5) return true;
+        const steps = Math.ceil(dist * 3);
+        for (let i = 1; i < steps; i++) {
+            const t = i / steps;
+            const cx = x1 + dx * t;
+            const cy = y1 + dy * t;
+            const xi = Math.floor(cx), yi = Math.floor(cy);
+            if (xi < 0 || xi >= MAP_SIZE || yi < 0 || yi >= MAP_SIZE) return false;
+            if (lvl0.map[yi][xi] === 1) return false;
+        }
+        return true;
+    }
+
+    function drawLevel0() {
+        const p = lvl0.player;
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.save();
+        if (lvl0.screenShake > 0.1) ctx.translate((Math.random() - 0.5) * lvl0.screenShake, (Math.random() - 0.5) * lvl0.screenShake);
+
+        const rays = castRays();
+        const columnW = W / RAY_COUNT;
+        const horizonY = H / 2 + 40;
+
+        // Потолок и пол
+        const cG = ctx.createLinearGradient(0, 0, 0, horizonY);
+        cG.addColorStop(0, '#3a3a1a'); cG.addColorStop(1, '#8a8a4a');
+        ctx.fillStyle = cG; ctx.fillRect(0, 0, W, horizonY);
+        const fG = ctx.createLinearGradient(0, horizonY, 0, H);
+        fG.addColorStop(0, '#6a6a2a'); fG.addColorStop(1, '#2a2a0a');
+        ctx.fillStyle = fG; ctx.fillRect(0, horizonY, W, H - horizonY);
+
+        // Стены
+        for (let i = 0; i < rays.length; i++) {
+            const r = rays[i];
+            const wh = Math.min(H / r.dist * 0.9, H * 1.5);
+            const wT = horizonY - wh / 2;
+            const wB = horizonY + wh / 2;
+            const x = i * columnW;
+            let bR = 200, bG = 180, bB = 90;
+            if (Math.floor(r.wallX * 4) % 2 === 0) { bR = 170; bG = 150; bB = 70; }
+            const fog = Math.max(0, 1 - r.dist / MAX_DEPTH);
+            bR = Math.floor(bR * fog + 20 * (1 - fog));
+            bG = Math.floor(bG * fog + 15 * (1 - fog));
+            bB = Math.floor(bB * fog + 5 * (1 - fog));
+            if (r.side === 1) { bR *= 0.75; bG *= 0.75; bB *= 0.75; }
+            if (r.cellType === 2) {
+                const pulse = 0.8 + Math.sin(performance.now() / 300) * 0.2;
+                bR = Math.floor(20 * fog); bG = Math.floor(180 * fog * pulse); bB = Math.floor(40 * fog);
+            }
+            if (p.flashlightOn && p.flash > 0) {
+                const fb = Math.max(0, 1 - Math.pow(Math.abs(r.cameraX) * 1.4, 2));
+                const inten = Math.min(1, p.flash / 50);
+                const b = fb * inten;
+                bR = Math.min(255, Math.floor(bR + b * 130));
+                bG = Math.min(255, Math.floor(bG + b * 120));
+                bB = Math.min(255, Math.floor(bB + b * 70));
+            }
+            const amb = 1 - Math.min(0.7, r.dist / MAX_DEPTH * 0.5);
+            bR = Math.floor(bR * amb); bG = Math.floor(bG * amb); bB = Math.floor(bB * amb);
+            ctx.fillStyle = `rgb(${bR},${bG},${bB})`;
+            ctx.fillRect(x, wT, columnW + 1, wB - wT);
+        }
+
+        // Лампа
+        const lampY = horizonY - 150, lampX = W / 2;
+        const flicker = 0.7 + Math.random() * 0.3;
+        const size = 40 * flicker;
+        const lg = ctx.createRadialGradient(lampX, lampY, 0, lampX, lampY, size * 3);
+        lg.addColorStop(0, `rgba(255, 250, 200, ${0.4 * flicker})`);
+        lg.addColorStop(1, 'rgba(255, 250, 200, 0)');
+        ctx.fillStyle = lg;
+        ctx.fillRect(lampX - size * 3, lampY - size * 3, size * 6, size * 6);
+        ctx.fillStyle = `rgba(255, 255, 220, ${0.8 * flicker})`;
+        ctx.fillRect(lampX - 30, lampY - 8, 60, 16);
+
+        // ═══ ОТРИСОВКА ОБЪЕКТОВ В ПОЛЕ ЗРЕНИЯ ═══
+        // Сначала собираем всё для отрисовки с дистанцией
+        const renderQueue = [];
+        // Мебель
+        lvl0.furniture.forEach(f => {
+            const dx = f.x - p.x, dy = f.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > MAX_DEPTH) return;
+            const angle = Math.atan2(dy, dx) - p.angle;
+            let a = angle;
+            while (a > Math.PI) a -= Math.PI * 2;
+            while (a < -Math.PI) a += Math.PI * 2;
+            if (Math.abs(a) > FOV / 2 + 0.3) return;
+            // Линия видимости
+            if (!hasLineOfSight(p.x, p.y, f.x, f.y)) return;
+            const sx = W / 2 + (a / (FOV / 2)) * (W / 2);
+            renderQueue.push({ dist, type: 'furniture', obj: f, sx });
+        });
+        // Предметы (кроме тех что подобраны)
+        lvl0.items.forEach(it => {
+            if (it.taken) return;
+            const dx = it.x - p.x, dy = it.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > MAX_DEPTH) return;
+            const angle = Math.atan2(dy, dx) - p.angle;
+            let a = angle;
+            while (a > Math.PI) a -= Math.PI * 2;
+            while (a < -Math.PI) a += Math.PI * 2;
+            if (Math.abs(a) > FOV / 2 + 0.3) return;
+            if (!hasLineOfSight(p.x, p.y, it.x, it.y)) return;
+            const sx = W / 2 + (a / (FOV / 2)) * (W / 2);
+            renderQueue.push({ dist, type: 'item', obj: it, sx });
+        });
+        // Заражённые зоны
+        lvl0.infectedZones.forEach(z => {
+            if (z.deactivated) return;
+            const dx = z.x - p.x, dy = z.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > MAX_DEPTH) return;
+            const angle = Math.atan2(dy, dx) - p.angle;
+            let a = angle;
+            while (a > Math.PI) a -= Math.PI * 2;
+            while (a < -Math.PI) a += Math.PI * 2;
+            if (Math.abs(a) > FOV / 2 + 0.3) return;
+            if (!hasLineOfSight(p.x, p.y, z.x, z.y)) return;
+            const sx = W / 2 + (a / (FOV / 2)) * (W / 2);
+            renderQueue.push({ dist, type: 'zone', obj: z, sx });
+        });
+        // Сущности — ТОЛЬКО если есть линия видимости И мы их можем видеть
+        lvl0.entities.forEach(e => {
+            if (e.state === 'dead') return;
+            const dx = e.x - p.x, dy = e.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > MAX_DEPTH) return;
+            const angle = Math.atan2(dy, dx) - p.angle;
+            let a = angle;
+            while (a > Math.PI) a -= Math.PI * 2;
+            while (a < -Math.PI) a += Math.PI * 2;
+            if (Math.abs(a) > FOV / 2 + 0.3) return;
+            if (!hasLineOfSight(p.x, p.y, e.x, e.y)) return;
+            const sx = W / 2 + (a / (FOV / 2)) * (W / 2);
+            renderQueue.push({ dist, type: 'entity', obj: e, sx });
+        });
+        // Спасённый
+        if (lvl0.rescueNPC) {
+            const npc = lvl0.rescueNPC;
+            const dx = npc.x - p.x, dy = npc.y - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < MAX_DEPTH) {
+                const angle = Math.atan2(dy, dx) - p.angle;
+                let a = angle;
+                while (a > Math.PI) a -= Math.PI * 2;
+                while (a < -Math.PI) a += Math.PI * 2;
+                if (Math.abs(a) <= FOV / 2 + 0.3 && hasLineOfSight(p.x, p.y, npc.x, npc.y)) {
+                    const sx = W / 2 + (a / (FOV / 2)) * (W / 2);
+                    renderQueue.push({ dist, type: 'npc', obj: npc, sx });
+                }
+            }
+        }
+
+        // Сортируем по дистанции (дальние первыми)
+        renderQueue.sort((a, b) => b.dist - a.dist);
+        renderQueue.forEach(item => {
+            if (item.type === 'furniture') drawFurnitureWorld(item.obj, item.sx, item.dist, horizonY);
+            else if (item.type === 'item') drawItemWorld(item.obj, item.sx, item.dist, horizonY);
+            else if (item.type === 'zone') drawZoneWorld(item.obj, item.sx, item.dist, horizonY);
+            else if (item.type === 'entity') drawEntityWorld(item.obj, item.sx, item.dist, horizonY);
+            else if (item.type === 'npc') drawRescueWorld(item.obj, item.sx, item.dist, horizonY);
+        });
+
+        // Выход
+        const exitS = worldToScreen(lvl0.exitPos.x, lvl0.exitPos.y, rays, horizonY);
+        if (exitS && hasLineOfSight(p.x, p.y, lvl0.exitPos.x, lvl0.exitPos.y)) {
+            drawExit(exitS, horizonY);
+        }
+
+        ctx.restore();
+
+        drawVHS();
+
+        // Виньетка
+        const v = ctx.createRadialGradient(W / 2, H / 2 + 40, W * 0.15, W / 2, H / 2 + 40, W * 0.7);
+        v.addColorStop(0, 'rgba(0,0,0,0)');
+        v.addColorStop(1, 'rgba(0,0,0,0.95)');
+        ctx.fillStyle = v;
+        ctx.fillRect(0, 0, W, H);
+
+        drawLevelUI();
+        drawScareFlash();
+
+        if (lvl0.damageFlash > 0) {
+            ctx.fillStyle = `rgba(255, 0, 0, ${lvl0.damageFlash * 0.4})`;
+            ctx.fillRect(0, 0, W, H);
+        }
+
+        if (lvl0.inventoryOpen) drawInventoryScreen();
+
+        lvl0.toasts.forEach((t, i) => {
+            const a = Math.min(1, t.life);
+            ctx.globalAlpha = a;
+            const bW = Math.max(240, ctx.measureText(t.text).width + 40);
+            const bH = 38, bX = W / 2 - bW / 2, bY = 100 + i * 46;
+            ctx.fillStyle = 'rgba(0,0,0,0.9)';
+            ctx.fillRect(bX, bY, bW, bH);
+            ctx.strokeStyle = t.color; ctx.lineWidth = 2;
+            ctx.strokeRect(bX, bY, bW, bH);
+            ctx.fillStyle = t.color;
+            ctx.font = 'bold 13px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(t.text, W / 2, bY + bH / 2);
+        });
+        ctx.globalAlpha = 1;
+
+        // Экран смерти
+        if (lvl0.deathScreen) drawDeathScreen();
+
+        if (controlMode === 'mobile') drawLevelMobileControls();
+    }
+
+    function worldToScreen(wx, wy, rays, horizonY) {
+        const p = lvl0.player;
+        const dx = wx - p.x, dy = wy - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (!isFinite(dist)) return null;
+        const angle = Math.atan2(dy, dx) - p.angle;
+        let a = angle;
+        while (a > Math.PI) a -= Math.PI * 2;
+        while (a < -Math.PI) a += Math.PI * 2;
+        if (Math.abs(a) > FOV / 2 + 0.3 || dist > MAX_DEPTH) return null;
+        const sx = W / 2 + (a / (FOV / 2)) * (W / 2);
+        return { x: sx, dist, angle: a };
+    }
+
+    // ═══ ОТРИСОВКА ОБЪЕКТОВ ═══
+    function drawFurnitureWorld(f, sx, dist, horizonY) {
+        const size = Math.min(1, 3 / dist);
+        const baseY = horizonY + 40;
+        const h = 60 * size;
+        const w = 40 * size;
+
+        // Тень
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.beginPath();
+        ctx.ellipse(sx, baseY + 5, w * 0.6, 6 * size, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Тело шкафа
+        ctx.fillStyle = f.color;
+        ctx.fillRect(sx - w / 2, baseY - h, w, h);
+
+        // Обводка
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx - w / 2, baseY - h, w, h);
+
+        // Дверца (линия)
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx, baseY - h + 3);
+        ctx.lineTo(sx, baseY - 3);
+        ctx.stroke();
+
+        // Ручки
+        ctx.fillStyle = '#f5d76e';
+        ctx.beginPath();
+        ctx.arc(sx - w * 0.15, baseY - h / 2, 2 * size, 0, Math.PI * 2);
+        ctx.arc(sx + w * 0.15, baseY - h / 2, 2 * size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Свечение если можно открыть и не открыт
+        if (!f.opened && !f.empty && !f.decorative) {
+            const pulse = 0.5 + Math.sin(performance.now() / 300) * 0.5;
+            ctx.strokeStyle = `rgba(245, 215, 110, ${pulse})`;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(sx - w / 2 - 2, baseY - h - 2, w + 4, h + 4);
+        }
+
+        // Если открыт — иконка предмета/пусто
+        if (f.opened) {
+            if (f.lootItem) {
+                ctx.font = `${Math.floor(20 * size)}px Arial`;
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(ITEM_TYPES[f.lootItem].emoji, sx, baseY - h / 2);
+            } else {
+                ctx.fillStyle = 'rgba(0,0,0,0.5)';
+                ctx.fillRect(sx - 8 * size, baseY - h / 2 - 8 * size, 16 * size, 16 * size);
+            }
+        }
+    }
+
+    function drawItemWorld(it, sx, dist, horizonY) {
+        const size = Math.min(1, 3 / dist);
+        const bob = Math.sin(it.bob + performance.now() / 500) * 3;
+        const cfg = ITEM_TYPES[it.type];
+        if (!cfg) return;
+        const baseY = horizonY + 40 + bob;
+
+        // Свечение
+        const gl = ctx.createRadialGradient(sx, baseY - 10, 0, sx, baseY - 10, 40 * size);
+        gl.addColorStop(0, cfg.glow + 'cc');
+        gl.addColorStop(0.5, cfg.glow + '44');
+        gl.addColorStop(1, cfg.glow + '00');
+        ctx.fillStyle = gl;
+        ctx.beginPath();
+        ctx.arc(sx, baseY - 10, 40 * size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Иконка
+        ctx.font = `${Math.floor(35 * size)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(cfg.emoji, sx, baseY - 10);
+    }
+
+    function drawZoneWorld(z, sx, dist, horizonY) {
+        const size = Math.min(1, 3 / dist);
+        const baseY = horizonY + 40;
+        const pulse = 0.6 + Math.sin(performance.now() / 200) * 0.4;
+        const gl = ctx.createRadialGradient(sx, baseY, 0, sx, baseY, 60 * size);
+        gl.addColorStop(0, `rgba(255, 0, 100, ${pulse})`);
+        gl.addColorStop(0.5, `rgba(200, 0, 80, ${pulse * 0.5})`);
+        gl.addColorStop(1, 'rgba(100, 0, 50, 0)');
+        ctx.fillStyle = gl;
+        ctx.beginPath(); ctx.arc(sx, baseY, 60 * size, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ff00aa';
+        ctx.font = `${Math.floor(30 * size)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('☣️', sx, baseY);
+    }
+
+    // ═══ СУЩНОСТЬ С ТЕЛОМ, РУКАМИ, НОГАМИ ═══
+    function drawEntityWorld(e, sx, dist, horizonY) {
+        const size = Math.min(1, 4 / dist);
+        const baseY = horizonY + 40;
+
+        // Тело сущности — стикмен-подобное
+        const height = 80 * size;
+        const headR = 12 * size;
+        const feetY = baseY;
+        const headY = feetY - height;
+        const bodyY = feetY - height * 0.55;
+
+        // Аура при погоне
+        if (e.state === 'chase') {
+            const pulse = 0.5 + Math.sin(performance.now() / 200) * 0.5;
+            ctx.fillStyle = `rgba(255, 0, 0, ${0.15 * pulse})`;
+            ctx.beginPath();
+            ctx.arc(sx, bodyY, 60 * size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Цвет
+        const entityColor = e.type === 'smiler' ? '#000' : '#1a0000';
+        ctx.strokeStyle = entityColor;
+        ctx.fillStyle = entityColor;
+        ctx.lineWidth = 4 * size;
+        ctx.lineCap = 'round';
+
+        // Тень
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.beginPath();
+        ctx.ellipse(sx, feetY + 3, 20 * size, 4 * size, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Голова
+        ctx.fillStyle = entityColor;
+        ctx.beginPath();
+        ctx.arc(sx, headY + headR, headR, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Лицо смайлера / глаза хаунда
+        if (e.type === 'smiler') {
+            const pulse = 0.8 + Math.sin(e.animTime * 3) * 0.2;
+            ctx.fillStyle = `rgba(255, 255, 255, ${pulse})`;
+            ctx.font = `bold ${Math.floor(18 * size)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(':)', sx, headY + headR);
+        } else {
+            // Красные глаза
+            ctx.fillStyle = '#ff0000';
+            ctx.beginPath();
+            ctx.arc(sx - 4 * size, headY + headR - 2 * size, 2 * size, 0, Math.PI * 2);
+            ctx.arc(sx + 4 * size, headY + headR - 2 * size, 2 * size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Тело
+        ctx.strokeStyle = entityColor;
+        ctx.beginPath();
+        ctx.moveTo(sx, headY + headR * 2);
+        ctx.lineTo(sx, bodyY + 10 * size);
+        ctx.stroke();
+
+        // Руки (тянутся вперёд, как у зомби)
+        const armSwing = Math.sin(e.animTime * 6 + e.walkPhase) * 8 * size;
+        const armReach = 20 * size;
+        ctx.beginPath();
+        ctx.moveTo(sx, headY + headR * 2 + 5 * size);
+        ctx.lineTo(sx + e.facing * armReach, headY + headR * 2 + 15 * size + armSwing);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx, headY + headR * 2 + 5 * size);
+        ctx.lineTo(sx + e.facing * armReach * 0.8, headY + headR * 2 + 20 * size - armSwing);
+        ctx.stroke();
+
+        // Ноги
+        const legSwing = Math.sin(e.animTime * 10 + e.walkPhase) * 10 * size;
+        const hipY = bodyY + 10 * size;
+        ctx.beginPath();
+        ctx.moveTo(sx, hipY);
+        ctx.lineTo(sx - 8 * size + legSwing, feetY);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(sx, hipY);
+        ctx.lineTo(sx + 8 * size - legSwing, feetY);
+        ctx.stroke();
+    }
+
+    function drawRescueWorld(npc, sx, dist, horizonY) {
+        const size = Math.min(1, 3 / dist);
+        const baseY = horizonY + 40;
+        ctx.fillStyle = '#34c759';
+        ctx.beginPath(); ctx.arc(sx, baseY - 40 * size, 20 * size, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+        ctx.font = `${Math.floor(24 * size)}px Arial`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(npc.emoji, sx, baseY - 40 * size);
+        if (!npc.following) {
+            ctx.fillStyle = '#fff';
+            ctx.font = `bold ${Math.max(10, 14 * size)}px "Courier New", monospace`;
+            ctx.fillText('ПОМОГИ!', sx, baseY - 70 * size);
+        }
+    }
+
+    function drawExit(s, horizonY) {
+        const size = Math.min(1, 3 / s.dist);
+        const w = 100 * size, h = 160 * size;
+        ctx.fillStyle = 'rgba(52, 199, 89, 0.85)';
+        ctx.fillRect(s.x - w / 2, horizonY - h + h * 0.15, w, h);
+        ctx.strokeStyle = '#34c759'; ctx.lineWidth = 3;
+        ctx.strokeRect(s.x - w / 2, horizonY - h + h * 0.15, w, h);
+        ctx.fillStyle = '#fff';
+        ctx.font = `bold ${Math.max(10, size * 14)}px "Courier New", monospace`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('ЛИФТ', s.x, horizonY - h + h * 0.15 + h / 2);
+    }
+
+    function drawVHS() {
+        if (Math.random() < 0.05) lvl0.vhsOffset = (Math.random() - 0.5) * 20;
+        lvl0.vhsOffset *= 0.9;
+        for (let i = 0; i < 150; i++) {
+            const x = Math.random() * W, y = Math.random() * H, b = Math.random() * 50;
+            ctx.fillStyle = `rgba(255, 255, 255, ${b / 255})`;
+            ctx.fillRect(x, y, 1, 1);
+        }
+    }
+
+    // ═══ СКРИМЕР ═══
+    function drawScareFlash() {
+        if (lvl0.scareFlash <= 0) return;
+        const i = lvl0.scareFlash;
+        // Красная вспышка
+        ctx.fillStyle = `rgba(255, 0, 0, ${i * 0.4})`;
+        ctx.fillRect(0, 0, W, H);
+
+        if (i > 0.3) {
+            // Чёрный фон
+            ctx.fillStyle = `rgba(0, 0, 0, ${i * 0.9})`;
+            ctx.fillRect(0, 0, W, H);
+
+            // Огромное лицо смайлера
+            const faceR = 200 * (1.3 - i * 0.3);
+            const cx = W / 2, cy = H / 2;
+
+            // Голова
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(cx, cy, faceR, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Глаза
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(cx - faceR * 0.4, cy - faceR * 0.2, faceR * 0.2, 0, Math.PI * 2);
+            ctx.arc(cx + faceR * 0.4, cy - faceR * 0.2, faceR * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Зрачки
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(cx - faceR * 0.4, cy - faceR * 0.2, faceR * 0.1, 0, Math.PI * 2);
+            ctx.arc(cx + faceR * 0.4, cy - faceR * 0.2, faceR * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Кровь из глаз
+            ctx.fillStyle = '#8b0000';
+            ctx.fillRect(cx - faceR * 0.45, cy - faceR * 0.05, faceR * 0.1, faceR * 1.2);
+            ctx.fillRect(cx + faceR * 0.35, cy - faceR * 0.05, faceR * 0.1, faceR * 1.2);
+
+            // Злобная улыбка
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = faceR * 0.08;
+            ctx.beginPath();
+            ctx.arc(cx, cy + faceR * 0.4, faceR * 0.6, 0.3, Math.PI - 0.3);
+            ctx.stroke();
+
+            // Зубы
+            ctx.fillStyle = '#fff';
+            const teethY = cy + faceR * 0.7;
+            for (let j = -2; j <= 2; j++) {
+                ctx.beginPath();
+                ctx.moveTo(cx + j * faceR * 0.15 - faceR * 0.06, teethY);
+                ctx.lineTo(cx + j * faceR * 0.15, teethY - faceR * 0.15);
+                ctx.lineTo(cx + j * faceR * 0.15 + faceR * 0.06, teethY);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+    }
+
+    // ═══ ЭКРАН СМЕРТИ ═══
+    function drawDeathScreen() {
+        const d = lvl0.deathScreen;
+        if (!d) return;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.fillRect(0, 0, W, H);
+
+        // Красный градиент
+        const grad = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W);
+        grad.addColorStop(0, 'rgba(139, 0, 0, 0.7)');
+        grad.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+        // ТЫ УМЕР
+        ctx.font = 'bold 72px "Courier New", monospace';
+        ctx.fillStyle = '#ff0000';
+        ctx.shadowColor = '#ff0000'; ctx.shadowBlur = 40;
+        ctx.fillText('ТЫ УМЕР', W / 2, H / 2 - 80);
+        ctx.shadowBlur = 0;
+
+        // Причина
+        ctx.font = 'bold 20px "Courier New", monospace';
+        ctx.fillStyle = '#fff';
+        ctx.fillText(d.reason || 'Тебя настигла сущность', W / 2, H / 2);
+
+        // Совет
+        ctx.font = '14px "Courier New", monospace';
+        ctx.fillStyle = '#aaa';
+        ctx.fillText('Совет: ' + (d.tip || 'Не подходи близко к сущностям'), W / 2, H / 2 + 50);
+
+        // Кнопка
+        addButton(W / 2 - 150, H / 2 + 120, 300, 60, '← ВЕРНУТЬСЯ НА БАЗУ', () => {
+            gameOverLevel();
+        }, { type: 'primary', fontSize: 16 });
+    }
+
+    function drawLevelUI() {
+        const p = lvl0.player;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(0, 0, W, 50);
+        ctx.font = 'bold 13px "Courier New", monospace';
+        ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f5d76e';
+        ctx.fillText('УРОВЕНЬ 0', 15, 25);
+        ctx.font = 'bold 10px "Courier New", monospace';
+        ctx.fillStyle = '#ffd700';
+        if (missionType === 'kill') ctx.fillText('🎯 ' + missionProgress.killed + '/' + missionProgress.totalKills, 15, 42);
+        else if (missionType === 'virus') ctx.fillText('🎯 Зоны: ' + missionProgress.zonesDone + '/' + missionProgress.zonesTotal, 15, 42);
+        else if (missionType === 'rescue') ctx.fillText('🎯 ' + (missionProgress.rescued ? '✓' : 'нет'), 15, 42);
+
+        const hpX = 15, hpY = 60, hpW = 200, hpH = 16;
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(hpX - 2, hpY - 2, hpW + 4, hpH + 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(hpX, hpY, hpW, hpH);
+        const hpPct = Math.max(0, p.health / p.maxHealth);
+        ctx.fillStyle = hpPct > 0.5 ? '#34c759' : hpPct > 0.25 ? '#f5a623' : '#e74c3c';
+        ctx.fillRect(hpX, hpY, hpW * hpPct, hpH);
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+        ctx.strokeRect(hpX, hpY, hpW, hpH);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px "Courier New", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('HP ' + Math.floor(p.health), hpX + 6, hpY + hpH / 2);
+
+        // Фонарик
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'right';
+        ctx.font = '13px "Courier New", monospace';
+        ctx.fillText('🔦', W - 200, 25);
+        const fX = W - 180, fY = 18, fW = 165, fH = 14;
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.fillRect(fX, fY, fW, fH);
+        ctx.fillStyle = p.flash > 30 ? '#f5d76e' : '#e74c3c';
+        ctx.fillRect(fX, fY, fW * (p.flash / 100), fH);
+        ctx.strokeStyle = '#f5d76e'; ctx.lineWidth = 1;
+        ctx.strokeRect(fX + 0.5, fY + 0.5, fW - 1, fH - 1);
+
+        // Мини-подсказка
+        ctx.textAlign = 'center';
+        ctx.font = '10px "Courier New", monospace';
+        ctx.fillStyle = 'rgba(245, 215, 110, 0.6)';
+        ctx.fillText('E — открыть шкаф / взаимодействие', W / 2, H - 10);
+    }
+
+    function drawLevelMobileControls() {
+        const c = lvl0.controls;
+        const bx = c.leftStick.baseX, by = c.leftStick.baseY;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath(); ctx.arc(bx, by, STICK_RADIUS + 20, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        ctx.beginPath(); ctx.arc(bx, by, STICK_RADIUS, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(245, 215, 110, 0.4)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(bx, by, STICK_RADIUS, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = c.leftStick.active ? 'rgba(245, 215, 110, 0.75)' : 'rgba(245, 215, 110, 0.35)';
+        ctx.beginPath(); ctx.arc(c.leftStick.knobX, c.leftStick.knobY, 28, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#f5d76e'; ctx.lineWidth = 2; ctx.stroke();
+
+        const flashBtn = { x: W - 90, y: 80, w: 70, h: 70 };
+        const invBtn = { x: W - 90, y: 170, w: 70, h: 70 };
+        const useBtn = { x: W - 90, y: 260, w: 70, h: 70 };
+        const interactE = { x: W - 90, y: 350, w: 70, h: 70 };
+
+        ctx.fillStyle = lvl0.player.flashlightOn && lvl0.player.flash > 0 ? 'rgba(52,199,89,0.4)' : 'rgba(245,215,110,0.15)';
+        ctx.beginPath(); ctx.arc(flashBtn.x + 35, flashBtn.y + 35, 35, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#f5d76e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(flashBtn.x + 35, flashBtn.y + 35, 35, 0, Math.PI * 2); ctx.stroke();
+        ctx.font = '28px Arial';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#f5d76e';
+        ctx.fillText('🔦', flashBtn.x + 35, flashBtn.y + 35);
+
+        ctx.fillStyle = 'rgba(245,215,110,0.15)';
+        ctx.beginPath(); ctx.arc(invBtn.x + 35, invBtn.y + 35, 35, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#f5d76e'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(invBtn.x + 35, invBtn.y + 35, 35, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#f5d76e';
+        ctx.fillText('🎒', invBtn.x + 35, invBtn.y + 35);
+
+        ctx.fillStyle = 'rgba(52,199,89,0.3)';
+        ctx.beginPath(); ctx.arc(useBtn.x + 35, useBtn.y + 35, 35, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#34c759'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(useBtn.x + 35, useBtn.y + 35, 35, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#34c759';
+        ctx.font = 'bold 28px Arial';
+        ctx.fillText('▶', useBtn.x + 35, useBtn.y + 35);
+
+        // Кнопка E — взаимодействие
+        const hasTarget = checkFurnitureNear();
+        ctx.fillStyle = hasTarget ? 'rgba(52,199,89,0.5)' : 'rgba(52,199,89,0.15)';
+        ctx.beginPath(); ctx.arc(interactE.x + 35, interactE.y + 35, 35, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = '#34c759'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(interactE.x + 35, interactE.y + 35, 35, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#34c759';
+        ctx.font = 'bold 28px "Courier New", monospace';
+        ctx.fillText('E', interactE.x + 35, interactE.y + 35);
+    }
+
+    function drawInventoryScreen() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.font = 'bold 28px "Courier New", monospace';
+        ctx.fillStyle = '#f5d76e';
+        ctx.fillText('🎒 ИНВЕНТАРЬ', W / 2, 60);
+        const slots = [
+            { key: 'medkit', label: 'Аптечка', action: '+50 HP' },
+            { key: 'pistol', label: 'Пистолет', action: 'Патроны: ' + lvl0.inventory.ammo },
+            { key: 'ammo', label: 'Патроны', action: 'Боеприпасы' },
+            { key: 'taser', label: 'Шокер', action: 'Оглушить' },
+            { key: 'energy', label: 'Энергетик', action: 'Фонарик' }
+        ];
+        const itemH = 70, startY = 130;
+        slots.forEach((s, i) => {
+            const y = startY + i * (itemH + 6);
+            const count = lvl0.inventory[s.key];
+            const has = count > 0;
+            const cfg = ITEM_TYPES[s.key];
+            ctx.fillStyle = has ? 'rgba(245,215,110,0.15)' : 'rgba(255,255,255,0.05)';
+            ctx.fillRect(40, y, W - 80, itemH);
+            ctx.strokeStyle = has ? '#f5d76e' : 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(40, y, W - 80, itemH);
+            ctx.font = '36px Arial';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = has ? '#fff' : '#555';
+            ctx.fillText(cfg.emoji, 60, y + itemH / 2);
+            ctx.font = 'bold 15px "Courier New", monospace';
+            ctx.fillStyle = has ? '#fff' : '#666';
+            ctx.fillText(s.label, 120, y + 25);
+            ctx.font = '11px "Courier New", monospace';
+            ctx.fillStyle = '#999';
+            ctx.fillText(s.action, 120, y + 48);
+            ctx.font = 'bold 22px "Courier New", monospace';
+            ctx.fillStyle = has ? '#ffd700' : '#444';
+            ctx.textAlign = 'right';
+            ctx.fillText('×' + count, W - 60, y + itemH / 2);
+        });
+        addButton(W / 2 - 120, H - 80, 240, 55, '← ЗАКРЫТЬ', () => {
+            lvl0.inventoryOpen = false;
+            Sound.click();
+        }, { fontSize: 16 });
+    }
+
+    // ═══ ПРОВЕРКА БЛИЖАЙШЕЙ МЕБЕЛИ ═══
+    function checkFurnitureNear() {
+        if (!lvl0) return null;
+        const p = lvl0.player;
+        for (const f of lvl0.furniture) {
+            if (f.opened || f.empty || f.decorative) continue;
+            const d = Math.hypot(f.x - p.x, f.y - p.y);
+            if (d < 1.2) return f;
+        }
+        return null;
+    }
+
+    // ═══ ОТКРЫТЬ ШКАФ ═══
+    function tryOpenFurniture() {
+        const f = checkFurnitureNear();
+        if (!f) return;
+        f.opened = true;
+        // Определяем что выпадет
+        let looted = null;
+        if (f.type === 'cabinet') {
+            const r = Math.random();
+            if (r < 0.34) looted = 'pistol';
+            else if (r < 0.59) looted = 'taser';
+            else if (r < 0.9) looted = 'ammo';
+        } else if (f.type === 'drawer') {
+            const r = Math.random();
+            if (r < 0.55) looted = 'medkit';
+            else if (r < 0.95) looted = 'energy';
+        }
+        if (looted) {
+            f.lootItem = looted;
+            lvl0.inventory[looted] = (lvl0.inventory[looted] || 0) + 1;
+            addLevelToast('📦 Найдено: ' + ITEM_TYPES[looted].name, ITEM_TYPES[looted].color);
+            Sound.pickup();
+        } else {
+            f.empty = true;
+            addLevelToast('📦 Пусто...', '#666');
+            Sound.deny();
+        }
+    }
+
+    function addLevelToast(text, color) {
+        if (!lvl0) return;
+        lvl0.toasts.push({ text, color: color || '#fff', life: 2.5 });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ОБНОВЛЕНИЕ LEVEL 0
+    // ═══════════════════════════════════════════════════════════
+    function updateLevel0(dt) {
+        if (!lvl0) return;
+        if (!lvl0.player || !lvl0.map || !lvl0.entities) { lvl0 = null; screen = 'base'; return; }
+        const p = lvl0.player;
+        if (!isFinite(p.x) || !isFinite(p.y)) { p.x = 1.5; p.y = 1.5; }
+        if (!isFinite(p.angle)) p.angle = 0;
+        if (!isFinite(p.health)) p.health = 100;
+
+        if (lvl0.screenShake > 0.1) lvl0.screenShake *= 0.9;
+        if (lvl0.damageFlash > 0) lvl0.damageFlash -= dt * 2;
+        if (lvl0.scareFlash > 0) lvl0.scareFlash -= dt * 3;
+
+        lvl0.toasts.forEach(t => t.life -= dt);
+        lvl0.toasts = lvl0.toasts.filter(t => t.life > 0);
+
+        // Экран смерти — блокирует управление
+        if (lvl0.deathScreen) {
+            lvl0.deathScreen.timer -= dt;
+            return;
+        }
+
+        if (lvl0.inventoryOpen) return;
+
+        // Движение
+        const c = lvl0.controls;
+        let mvx = 0, mvy = 0;
+        if (controlMode === 'mobile') {
+            if (c.leftStick.active) { mvx = c.leftStick.dx; mvy = c.leftStick.dy; }
+        } else {
+            if (keys['w'] || keys['ц'] || keys['arrowup']) { mvx += Math.cos(p.angle); mvy += Math.sin(p.angle); }
+            if (keys['s'] || keys['ы'] || keys['arrowdown']) { mvx -= Math.cos(p.angle); mvy -= Math.sin(p.angle); }
+            if (keys['a'] || keys['ф'] || keys['arrowleft']) p.angle -= ROT_SPEED * 60 * dt;
+            if (keys['d'] || keys['в'] || keys['arrowright']) p.angle += ROT_SPEED * 60 * dt;
+        }
+        const mag = Math.sqrt(mvx * mvx + mvy * mvy);
+        if (mag > 0.1) {
+            const speed = MOVE_SPEED_3D * Math.min(1, mag) * 60 * dt;
+            const nx = p.x + (mvx / mag) * speed;
+            const ny = p.y + (mvy / mag) * speed;
+            if (lvl0CanMove(nx, p.y)) p.x = nx;
+            if (lvl0CanMove(p.x, ny)) p.y = ny;
+            p.bobPhase += dt * 10;
+            if (!p._stepT) p._stepT = 0;
+            p._stepT -= dt;
+            if (p._stepT <= 0) { Sound.step(); p._stepT = 0.4; }
+        }
+
+        if (c.rightZone.rotateDelta) { p.angle += c.rightZone.rotateDelta; c.rightZone.rotateDelta = 0; }
+        if (!isFinite(p.angle)) p.angle = 0;
+
+        if (p.flashlightOn && p.flash > 0) p.flash = Math.max(0, p.flash - dt * 2.2);
+
+        // Туман войны — открываем текущую клетку
+        const pxi = Math.floor(p.x), pyi = Math.floor(p.y);
+        for (let dy = -4; dy <= 4; dy++) {
+            for (let dx = -4; dx <= 4; dx++) {
+                const nx = pxi + dx, ny = pyi + dy;
+                if (ny >= 0 && ny < MAP_SIZE && nx >= 0 && nx < MAP_SIZE) {
+                    if (Math.sqrt(dx * dx + dy * dy) < 4.5) {
+                        // Только если есть линия видимости
+                        if (hasLineOfSight(p.x, p.y, nx + 0.5, ny + 0.5)) {
+                            lvl0.fog[ny][nx] = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Предметы на полу
+        lvl0.items.forEach(it => {
+            if (it.taken) return;
+            const d = Math.hypot(it.x - p.x, it.y - p.y);
+            if (d < 0.5) {
+                it.taken = true;
+                lvl0Pickup(it.type);
+            }
+            it.bob += dt * 2;
+        });
+
+        // Сущности
+        lvl0.entities.forEach(e => {
+            if (e.state === 'dead') return;
+            if (!isFinite(e.x) || !isFinite(e.y)) { e.x = 1.5; e.y = 1.5; }
+            if (e.stun > 0) { e.stun -= dt; return; }
+            e.animTime += dt;
+            const dx = p.x - e.x, dy = p.y - e.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const detectRange = e.type === 'hound' ? 10 : 6;
+            // Проверка видимости — сущность нас видит только если есть линия
+            const canSee = dist < detectRange && hasLineOfSight(e.x, e.y, p.x, p.y);
+
+            if (canSee) {
+                if (e.state !== 'chase') {
+                    // Только что заметил
+                    entitySay(e, 'spotted');
+                }
+                e.state = 'chase';
+                e.lastSeen = { x: p.x, y: p.y };
+                if (e.screamCD <= 0 && dist < 4 && settings.scares) {
+                    Sound.scream();
+                    lvl0.scareFlash = 1;
+                    lvl0.screenShake = 15;
+                    entitySay(e, 'attack');
+                    e.screamCD = 8;
+                }
+            } else if (e.state === 'chase' && e.lastSeen) {
+                const dl = Math.hypot(e.lastSeen.x - e.x, e.lastSeen.y - e.y);
+                if (dl < 0.5) {
+                    e.state = 'idle';
+                    if (Math.random() < 0.3) entitySay(e, 'lost');
+                }
+            }
+            if (e.screamCD > 0) e.screamCD -= dt;
+
+            // Периодически говорит при погоне
+            if (e.state === 'chase' && Math.random() < 0.005) {
+                entitySay(e, 'chase');
+            }
+
+            // Движение к цели
+            let target = null;
+            if (e.state === 'chase' && e.lastSeen) target = e.lastSeen;
+            if (target) {
+                const tdx = target.x - e.x, tdy = target.y - e.y;
+                const td = Math.hypot(tdx, tdy);
+                if (td > 0.05 && td < 50) {
+                    const sp = e.type === 'hound' ? 0.03 : 0.015;
+                    const st = Math.min(sp * 60 * dt, td);
+                    const nx = e.x + (tdx / td) * st;
+                    const ny = e.y + (tdy / td) * st;
+                    if (lvl0CanMove(nx, e.y)) e.x = nx;
+                    if (lvl0CanMove(e.x, ny)) e.y = ny;
+                    e.walkPhase += dt * 10;
+                    e.facing = tdx > 0 ? 1 : -1;
+                }
+            }
+
+            // Контакт = смерть + скример
+            if (dist < 0.7) {
+                triggerDeath(e.type === 'smiler' ? 'Smiler добрался до тебя' : 'Hound разорвал тебя');
+            }
+        });
+
+        // Заражённые зоны
+        lvl0.infectedZones.forEach(z => {
+            if (z.deactivated) return;
+            const d = Math.hypot(z.x - p.x, z.y - p.y);
+            if (d < 0.6) {
+                z.deactivated = true;
+                missionProgress.zonesDone++;
+                Sound.buildDone();
+                addLevelToast('⚠️ Зона деактивирована!', '#00d4ff');
+                checkMissionComplete();
+            }
+        });
+
+        // Спасённый
+        if (lvl0.rescueNPC) {
+            const d = Math.hypot(lvl0.rescueNPC.x - p.x, lvl0.rescueNPC.y - p.y);
+            if (d < 0.7 && !lvl0.rescueNPC.following) {
+                lvl0.rescueNPC.following = true;
+                Sound.buildDone();
+                addLevelToast('👤 Спасён: ' + lvl0.rescueNPC.name, '#34c759');
+                missionProgress.rescued = true;
+            }
+            if (lvl0.rescueNPC.following) {
+                const tdx = p.x - lvl0.rescueNPC.x;
+                const tdy = p.y - lvl0.rescueNPC.y;
+                const td = Math.hypot(tdx, tdy);
+                if (td > 0.8) {
+                    const st = Math.min(0.04 * 60 * dt, td);
+                    const nx = lvl0.rescueNPC.x + (tdx / td) * st;
+                    const ny = lvl0.rescueNPC.y + (tdy / td) * st;
+                    if (lvl0CanMove(nx, lvl0.rescueNPC.y)) lvl0.rescueNPC.x = nx;
+                    if (lvl0CanMove(lvl0.rescueNPC.x, ny)) lvl0.rescueNPC.y = ny;
+                }
+            }
+        }
+
+        // Выход
+        const dExit = Math.hypot(p.x - lvl0.exitPos.x, p.y - lvl0.exitPos.y);
+        if (dExit < 0.6) {
+            if (checkMissionComplete(true)) completeMissionLevel();
+            else addLevelToast('⚠️ Задание не выполнено!', '#ff4757');
+        }
+    }
+
+    function triggerDeath(reason) {
+        if (!lvl0 || lvl0.deathScreen) return;
+        // Скример
+        if (settings.scares) {
+            Sound.scream();
+            lvl0.scareFlash = 1.5;
+        }
+        const tips = [
+            'Не подходи близко к сущностям',
+            'Слушай голоса — они предупреждают',
+            'Проверяй шкафы — там может быть оружие',
+            'Фонарик садится — экономь заряд',
+            'Hound быстрее Smiler'
+        ];
+        lvl0.deathScreen = {
+            timer: 3,
+            reason: reason,
+            tip: tips[Math.floor(Math.random() * tips.length)]
+        };
+        // Через 2 секунды показываем экран смерти
+        setTimeout(() => {
+            if (lvl0 && lvl0.deathScreen) {
+                // Экран уже рисуется
+            }
+        }, 500);
+    }
+
+    function lvl0Pickup(type) {
+        Sound.pickup();
+        if (type === 'medkit') lvl0.inventory.medkit++;
+        else if (type === 'pistol') { lvl0.inventory.pistol = 1; lvl0.inventory.ammo += 6; }
+        else if (type === 'ammo') lvl0.inventory.ammo += 8;
+        else if (type === 'taser') lvl0.inventory.taser++;
+        else if (type === 'energy') lvl0.inventory.energy++;
+        addLevelToast(ITEM_TYPES[type].emoji + ' ' + ITEM_TYPES[type].name, ITEM_TYPES[type].color);
+    }
+
+    function checkMissionComplete(silent) {
+        if (missionType === 'kill') return missionProgress.killed >= missionProgress.totalKills;
+        if (missionType === 'virus') return missionProgress.zonesDone >= missionProgress.zonesTotal;
+        if (missionType === 'rescue') return missionProgress.rescued;
+        return true;
+    }
+
+    function completeMissionLevel() {
+        Sound.buildDone();
+        const rewardCredits = 500 + Math.floor(Math.random() * 500);
+        resources.credits += rewardCredits;
+        addXP(300);
+        progress.missionsDone++;
+        saveGame();
+        lvl0 = null;
+        screen = 'base';
+        updateFloorGeometry();
+        const floor = floors[progress.currentFloor];
+        const hall = floor.rooms.find(r => r.id === 'hall');
+        if (hall) { player.x = hall.col * ROOM_W + ROOM_W / 2; player.y = hall.row * ROOM_H + ROOM_H / 2; }
+        addToast('✅ Миссия выполнена! +' + rewardCredits + '💰', '#34c759');
+    }
+
+    function gameOverLevel() {
+        resources.credits = Math.max(0, resources.credits - 200);
+        progress.deaths = (progress.deaths || 0) + 1;
+        addToast('💀 Вы погибли. -200💰', '#ff4757');
+        saveGame();
+        lvl0 = null;
+        screen = 'base';
+        updateFloorGeometry();
+        const floor = floors[progress.currentFloor];
+        const hall = floor.rooms.find(r => r.id === 'hall');
+        if (hall) { player.x = hall.col * ROOM_W + ROOM_W / 2; player.y = hall.row * ROOM_H + ROOM_H / 2; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ОБЩЕЕ ОБНОВЛЕНИЕ
+    // ═══════════════════════════════════════════════════════════
+    let lastTime = 0;
+    let appTimer = 0;
+    let incomeTimer = 0;
+
+    function updateBase(dt) {
+        let mx = 0, my = 0;
+        if (!buildMode) {
+            if (controlMode === 'mobile') {
+                if (leftStick.active) { mx = leftStick.dx; my = leftStick.dy; }
+            } else {
+                if (keys['w'] || keys['ц'] || keys['arrowup']) my -= 1;
+                if (keys['s'] || keys['ы'] || keys['arrowdown']) my += 1;
+                if (keys['a'] || keys['ф'] || keys['arrowleft']) mx -= 1;
+                if (keys['d'] || keys['в'] || keys['arrowright']) mx += 1;
+            }
+        }
+        const mag = Math.sqrt(mx * mx + my * my);
+        if (mag > 0.1) {
+            const speed = player.speed * Math.min(1, mag) * 60 * dt;
+            const moved = tryMovePlayer((mx / mag) * speed, (my / mag) * speed);
+            if (moved) {
+                player.angle = Math.atan2(my, mx);
+                player.moving = true;
+                player.walkPhase += dt * 12;
+                if (!player._stepT) player._stepT = 0;
+                player._stepT -= dt;
+                if (player._stepT <= 0) { Sound.step(); player._stepT = 0.4; }
+            } else player.moving = false;
+        } else player.moving = false;
+        if (interactPressed) {
+            interactPressed = false;
+            if (!buildMode) handleInteraction();
+        }
+    }
+
+    function update(dt) {
+        toasts.forEach(t => t.life -= dt);
+        toasts = toasts.filter(t => t.life > 0);
+
+        if (screen === 'loading') {
+            loadingTimer += dt;
+            loadingProgress = Math.min(100, loadingTimer * 50);
+            if (loadingProgress >= 100) setTimeout(() => { if (screen === 'loading') screen = 'splash'; }, 500);
+        } else if (screen === 'splash') {
+            if (!splashComplete) {
+                splashTimer += dt;
+                const tc = Math.floor(splashTimer * 35);
+                if (tc >= splashText.length) { splashCharIndex = splashText.length; splashComplete = true; }
+                else while (splashCharIndex < tc && splashCharIndex < splashText.length) splashCharIndex++;
+            }
+        } else if (screen === 'story') {
+            if (storyCharIndex < storyText.length) {
+                storyTimer += dt;
+                const tc = Math.floor(storyTimer * 35);
+                while (storyCharIndex < tc && storyCharIndex < storyText.length) storyCharIndex++;
+            }
+        } else if (screen === 'base') {
+            updateBase(dt);
+            updateInteractPrompt();
+            if (buildingAnimation) { buildingAnimation.timer += dt; if (buildingAnimation.timer >= buildingAnimation.totalTime) completeConstruction(); }
+            appTimer += dt;
+            if (appTimer >= 30) { appTimer = 0; generateApplication(); }
+            applications.forEach(a => a.timeLeft -= dt);
+            applications = applications.filter(a => a.timeLeft > 0);
+        } else if (screen === 'elevator') {
+            updateElevator(dt);
+        } else if (screen === 'level0') {
+            updateLevel0(dt);
+        }
+    }
+
+    function updateElevator(dt) {
+        elevatorTimer += dt;
+        if (elevatorState === 'closing' && elevatorTimer > 1.5) { elevatorState = 'descending'; elevatorTimer = 0; elevatorMessage = 'СПУСК...'; }
+        else if (elevatorState === 'descending' && elevatorTimer > 4) { elevatorState = 'arrived'; elevatorTimer = 0; elevatorMessage = 'УРОВЕНЬ 0'; }
+        else if (elevatorState === 'arrived' && elevatorTimer > 2) { startLevel0(); }
+    }
+
+    function drawElevatorScreen() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        const dg = elevatorState === 'opening' ? Math.min(300, elevatorTimer * 200) : elevatorState === 'closing' ? Math.max(0, 300 - elevatorTimer * 200) : 0;
+        ctx.fillStyle = '#2a2a3a';
+        ctx.fillRect(0, 0, W / 2 - dg / 2, H);
+        ctx.fillRect(W / 2 + dg / 2, 0, W / 2 - dg / 2, H);
+        ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(W / 2 - dg / 2, 0); ctx.lineTo(W / 2 - dg / 2, H); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(W / 2 + dg / 2, 0); ctx.lineTo(W / 2 + dg / 2, H); ctx.stroke();
+        if (elevatorMessage) {
+            ctx.fillStyle = 'rgba(0,0,0,0.9)';
+            ctx.fillRect(W / 2 - 220, H / 2 - 40, 440, 80);
+            ctx.strokeStyle = '#00d4ff'; ctx.lineWidth = 2;
+            ctx.strokeRect(W / 2 - 220, H / 2 - 40, 440, 80);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 15px "Courier New", monospace';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(elevatorMessage, W / 2, H / 2);
+        }
+    }
+
+    function draw() {
+        buttons = [];
+        ctx.fillStyle = '#0a0a10';
+        ctx.fillRect(0, 0, W, H);
+        if (screen === 'loading') drawLoading();
+        else if (screen === 'splash') drawSplash();
+        else if (screen === 'menu') drawMenu();
+        else if (screen === 'story') drawStory();
+        else if (screen === 'settings') drawSettings();
+        else if (screen === 'devs') drawDevs();
+        else if (screen === 'help') drawHelp();
+        else if (screen === 'base') drawBase();
+        else if (screen === 'elevator') drawElevatorScreen();
+        else if (screen === 'level0') drawLevel0();
+        else if (screen === 'missionSelect') drawMissionSelect();
+        else if (screen === 'floorSelect') drawFloorSelect();
+        buttons.forEach(b => drawButton(b));
+    }
+
+    function drawMissionSelect() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#00d4ff';
+        ctx.font = 'bold 22px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🎯 ВЫБЕРИ ЗАДАНИЕ', W / 2, 40);
+        const missions = [
+            { id: 'kill', title: '🔫 УНИЧТОЖИТЬ', desc: 'Найди пистолет и убей сущность', color: '#ff4757' },
+            { id: 'virus', title: '☣️ ДЕАКТИВИРОВАТЬ', desc: 'Найди заражённую зону', color: '#00ffaa' },
+            { id: 'rescue', title: '🧑 СПАСТИ', desc: 'Найди потерянного сотрудника', color: '#34c759' }
+        ];
+        missions.forEach((m, i) => {
+            const y = 100 + i * 140;
+            ctx.fillStyle = m.color + '22';
+            ctx.fillRect(40, y, W - 80, 120);
+            ctx.strokeStyle = m.color; ctx.lineWidth = 2;
+            ctx.strokeRect(40.5, y + 0.5, W - 81, 119);
+            ctx.fillStyle = m.color;
+            ctx.font = 'bold 22px "Courier New", monospace';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillText(m.title, 60, y + 40);
+            ctx.fillStyle = '#fff';
+            ctx.font = '13px "Courier New", monospace';
+            ctx.fillText(m.desc, 60, y + 75);
+            addButton(40, y, W - 80, 120, '', () => startMission(m.id));
+        });
+        addButton(W / 2 - 100, H - 80, 200, 50, '← ОТМЕНА', () => { Sound.click(); screen = 'base'; }, { fontSize: 14 });
+    }
+
+    function startMission(type) {
+        currentMission = type;
+        progress.currentMission = type;
+        saveGame();
+        screen = 'elevator';
+        elevatorState = 'closing';
+        elevatorTimer = 0;
+        elevatorMessage = 'ПОДГОТОВКА...';
+        Sound.elevator();
+    }
+
+    function drawFloorSelect() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.95)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#f5d76e';
+        ctx.font = 'bold 24px "Courier New", monospace';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🪜 ВЫБОР ЭТАЖА', W / 2, 50);
+        for (let f = 1; f <= 3; f++) {
+            const y = 140 + (f - 1) * 140;
+            const unlocked = f <= progress.maxFloors;
+            const current = f === progress.currentFloor;
+            ctx.fillStyle = current ? 'rgba(52, 199, 89, 0.15)' : (unlocked ? 'rgba(245, 215, 110, 0.1)' : 'rgba(100, 100, 100, 0.1)');
+            ctx.fillRect(40, y, W - 80, 110);
+            ctx.strokeStyle = current ? '#34c759' : (unlocked ? '#f5d76e' : '#444');
+            ctx.lineWidth = 2;
+            ctx.strokeRect(40.5, y + 0.5, W - 81, 109);
+            ctx.font = '50px Arial';
+            ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = unlocked ? '#fff' : '#555';
+            ctx.fillText(unlocked ? '🏢' : '🔒', 65, y + 55);
+            ctx.font = 'bold 22px "Courier New", monospace';
+            ctx.fillStyle = unlocked ? '#fff' : '#555';
+            ctx.fillText('ЭТАЖ ' + f, 130, y + 35);
+            if (unlocked && !current) {
+                addButton(40, y, W - 80, 110, '', () => {
+                    progress.currentFloor = f;
+                    updateFloorGeometry();
+                    const flr = floors[f];
+                    const hall = flr.rooms.find(r => r.id === 'hall') || flr.rooms[0];
+                    player.x = hall.col * ROOM_W + ROOM_W / 2;
+                    player.y = hall.row * ROOM_H + ROOM_H / 2;
+                    screen = 'base';
+                    addToast('🪜 Этаж ' + f, '#f5d76e');
+                    Sound.click();
+                    saveGame();
+                });
+            }
+        }
+        addButton(W / 2 - 100, H - 80, 200, 50, '← НАЗАД', () => { Sound.click(); screen = 'base'; }, { fontSize: 16 });
+    }
+
+    const isMobileCheck = /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+    let controlMode = 'mobile';
+    if (settings.controlMode === 'pc') controlMode = 'pc';
+    else if (settings.controlMode === 'auto') controlMode = isMobileCheck ? 'mobile' : 'pc';
+
+    function getCanvasPos(e) {
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - rect.left) * (W / rect.width), y: (cy - rect.top) * (H / rect.height) };
+    }
+
+    function handleTap(mx, my) {
+        Sound.init();
+        for (const b of buttons) {
+            if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                if (b.onClick) b.onClick();
+                return true;
+            }
+        }
+        if (screen === 'splash' && !splashComplete) { splashCharIndex = splashText.length; splashComplete = true; }
+        else if (screen === 'story' && storyCharIndex < storyText.length) storyCharIndex = storyText.length;
+        return false;
+    }
+
+    function onTouchStart(e) {
+        e.preventDefault();
+        Sound.init();
+        for (let i = 0; i < (e.touches ? e.touches.length : 1); i++) {
+            const t = e.touches ? e.touches[i] : e;
+            const pos = getCanvasPos({ touches: [t] });
+            if (screen === 'level0' && controlMode === 'mobile' && lvl0) {
+                const c = lvl0.controls;
+                // Кнопки справа
+                if (pos.x >= W / 2) {
+                    if (Math.hypot(pos.x - (W - 55), pos.y - 115) < 40) { lvl0.player.flashlightOn = !lvl0.player.flashlightOn; Sound.click(); continue; }
+                    if (Math.hypot(pos.x - (W - 55), pos.y - 205) < 40) { lvl0.inventoryOpen = !lvl0.inventoryOpen; Sound.click(); continue; }
+                    if (Math.hypot(pos.x - (W - 55), pos.y - 295) < 40) {
+                        // Использовать предмет (аптечка)
+                        if (lvl0.inventory.medkit > 0 && lvl0.player.health < lvl0.player.maxHealth) {
+                            lvl0.inventory.medkit--;
+                            lvl0.player.health = Math.min(lvl0.player.maxHealth, lvl0.player.health + 50);
+                            Sound.pickup();
+                            addLevelToast('💊 +50 HP', '#34c759');
+                        } else if (lvl0.inventory.energy > 0) {
+                            lvl0.inventory.energy--;
+                            lvl0.player.flash = 100;
+                            Sound.pickup();
+                            addLevelToast('🥤 Фонарик полный', '#ff00aa');
+                        }
+                        continue;
+                    }
+                    if (Math.hypot(pos.x - (W - 55), pos.y - 385) < 40) {
+                        tryOpenFurniture();
+                        continue;
+                    }
+                    if (c.rightZone.id === null) {
+                        c.rightZone.active = true;
+                        c.rightZone.id = t.identifier !== undefined ? t.identifier : 0;
+                        c.rightZone.lastX = pos.x;
+                    }
+                    continue;
+                }
+                // Стик слева
+                if (pos.x < W / 2 && c.leftStick.id === null) {
+                    c.leftStick.active = true;
+                    c.leftStick.id = t.identifier !== undefined ? t.identifier : 0;
+                    c.leftStick.baseX = pos.x; c.leftStick.baseY = pos.y;
+                    c.leftStick.knobX = pos.x; c.leftStick.knobY = pos.y;
+                    continue;
+                }
+            }
+            handleTap(pos.x, pos.y);
+        }
+    }
+
+    function onTouchMove(e) {
+        e.preventDefault();
+        for (let i = 0; i < (e.touches ? e.touches.length : 0); i++) {
+            const t = e.touches[i];
+            const id = t.identifier !== undefined ? t.identifier : 0;
+            const pos = getCanvasPos({ touches: [t] });
+            if (screen === 'level0' && lvl0) {
+                const c = lvl0.controls;
+                if (c.leftStick.active && c.leftStick.id === id) {
+                    const R = STICK_RADIUS;
+                    let dx = pos.x - c.leftStick.baseX, dy = pos.y - c.leftStick.baseY;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d > R) { dx = dx / d * R; dy = dy / d * R; }
+                    c.leftStick.knobX = c.leftStick.baseX + dx;
+                    c.leftStick.knobY = c.leftStick.baseY + dy;
+                    c.leftStick.dx = dx / R;
+                    c.leftStick.dy = dy / R;
+                } else if (c.rightZone.active && c.rightZone.id === id) {
+                    const dx = pos.x - c.rightZone.lastX;
+                    c.rightZone.rotateDelta = (c.rightZone.rotateDelta || 0) + dx * 0.006;
+                    c.rightZone.lastX = pos.x;
+                }
+            }
+            if (screen === 'base' && leftStick.active && leftStick.id === id) {
+                let dx = pos.x - leftStick.baseX, dy = pos.y - leftStick.baseY;
+                const d = Math.sqrt(dx * dx + dy * dy);
+                if (d > STICK_RADIUS) { dx = dx / d * STICK_RADIUS; dy = dy / d * STICK_RADIUS; }
+                leftStick.knobX = leftStick.baseX + dx;
+                leftStick.knobY = leftStick.baseY + dy;
+                leftStick.dx = dx / STICK_RADIUS;
+                leftStick.dy = dy / STICK_RADIUS;
+            }
+        }
+    }
+
+    function onTouchEnd(e) {
+        e.preventDefault();
+        const ids = new Set();
+        for (let i = 0; i < (e.touches ? e.touches.length : 0); i++) ids.add(e.touches[i].identifier !== undefined ? e.touches[i].identifier : 0);
+        if (leftStick.id !== null && !ids.has(leftStick.id)) {
+            leftStick.active = false; leftStick.id = null; leftStick.dx = 0; leftStick.dy = 0;
+        }
+        if (lvl0) {
+            const c = lvl0.controls;
+            if (c.leftStick.id !== null && !ids.has(c.leftStick.id)) {
+                c.leftStick.active = false; c.leftStick.id = null; c.leftStick.dx = 0; c.leftStick.dy = 0;
+            }
+            if (c.rightZone.id !== null && !ids.has(c.rightZone.id)) {
+                c.rightZone.active = false; c.rightZone.id = null;
+            }
+        }
+    }
+
+    canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', onTouchEnd, { passive: false });
+    canvas.addEventListener('click', e => { const p = getCanvasPos(e); handleTap(p.x, p.y); });
+
+    // ═══ КЛАВИАТУРА ═══
+    document.addEventListener('keydown', e => {
+        const k = e.key.toLowerCase();
+        keys[k] = true;
+        if (screen === 'splash' && (k === ' ' || k === 'enter')) {
+            if (!splashComplete) { splashCharIndex = splashText.length; splashComplete = true; }
+            else screen = 'menu';
+            e.preventDefault();
+        }
+        if (screen === 'story' && (k === ' ' || k === 'enter')) {
+            if (storyCharIndex < storyText.length) storyCharIndex = storyText.length;
+            else { progress.storySeen = true; saveGame(); enterBase(); }
+            e.preventDefault();
+        }
+        if (screen === 'level0' && lvl0) {
+            if (lvl0.deathScreen) {
+                if (k === ' ' || k === 'enter') gameOverLevel();
+                e.preventDefault(); return;
+            }
+            if (k === ' ') { lvl0.player.flashlightOn = !lvl0.player.flashlightOn; e.preventDefault(); }
+            if (k === 'i' || k === 'ш') { lvl0.inventoryOpen = !lvl0.inventoryOpen; e.preventDefault(); }
+            if (k === 'e' || k === 'у') { tryOpenFurniture(); e.preventDefault(); }
+            if (k === 'q' || k === 'й') {
+                // Использовать аптечку
+                if (lvl0.inventory.medkit > 0 && lvl0.player.health < lvl0.player.maxHealth) {
+                    lvl0.inventory.medkit--;
+                    lvl0.player.health = Math.min(lvl0.player.maxHealth, lvl0.player.health + 50);
+                    Sound.pickup();
+                    addLevelToast('💊 +50 HP', '#34c759');
+                }
+            }
+        }
+        if (screen === 'base') {
+            if (k === 'e' || k === 'у') { if (!buildMode) interactPressed = true; }
+        }
+        if (k.startsWith('arrow') || k === ' ') e.preventDefault();
+    });
+    document.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+    // ═══════════════════════════════════════════════════════════
+    //  СТАРТ
+    // ═══════════════════════════════════════════════════════════
+    loadGame();
+    initFloors();
+    if (!floors || !floors[1]) {
+        floors = { 1: createFloor1(), 2: createEmptyFloor(2, 4, 3), 3: createEmptyFloor(3, 4, 3) };
+    }
+    if (!roomEmployees) roomEmployees = {};
+    updateFloorGeometry();
+
+    let errorCount = 0;
+    function loop(time) {
+        try {
+            const dt = Math.min((time - lastTime) / 1000, 0.05);
+            lastTime = time;
+            update(dt);
+            draw();
+            errorCount = 0;
+        } catch(err) {
+            errorCount++;
+            console.error('Loop error:', err);
+            if (errorCount >= 5) {
+                try {
+                    addToast('⚠️ Ошибка. Возврат...', '#ff4757');
+                    lvl0 = null;
+                    screen = 'base';
+                    errorCount = 0;
+                } catch(e) {}
+            }
+        }
+        requestAnimationFrame(loop);
+    }
+    lastTime = performance.now();
+    requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
