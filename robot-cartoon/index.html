@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>🤖 Приключения Робота Пикселя</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="stage">
+
+  <!-- ИНТРО -->
+  <div id="intro">
+    <h1>🤖 Приключения Робота Пикселя</h1>
+    <p class="sub">Сезон 1 · Серия 1</p>
+    <p class="sub small">«Дом, который нашёлся»</p>
+    <button class="start-btn" onclick="startEpisode()">▶ Смотреть</button>
+    <p class="episode-info">🎬 Полная серия · с диалогами и песнями</p>
+  </div>
+
+  <!-- СЦЕНА -->
+  <div id="scene">
+    <div class="moon" id="moon"></div>
+    <div class="ground" id="ground"></div>
+    <div class="lamp-glow" id="lampGlow"></div>
+
+    <div id="robot">
+      <div class="robot-head">
+        <div class="robot-antenna"></div>
+        <div class="robot-eye l"></div>
+        <div class="robot-eye r"></div>
+      </div>
+      <div class="robot-body"></div>
+      <div class="robot-leg l"></div>
+      <div class="robot-leg r"></div>
+    </div>
+
+    <div id="dog">
+      <div class="dog-body"></div>
+      <div class="dog-head">
+        <div class="dog-ear"></div>
+        <div class="dog-eye"></div>
+      </div>
+      <div class="dog-tail"></div>
+      <div class="dog-leg l"></div>
+      <div class="dog-leg r"></div>
+    </div>
+
+    <div id="butterfly">
+      <div class="wing l"></div>
+      <div class="wing r"></div>
+    </div>
+
+    <div id="title-card">
+      <h2></h2>
+      <p></p>
+    </div>
+
+    <div id="dialogue">
+      <span class="speaker"></span>
+      <span class="text"></span>
+      <span class="next-hint">▼</span>
+    </div>
+
+    <div id="final-screen">
+      <h2>И робот понял:<br>дом — это не место, а те, кто ждёт тебя.</h2>
+      <p>🌧️ Пиксель и Бублик жили долго и счастливо.<br>А дождь в Петербурге стал для них любимой музыкой.</p>
+      <button onclick="restart()">🔁 Смотреть с начала</button>
+    </div>
+  </div>
+
+  <button id="skipBtn" onclick="skipToEnd()">⏭ Пропустить</button>
+</div>
+<script src="engine.js"></script>
+</body>
+</html>
